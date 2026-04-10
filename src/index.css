@@ -1,0 +1,1404 @@
+@import "tailwindcss/theme" layer(theme);
+@import "tailwindcss/utilities" layer(utilities);
+
+:root {
+  color-scheme: light;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f5f7fb;
+  color: #1f2937;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  margin: 0;
+  background: #eef2ff;
+  overflow-y: auto;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  height: 100vh;
+  overflow: hidden;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
+  }
+}
+
+.app-main {
+  padding: 24px;
+  height: 100vh;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 16px;
+  min-height: 0;
+}
+
+.route-scroll-area {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
+  scrollbar-gutter: stable;
+}
+
+.route-scroll-area::-webkit-scrollbar {
+  width: 10px;
+}
+
+.route-scroll-area::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.route-scroll-area::-webkit-scrollbar-track {
+  background: #e2e8f0;
+}
+
+@media (max-width: 900px) {
+  .app-main {
+    height: auto;
+    overflow: visible;
+    display: block;
+  }
+
+  .route-scroll-area {
+    overflow: visible;
+    padding-right: 0;
+  }
+}
+
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: radial-gradient(circle at top, #dbeafe 0%, #eef2ff 45%, #f8fafc 100%);
+}
+
+.auth-card {
+  width: min(560px, 100%);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 22px;
+  padding: 24px;
+  box-shadow: 0 20px 35px rgba(15, 23, 42, 0.1);
+}
+
+.auth-title {
+  margin: 0;
+  font-size: clamp(1.7rem, 2.4vw, 2.1rem);
+  color: #1e1b4b;
+}
+
+.auth-subtitle {
+  margin: 8px 0 18px;
+  color: #475569;
+}
+
+.auth-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.auth-form {
+  margin-top: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.auth-note {
+  margin: 16px 0 0;
+  color: #334155;
+  font-weight: 600;
+}
+
+.auth-error {
+  margin: 0;
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.readonly-banner {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-left: 4px solid #ea580c;
+  color: #9a3412;
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 0;
+  font-weight: 600;
+}
+
+.read-only-mode :is(button, input, select, textarea, label, form) {
+  cursor: not-allowed !important;
+}
+
+.page-title {
+  margin: 0 0 18px;
+  font-size: clamp(1.8rem, 2.2vw, 2.3rem);
+}
+
+.page-intro {
+  margin: 0 0 24px;
+  color: #475569;
+}
+
+.section-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.05);
+}
+
+.card-title {
+  margin: 0 0 16px;
+  font-size: 1.05rem;
+  color: #111827;
+}
+
+.stats-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.small-card {
+  border-radius: 16px;
+  padding: 18px;
+  background: #eef2ff;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.button-primary,
+.button-secondary {
+  border: none;
+  border-radius: 14px;
+  padding: 14px 18px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.button-primary {
+  background: #4338ca;
+  color: white;
+}
+
+.button-secondary {
+  background: #e0e7ff;
+  color: #1e293b;
+}
+
+.button-primary:hover,
+.button-secondary:hover {
+  transform: translateY(-1px);
+}
+
+.button-small {
+  padding: 10px 14px;
+  border-radius: 12px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 14px 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.table th {
+  color: #475569;
+  font-weight: 600;
+}
+
+.table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.team-table .team-label {
+  font-weight: 800;
+}
+
+.team-table .team-player-name {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.team-table .team-players-cell {
+  line-height: 1.65;
+}
+
+.team-table .team-player-list {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 3px;
+}
+
+.team-table .team-player-list li::marker {
+  color: #475569;
+  font-weight: 700;
+}
+
+.team-table .team-row-a td {
+  background: #eff6ff;
+}
+
+.team-table .team-row-b td {
+  background: #fef3c7;
+}
+
+.team-table tbody tr.team-row-a:hover td {
+  background: #dbeafe;
+}
+
+.team-table tbody tr.team-row-b:hover td {
+  background: #fde68a;
+}
+
+.split-team-table th:first-child {
+  background: #dbeafe;
+}
+
+.split-team-table th:last-child {
+  background: #fef3c7;
+}
+
+.split-team-table td.team-col-a {
+  background: #eff6ff;
+}
+
+.split-team-table td.team-col-b {
+  background: #fef9c3;
+}
+
+.split-team-table tbody tr:hover td.team-col-a {
+  background: #dbeafe;
+}
+
+.split-team-table tbody tr:hover td.team-col-b {
+  background: #fde68a;
+}
+
+.input-group {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid #cbd5e1;
+  background: white;
+  color: #0f172a;
+}
+
+textarea {
+  min-height: 120px;
+}
+
+.input-label {
+  font-size: 0.95rem;
+  color: #334155;
+}
+
+.status-pill {
+  display: inline-flex;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  background: #e0f2fe;
+  color: #035388;
+}
+
+.today-highlight {
+  border: 2px solid #3b82f6 !important;
+  background: #eff6ff;
+}
+
+.top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  background: #f8fafc;
+  border-radius: 999px;
+  padding: 8px 14px;
+  color: #334155;
+  font-size: 0.95rem;
+}
+
+.disabled-card {
+  opacity: 0.65;
+  filter: grayscale(12%);
+}
+
+.button-primary:disabled,
+.button-secondary:disabled {
+  background: #cbd5e1;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.warning-text {
+  color: #b45309;
+}
+
+.success-text {
+  color: #166534;
+}
+
+.empty-state {
+  color: #64748b;
+}
+
+/* History Page Layout */
+.history-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+@media (max-width: 900px) {
+  .history-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.history-main {
+  min-width: 0; /* Allow content to shrink */
+}
+
+.history-sidebar {
+  position: sticky;
+  top: 24px;
+  height: fit-content;
+}
+
+.matches-grid {
+  display: grid;
+  gap: 16px;
+}
+
+/* Match Card Styles */
+.match-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  transition: all 0.2s ease;
+}
+
+.match-card:hover {
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  transform: translateY(-2px);
+}
+
+.match-card.paid {
+  border-left: 4px solid #10b981;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+}
+
+.match-card.unpaid {
+  border-left: 4px solid #f59e0b;
+  background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
+}
+
+.match-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.match-date {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 1.1rem;
+}
+
+.match-week {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.match-details {
+  display: grid;
+  gap: 16px;
+}
+
+.match-result {
+  display: flex;
+  align-items: center;
+}
+
+.winner-badge {
+  background: #dbeafe;
+  color: #1e40af;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.captains-info {
+  display: grid;
+  gap: 8px;
+}
+
+.captain-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.captain-item .label {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.captain-item .name {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.penalty-section {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+}
+
+.penalty-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.penalty-info .label {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.penalty-info .amount {
+  color: #dc2626;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.penalty-info .loser {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.penalty-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.status-label {
+  color: #374151;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.status-select {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.status-select.paid {
+  background: #d1fae5;
+  color: #065f46;
+  border-color: #10b981;
+}
+
+.status-select.unpaid {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #f59e0b;
+}
+
+.status-select:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Match Fee Sidebar Styles */
+.match-fee-sidebar {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.sidebar-header {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.sidebar-header h3 {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+  color: #1e293b;
+}
+
+.week-indicator {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.fee-summary {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.summary-item.collected {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.summary-item.outstanding {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.summary-item .label {
+  font-size: 0.95rem;
+}
+
+.summary-item .amount {
+  font-size: 1.1rem;
+}
+
+.player-penalties h4 {
+  margin: 0 0 16px;
+  color: #1e293b;
+  font-size: 1rem;
+}
+
+.penalty-list {
+  display: grid;
+  gap: 16px;
+}
+
+.player-penalty-card {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+}
+
+.player-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.player-name {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.total-amount {
+  color: #dc2626;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.penalty-breakdown {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+}
+
+.paid-count {
+  color: #065f46;
+  font-weight: 500;
+}
+
+.unpaid-count {
+  color: #92400e;
+  font-weight: 500;
+}
+
+.match-details {
+  display: grid;
+  gap: 8px;
+}
+
+.match-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+.match-item.paid {
+  background: #f0fdf4;
+  border-color: #10b981;
+}
+
+.match-item.unpaid {
+  background: #fffbeb;
+  border-color: #f59e0b;
+}
+
+.match-date {
+  color: #64748b;
+}
+
+.match-amount {
+  color: #374151;
+  font-weight: 500;
+}
+
+.status-badge {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.status-badge.paid {
+  background: #10b981;
+  color: white;
+}
+
+.status-badge.unpaid {
+  background: #f59e0b;
+  color: white;
+}
+
+.no-data {
+  color: #64748b;
+  text-align: center;
+  padding: 20px;
+  font-style: italic;
+}
+
+/* Match Details Widget */
+.match-details-widget {
+  position: relative;
+  overflow: hidden;
+}
+
+.match-details-header {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.match-details-date {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #e0e7ff;
+  color: #1e3a8a;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.match-details-body {
+  display: grid;
+  gap: 10px;
+}
+
+.match-details-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.match-details-label {
+  color: #475569;
+  font-weight: 500;
+}
+
+.match-details-value {
+  margin: 0;
+  color: #0f172a;
+  font-weight: 700;
+  text-align: right;
+}
+
+.match-details-value.pending {
+  color: #b45309;
+}
+
+.match-details-value.paid {
+  color: #166534;
+}
+
+.match-fee-toast {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  width: min(420px, calc(100vw - 30px));
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid #fed7aa;
+  border-left: 5px solid #ea580c;
+  background: #fff7ed;
+  color: #7c2d12;
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.16);
+  line-height: 1.45;
+  opacity: 1;
+  transform: translateX(0);
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.match-fee-toast.visible {
+  animation: toast-slide-left-to-right 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.match-fee-toast-title {
+  margin: 0 0 8px;
+  font-weight: 800;
+}
+
+.match-fee-toast-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.match-fee-toast-name {
+  font-weight: 800;
+  color: #7c2d12;
+}
+
+.match-fee-toast-note {
+  margin: 10px 0 0;
+  font-weight: 600;
+}
+
+@keyframes toast-slide-left-to-right {
+  0% {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 900px) {
+  .match-fee-toast {
+    top: 12px;
+    left: 12px;
+    width: min(380px, calc(100vw - 24px));
+  }
+
+  .match-details-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .match-details-value {
+    text-align: left;
+  }
+}
+
+/* Weekly Summary */
+.weekly-summary-card,
+.weekly-summary-card p,
+.weekly-summary-card li,
+.weekly-summary-card .card-title {
+  font-weight: 700;
+}
+
+.weekly-status-pending {
+  color: #dc2626;
+}
+
+.weekly-status-paid {
+  color: #15803d;
+}
+
+.weekly-date-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.weekly-date-table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: separate;
+  border-spacing: 0 10px;
+  font-size: 0.92rem;
+}
+
+.weekly-date-table th {
+  text-align: left;
+  color: #475569;
+  padding: 0 10px 4px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.weekly-date-table td {
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 10px;
+  white-space: nowrap;
+}
+
+.weekly-date-table td:first-child {
+  border-left: 1px solid #e2e8f0;
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+}
+
+.weekly-date-table td:last-child {
+  border-right: 1px solid #e2e8f0;
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+
+@media (max-width: 760px) {
+  .weekly-date-table-wrap {
+    overflow: visible;
+  }
+
+  .weekly-date-table {
+    min-width: 0;
+    border-spacing: 0;
+  }
+
+  .weekly-date-table thead {
+    display: none;
+  }
+
+  .weekly-date-table,
+  .weekly-date-table tbody {
+    display: block;
+  }
+
+  .weekly-date-table tr {
+    display: block;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+  }
+
+  .weekly-date-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0;
+    border: 0;
+    background: transparent;
+    white-space: normal;
+    text-align: right;
+  }
+
+  .weekly-date-table td::before {
+    content: attr(data-label);
+    color: #475569;
+    font-weight: 800;
+    text-align: left;
+    flex: 0 0 auto;
+  }
+
+  .weekly-date-table td:first-child,
+  .weekly-date-table td:last-child {
+    border-radius: 0;
+  }
+
+  .weekly-date-table tr:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.captain-color-legend {
+  margin: 0 0 12px;
+  font-weight: 700;
+}
+
+.captain-loss-color {
+  color: #dc2626;
+  font-weight: 800;
+}
+
+.captain-win-color {
+  color: #15803d;
+  font-weight: 800;
+}
+
+/* Rules Page */
+.rules-page {
+  width: 100%;
+}
+
+.rules-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.rules-card {
+  border-left: 4px solid #4338ca;
+  font-weight: 700;
+}
+
+.rules-section-title {
+  margin: 0 0 12px;
+  font-size: 1.04rem;
+  color: #1e1b4b;
+  font-weight: 800;
+}
+
+.rules-list {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 8px;
+  color: #334155;
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.rules-list li::marker {
+  color: #4338ca;
+}
+
+@media (max-width: 900px) {
+  .rules-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Ground Fund Tracker */
+.fund-layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.fund-sidebar-panel {
+  position: sticky;
+  top: 24px;
+  display: grid;
+  gap: 18px;
+}
+
+.fund-main-panel {
+  min-width: 0;
+}
+
+.fund-summary-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.fund-summary-card {
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.fund-summary-card span {
+  color: #334155;
+  font-weight: 600;
+}
+
+.fund-summary-card strong {
+  font-size: 1.08rem;
+}
+
+.fund-summary-card.credit {
+  background: #dcfce7;
+  border: 1px solid #86efac;
+}
+
+.fund-summary-card.debit {
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+}
+
+.fund-summary-card.balance {
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+}
+
+.fund-form {
+  display: grid;
+  gap: 8px;
+}
+
+.fund-table-wrap {
+  overflow-x: auto;
+}
+
+.fund-table th,
+.fund-table td {
+  white-space: nowrap;
+}
+
+.fund-type-pill {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.fund-type-pill.credit {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.fund-type-pill.debit {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.fund-delete-btn {
+  background: #dc2626;
+}
+
+.fund-reset-btn {
+  background: #fff7ed;
+  color: #9a3412;
+  border: 1px solid #fdba74;
+  font-weight: 700;
+}
+
+.fund-reset-btn:hover {
+  background: #ffedd5;
+}
+
+@media (max-width: 1100px) {
+  .fund-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .fund-sidebar-panel {
+    position: static;
+  }
+}
+
+/* Ground Expense Page (enhanced UX) */
+.ground-expense-page {
+  display: grid;
+  gap: 18px;
+}
+
+.fund-summary-top-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.player-status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.player-status-row {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+  background: #f8fafc;
+}
+
+.player-status-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.player-status-name {
+  margin: 0;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.player-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 6px 10px;
+}
+
+.player-status-pill.paid {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.player-status-pill.unpaid {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.player-status-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.fund-paid-btn:disabled,
+.fund-unpaid-btn:disabled {
+  opacity: 0.55;
+}
+
+.ground-expense-content {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.ground-expense-side-panel {
+  position: sticky;
+  top: 24px;
+}
+
+.ground-expense-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.fund-editor-close-btn {
+  flex-shrink: 0;
+}
+
+.fund-mobile-editor-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(15, 23, 42, 0.45);
+  padding: 12px;
+  display: grid;
+  align-items: start;
+  overflow-y: auto;
+}
+
+.fund-mobile-editor-panel {
+  width: min(680px, 100%);
+  margin: 0 auto;
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+}
+
+.unpaid-notice-card {
+  border-left: 4px solid #f59e0b;
+}
+
+.unpaid-notice-list {
+  display: grid;
+  gap: 8px;
+}
+
+.unpaid-notice-item {
+  margin: 0;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #92400e;
+  font-weight: 600;
+}
+
+.fund-qr-card {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+  display: grid;
+  gap: 10px;
+}
+
+.fund-qr-image {
+  width: 100%;
+  max-width: 280px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+.fund-upi-id {
+  margin: 0;
+  font-weight: 700;
+  color: #0f172a;
+  word-break: break-all;
+}
+
+.fund-table-wrap {
+  max-height: 460px;
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  scroll-behavior: smooth;
+}
+
+.fund-table {
+  min-width: 700px;
+}
+
+.fund-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f8fafc;
+}
+
+.fund-table-wrap::-webkit-scrollbar,
+.player-status-grid::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.fund-table-wrap::-webkit-scrollbar-thumb,
+.player-status-grid::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.fund-table-wrap::-webkit-scrollbar-track,
+.player-status-grid::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 999px;
+}
+
+@media (max-width: 1100px) {
+  .ground-expense-content {
+    grid-template-columns: 1fr;
+  }
+
+  .ground-expense-side-panel {
+    position: static;
+  }
+}
+
+@media (max-width: 900px) {
+  .fund-summary-top-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .player-status-grid {
+    grid-template-columns: 1fr;
+  }
+}
