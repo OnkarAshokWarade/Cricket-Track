@@ -63,7 +63,6 @@ function MatchCenterPage({ accessMode }) {
 
   const {
     currentGenerationCount,
-    isGenerationDay,
     hasReachedGenerationLimit,
     canGenerateTeams,
     lockedMessage: teamGenerationLockedMessage,
@@ -106,16 +105,9 @@ function MatchCenterPage({ accessMode }) {
       return;
     }
 
-    if (!isGenerationDay) {
-      setTeamMessageType('warning');
-      setTeamMessage('You can generate teams only on Sunday, and only 2 times per week.');
-      setShowTeamPasswordModal(false);
-      return;
-    }
-
     if (hasReachedGenerationLimit) {
       setTeamMessageType('warning');
-      setTeamMessage('This week\'s 2 team-generation chances are over. You can generate teams again next Sunday.');
+      setTeamMessage('Today\'s 2 team-generation chances are over. You can generate teams again tomorrow.');
       setShowTeamPasswordModal(false);
       return;
     }
@@ -147,16 +139,9 @@ function MatchCenterPage({ accessMode }) {
 
     setIsSubmittingTeamGeneration(true);
 
-    if (!isGenerationDay) {
-      setTeamMessageType('warning');
-      setTeamMessage('You can generate teams only on Sunday, and only 2 times per week.');
-      setIsSubmittingTeamGeneration(false);
-      return;
-    }
-
     if (hasReachedGenerationLimit) {
       setTeamMessageType('warning');
-      setTeamMessage('This week\'s 2 team-generation chances are over. You can generate teams again next Sunday.');
+      setTeamMessage('Today\'s 2 team-generation chances are over. You can generate teams again tomorrow.');
       setIsSubmittingTeamGeneration(false);
       return;
     }
@@ -173,8 +158,8 @@ function MatchCenterPage({ accessMode }) {
       setTeamMessageType('success');
       setTeamMessage(
         nextGenerationCount >= MAX_TEAM_GENERATIONS
-          ? 'Weekly teams generated successfully. Generated this week: 2/2. You can generate teams again next Sunday.'
-          : `Weekly teams generated successfully. Generated this week: ${nextGenerationCount}/2.`
+          ? 'Weekly teams generated successfully. Generated today: 2/2. You can generate teams again tomorrow.'
+          : `Weekly teams generated successfully. Generated today: ${nextGenerationCount}/2.`
       );
     } catch (error) {
       console.error('Error generating weekly teams:', error);
@@ -305,7 +290,7 @@ function MatchCenterPage({ accessMode }) {
           <p className="pill">Current week: {weekId}</p>
           <p className="pill" style={{ marginTop: '10px' }}>Members available: {players.length}</p>
           <p className="pill" style={{ marginTop: '10px' }}>
-            Generated this week: {currentGenerationCount}/{MAX_TEAM_GENERATIONS}
+            Generated today: {currentGenerationCount}/{MAX_TEAM_GENERATIONS}
           </p>
 
           <div className="button-row" style={{ marginTop: '14px' }}>
@@ -343,7 +328,7 @@ function MatchCenterPage({ accessMode }) {
                 Enter Admin Password
               </h3>
               <p className="page-intro" style={{ marginBottom: '12px' }}>
-                Confirm password to use 1 team-generation chance.
+                Confirm password to use 1 of today&apos;s 2 team-generation chances.
               </p>
               <form className="team-password-form" onSubmit={generateTeams}>
                 <label className="input-label" htmlFor="team-generate-password">

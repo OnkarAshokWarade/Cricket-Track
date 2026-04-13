@@ -36,7 +36,7 @@ function TeamsPage() {
   const openPasswordPanel = () => {
     if (!canGenerateTeams) {
       setMessageType('warning');
-      setMessage(lockedMessage || 'You can generate teams only on Sunday, and only 2 times per week.');
+      setMessage(lockedMessage || 'Today\'s 2 team-generation chances are over. You can generate teams again tomorrow.');
       setShowPasswordPanel(false);
       return;
     }
@@ -68,13 +68,13 @@ function TeamsPage() {
 
     if (hasReachedGenerationLimit) {
       setMessageType('warning');
-      setMessage('This week\'s 2 team-generation chances are over. You can generate teams again next Sunday.');
+      setMessage('Today\'s 2 team-generation chances are over. You can generate teams again tomorrow.');
       return;
     }
 
     if (!canGenerateTeams) {
       setMessageType('warning');
-      setMessage(lockedMessage || 'You can generate teams only on Sunday, and only 2 times per week.');
+      setMessage(lockedMessage || 'Today\'s 2 team-generation chances are over. You can generate teams again tomorrow.');
       return;
     }
 
@@ -92,8 +92,8 @@ function TeamsPage() {
       setMessageType('success');
       setMessage(
         nextGenerationCount >= MAX_TEAM_GENERATIONS
-          ? 'Weekly teams generated successfully. Generated this week: 2/2. You can generate teams again next Sunday.'
-          : `Weekly teams generated successfully. Generated this week: ${nextGenerationCount}/2.`
+          ? 'Weekly teams generated successfully. Generated today: 2/2. You can generate teams again tomorrow.'
+          : `Weekly teams generated successfully. Generated today: ${nextGenerationCount}/2.`
       );
     } catch (error) {
       console.error('Error generating weekly teams:', error);
@@ -117,7 +117,7 @@ function TeamsPage() {
       <div className="top-nav">
         <div>
           <h1 className="page-title">Teams</h1>
-          <p className="page-intro">Team generation opens on Sunday only, requires admin password, and is limited to 2 times per week.</p>
+          <p className="page-intro">Team generation requires admin password and is limited to 2 times per day.</p>
         </div>
       </div>
 
@@ -126,7 +126,7 @@ function TeamsPage() {
           <h2 className="card-title">Current week: {weekId}</h2>
           <p className="pill">Members available: {players.length}</p>
           <p className="pill" style={{ marginTop: '10px' }}>
-            Generated this week: {currentGenerationCount}/{MAX_TEAM_GENERATIONS}
+            Generated today: {currentGenerationCount}/{MAX_TEAM_GENERATIONS}
           </p>
           <div className="button-row" style={{ marginTop: '14px' }}>
             <button
@@ -152,7 +152,7 @@ function TeamsPage() {
             <div className="team-password-panel">
               <h3 className="card-title">Enter Admin Password</h3>
               <p className="page-intro" style={{ marginBottom: '12px' }}>
-                Confirm password to use 1 team-generation chance.
+                Confirm password to use 1 of today&apos;s 2 team-generation chances.
               </p>
               <form className="team-password-form" onSubmit={generateTeams}>
                 <label className="input-label" htmlFor="teams-page-password">

@@ -3,20 +3,14 @@ import { todayKey, toDateKey } from './dateUtils';
 export const MAX_TEAM_GENERATIONS = 2;
 export const TEAM_GENERATE_PASSWORD = '9322070390';
 
-const getDayOfWeek = (dateValue = todayKey()) => {
-  const dateKey = toDateKey(dateValue);
-  if (!dateKey) {
-    return -1;
+export const getTeamGenerationCount = (weekTeams, dateValue = todayKey()) => {
+  if (!weekTeams) {
+    return 0;
   }
 
-  const [year, month, day] = dateKey.split('-').map(Number);
-  return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
-};
-
-export const isSunday = (dateValue = todayKey()) => getDayOfWeek(dateValue) === 0;
-
-export const getTeamGenerationCount = (weekTeams) => {
-  if (!weekTeams) {
+  const activeDateKey = toDateKey(dateValue);
+  const savedDateKey = toDateKey(weekTeams.date);
+  if (!activeDateKey || activeDateKey !== savedDateKey) {
     return 0;
   }
 
@@ -33,23 +27,19 @@ export const getTeamGenerationCount = (weekTeams) => {
 };
 
 export const getTeamGenerationStatus = (weekTeams, dateValue = todayKey()) => {
-  const currentGenerationCount = getTeamGenerationCount(weekTeams);
-  const isGenerationDay = isSunday(dateValue);
+  const currentGenerationCount = getTeamGenerationCount(weekTeams, dateValue);
   const hasReachedGenerationLimit = currentGenerationCount >= MAX_TEAM_GENERATIONS;
 
   let lockedMessage = '';
 
-  if (!isGenerationDay) {
-    lockedMessage = 'You can generate teams only on Sunday, and only 2 times per week.';
-  } else if (hasReachedGenerationLimit) {
-    lockedMessage = 'This week\'s 2 team-generation chances are over. You can generate teams again next Sunday.';
+  if (hasReachedGenerationLimit) {
+    lockedMessage = 'Today\'s 2 team-generation chances are over. You can generate teams again tomorrow.';
   }
 
   return {
     currentGenerationCount,
-    isGenerationDay,
     hasReachedGenerationLimit,
-    canGenerateTeams: isGenerationDay && !hasReachedGenerationLimit,
+    canGenerateTeams: !hasReachedGenerationLimit,
     lockedMessage,
   };
 };
