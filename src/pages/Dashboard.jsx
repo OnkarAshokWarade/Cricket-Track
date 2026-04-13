@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getWeekId, todayKey, isSameDay } from '../utils/dateUtils';
+import { formatDate, getWeekId, todayKey, isSameDay } from '../utils/dateUtils';
 import { getPlayerName } from '../utils/teamUtils';
 import { useAppData } from '../context/AppDataContext';
 
@@ -10,8 +10,31 @@ function Dashboard() {
 
   const currentWeekId = getWeekId();
   const currentWeekTeam = teams[currentWeekId] || null;
+  const todayCaptains = captains[currentWeekId]?.dailyCaptains?.find((entry) => entry.date === todayKey()) || null;
   const currentCaptains = captains[currentWeekId]?.dailyCaptains?.slice(-1)?.[0] || null;
   const todayMatch = matches.find((match) => isSameDay(match.date, todayKey()));
+  const currentCaptainsMatch = currentCaptains ? matches.find((match) => isSameDay(match.date, currentCaptains.date)) || null : null;
+  const visibleCaptains = todayCaptains || currentCaptains;
+  const visibleCaptainAName = visibleCaptains?.teamA ? getPlayerName(players, visibleCaptains.teamA) : '--';
+  const visibleCaptainBName = visibleCaptains?.teamB ? getPlayerName(players, visibleCaptains.teamB) : '--';
+  const latestWinnerLabel =
+    currentCaptainsMatch && currentCaptainsMatch.status !== 'no-match'
+      ? currentCaptainsMatch.winnerTeam === 'teamA'
+        ? 'Team A'
+        : 'Team B'
+      : null;
+  const captainAResultClass =
+    currentCaptainsMatch && currentCaptainsMatch.status !== 'no-match'
+      ? currentCaptainsMatch.winnerTeam === 'teamA'
+        ? 'captain-win-color'
+        : 'captain-loss-color'
+      : '';
+  const captainBResultClass =
+    currentCaptainsMatch && currentCaptainsMatch.status !== 'no-match'
+      ? currentCaptainsMatch.winnerTeam === 'teamB'
+        ? 'captain-win-color'
+        : 'captain-loss-color'
+      : '';
 
   const totalPenalty = useMemo(
     () => matches.reduce((sum, match) => sum + (match.penalty || 0), 0),
@@ -66,7 +89,13 @@ function Dashboard() {
               </tr>
               <tr>
                 <td>Today</td>
-                <td>{todayMatch ? 'Match recorded today' : 'No match recorded yet'}</td>
+                <td>
+                  {todayMatch
+                    ? todayMatch.status === 'no-match'
+                      ? 'Today marked as no match'
+                      : 'Match recorded today'
+                    : 'No match recorded yet'}
+                </td>
               </tr>
               <tr>
                 <td>Money collected</td>
@@ -84,8 +113,12 @@ function Dashboard() {
             <table className="table team-table split-team-table">
               <thead>
                 <tr>
-                  <th>Team A ({currentWeekTeam ? currentWeekTeam.teamA.length : 0})</th>
-                  <th>Team B ({currentWeekTeam ? currentWeekTeam.teamB.length : 0})</th>
+                  <th>
+                    Team A ({currentWeekTeam ? currentWeekTeam.teamA.length : 0}) - Captain: <strong>{visibleCaptainAName}</strong>
+                  </th>
+                  <th>
+                    Team B ({currentWeekTeam ? currentWeekTeam.teamB.length : 0}) - Captain: <strong>{visibleCaptainBName}</strong>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -128,24 +161,30 @@ function Dashboard() {
           </div>
           {currentCaptains && (
             <div style={{ marginTop: '18px' }}>
-              <p className="card-title">Last selected captains</p>
+              <p className="card-title" style={{ fontWeight: 800 }}>Last selected captains</p>
+              <p className="pill" style={{ marginBottom: '12px', fontWeight: 800 }}>
+                Date: {formatDate(currentCaptains.date)}
+              </p>
+              {latestWinnerLabel ? (
+                <p className="pill" style={{ marginBottom: '12px', fontWeight: 800 }}>
+                  Winner: {latestWinnerLabel}
+                </p>
+              ) : null}
               <div className="overflow-x-auto">
                 <table className="table team-table split-team-table">
                   <thead>
                     <tr>
-                      <th>Team A</th>
-                      <th>Team B</th>
+                      <th>Captain A</th>
+                      <th>Captain B</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
                       <td className="team-players-cell team-col-a">
-                        <span className="team-label">Captain: </span>
-                        <span className="team-player-name">{getPlayerName(players, currentCaptains.teamA)}</span>
+                        <span className={`team-player-name ${captainAResultClass}`}>{getPlayerName(players, currentCaptains.teamA)}</span>
                       </td>
                       <td className="team-players-cell team-col-b">
-                        <span className="team-label">Captain: </span>
-                        <span className="team-player-name">{getPlayerName(players, currentCaptains.teamB)}</span>
+                        <span className={`team-player-name ${captainBResultClass}`}>{getPlayerName(players, currentCaptains.teamB)}</span>
                       </td>
                     </tr>
                   </tbody>
@@ -162,14 +201,8 @@ function Dashboard() {
           <Link to="/players" className="button-secondary button-small">
             Manage players
           </Link>
-          <Link to="/teams" className="button-secondary button-small">
-            Generate teams
-          </Link>
-          <Link to="/captains" className="button-secondary button-small">
-            Select captains
-          </Link>
-          <Link to="/match" className="button-secondary button-small">
-            Record match
+          <Link to="/match-center" className="button-secondary button-small">
+            Open Match Center
           </Link>
         </div>
       </div>

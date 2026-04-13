@@ -4,13 +4,11 @@ import './Sidebar.css';
 const navItems = [
   { label: 'Dashboard', path: '/' },
   { label: 'Players', path: '/players' },
-  { label: 'Teams', path: '/teams' },
-  { label: 'Captains', path: '/captains' },
-  { label: 'Match', path: '/match' },
+  { label: 'Match Center', path: '/match-center' },
   { label: 'History', path: '/history' },
-  { label: 'Ground Expense', path: '/ground-expense' },
   { label: 'Weekly Summary', path: '/weekly-summary' },
   { label: 'Rules Patoda(g)', path: '/rules-patodag' },
+  { label: 'Ground Expense', path: '/ground-expense' },
 ];
 
 function Sidebar({ accessMode, onSwitchRole }) {

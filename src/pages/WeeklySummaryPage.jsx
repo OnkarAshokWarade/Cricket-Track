@@ -10,15 +10,23 @@ function WeeklySummaryPage() {
     const weeklyMap = {};
     matches.forEach((match) => {
       if (!weeklyMap[match.weekId]) {
-        weeklyMap[match.weekId] = { matches: [], losses: {} };
+        weeklyMap[match.weekId] = { matches: [], losses: {}, playedMatches: 0, noMatchDays: 0 };
       }
       weeklyMap[match.weekId].matches.push(match);
+
+      if (match.status === 'no-match') {
+        weeklyMap[match.weekId].noMatchDays += 1;
+        return;
+      }
+
+      weeklyMap[match.weekId].playedMatches += 1;
       weeklyMap[match.weekId].losses[match.loserCaptain] =
         (weeklyMap[match.weekId].losses[match.loserCaptain] || 0) + match.penalty;
     });
 
     return Object.entries(weeklyMap).map(([weekId, summary]) => {
-      const pendingMatches = summary.matches.filter((item) => item.penaltyPaid !== true);
+      const playedMatches = summary.matches.filter((item) => item.status !== 'no-match');
+      const pendingMatches = playedMatches.filter((item) => item.penaltyPaid !== true);
       const topLoser = Object.entries(summary.losses).reduce(
         (best, [playerId, amount]) => (amount > best.amount ? { playerId, amount } : best),
         { playerId: null, amount: 0 }
@@ -26,8 +34,9 @@ function WeeklySummaryPage() {
 
       return {
         weekId,
-        matchesPlayed: summary.matches.length,
-        totalMoney: summary.matches.reduce((sum, item) => sum + item.penalty, 0),
+        matchesPlayed: summary.playedMatches,
+        noMatchDays: summary.noMatchDays,
+        totalMoney: playedMatches.reduce((sum, item) => sum + item.penalty, 0),
         pendingMoney: pendingMatches.reduce((sum, item) => sum + item.penalty, 0),
         pendingCount: pendingMatches.length,
         losses: summary.losses,
@@ -52,6 +61,7 @@ function WeeklySummaryPage() {
             <div className="card weekly-summary-card" key={week.weekId}>
               <h2 className="card-title">{week.weekId}</h2>
               <p>Matches played: {week.matchesPlayed}</p>
+              <p>No-match days: {week.noMatchDays}</p>
               <p>Total money: {'\u20B9'} {week.totalMoney}</p>
               <p>Pending money: {'\u20B9'} {week.pendingMoney} ({week.pendingCount} matches)</p>
               {week.pendingMoney === 0 && (
@@ -74,11 +84,11 @@ function WeeklySummaryPage() {
                       {week.matches.map((match) => (
                         <tr key={match.id}>
                           <td data-label="Date">{formatDate(match.date)}</td>
-                          <td data-label="Losing Captain">{getPlayerName(players, match.loserCaptain)}</td>
+                          <td data-label="Losing Captain">{match.status === 'no-match' ? 'No match' : getPlayerName(players, match.loserCaptain)}</td>
                           <td data-label="Penalty">{'\u20B9'} {match.penalty}</td>
                           <td data-label="Status">
-                            <span className={match.penaltyPaid === true ? 'weekly-status-paid' : 'weekly-status-pending'}>
-                              {match.penaltyPaid === true ? 'Paid' : 'Pending'}
+                            <span className={match.status === 'no-match' || match.penaltyPaid === true ? 'weekly-status-paid' : 'weekly-status-pending'}>
+                              {match.status === 'no-match' ? 'No Match' : match.penaltyPaid === true ? 'Paid' : 'Pending'}
                             </span>
                           </td>
                         </tr>

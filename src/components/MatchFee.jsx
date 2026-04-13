@@ -3,7 +3,9 @@ import { getPlayerName } from '../utils/teamUtils';
 
 function MatchFee({ matches, players, currentWeekId }) {
   const weeklyData = useMemo(() => {
-    const weekMatches = matches.filter(match => match.weekId === currentWeekId);
+    const weekMatches = matches.filter(
+      (match) => match.weekId === currentWeekId && match.status !== 'no-match' && (match.penalty || 0) > 0 && match.loserCaptain
+    );
 
     const playerPenalties = {};
     let totalPaid = 0;

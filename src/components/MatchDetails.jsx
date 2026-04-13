@@ -23,15 +23,29 @@ function MatchDetails({ todayMatch, players, pendingMatches = [] }) {
   const matchInfo = useMemo(() => {
     if (!todayMatch) return null;
 
+    if (todayMatch.status === 'no-match') {
+      return {
+        isNoMatch: true,
+        statusLabel: 'आज सामना झाला नाही.',
+        captainAName: todayMatch.captainA ? normalizePlayerName(players, todayMatch.captainA) : '--',
+        captainBName: todayMatch.captainB ? normalizePlayerName(players, todayMatch.captainB) : '--',
+        penaltyAmount: 0,
+        pendingFee: false,
+      };
+    }
+
     const loserName = normalizePlayerName(players, todayMatch.loserCaptain);
     const captainAName = normalizePlayerName(players, todayMatch.captainA);
     const captainBName = normalizePlayerName(players, todayMatch.captainB);
 
     return {
+      isNoMatch: false,
       winnerLabel: todayMatch.winnerTeam === 'teamA' ? 'टीम A' : 'टीम B',
       loserName,
       captainAName,
       captainBName,
+      captainAResultClass: todayMatch.winnerTeam === 'teamA' ? 'captain-win-color' : 'captain-loss-color',
+      captainBResultClass: todayMatch.winnerTeam === 'teamB' ? 'captain-win-color' : 'captain-loss-color',
       penaltyAmount: todayMatch.penalty || 0,
       pendingFee: todayMatch.penaltyPaid !== true,
     };
@@ -43,7 +57,6 @@ function MatchDetails({ todayMatch, players, pendingMatches = [] }) {
         id: match.id,
         date: formatDate(match.date),
         loserName: normalizePlayerName(players, match.loserCaptain),
-        penalty: match.penalty || 0,
         penaltyText: formatAmountMarathi(match.penalty || 0),
       })),
     [pendingMatches, players]
@@ -62,27 +75,43 @@ function MatchDetails({ todayMatch, players, pendingMatches = [] }) {
       {matchInfo && (
         <div className="match-details-body">
           <div className="match-details-row">
-            <span className="match-details-label">विजेता टीम</span>
-            <strong className="match-details-value">{matchInfo.winnerLabel}</strong>
+            <span className="match-details-label">{matchInfo.isNoMatch ? 'स्थिती' : 'विजेता टीम'}</span>
+            <strong className="match-details-value">
+              {matchInfo.isNoMatch ? matchInfo.statusLabel : matchInfo.winnerLabel}
+            </strong>
           </div>
           <div className="match-details-row">
             <span className="match-details-label">कर्णधार</span>
-            <strong className="match-details-value">{matchInfo.captainAName} / {matchInfo.captainBName}</strong>
-          </div>
-          <div className="match-details-row">
-            <span className="match-details-label">पराभूत कर्णधार</span>
-            <strong className="match-details-value">{matchInfo.loserName}</strong>
-          </div>
-          <div className="match-details-row">
-            <span className="match-details-label">मॅच फी</span>
-            <strong className="match-details-value">₹{matchInfo.penaltyAmount}</strong>
-          </div>
-          <div className="match-details-row">
-            <span className="match-details-label">पेमेंट स्थिती</span>
-            <strong className={`match-details-value ${matchInfo.pendingFee ? 'pending' : 'paid'}`}>
-              {matchInfo.pendingFee ? 'बाकी आहे' : 'भरली आहे'}
+            <strong className="match-details-value">
+              {matchInfo.isNoMatch ? (
+                `${matchInfo.captainAName} / ${matchInfo.captainBName}`
+              ) : (
+                <>
+                  <span className={matchInfo.captainAResultClass}>{matchInfo.captainAName}</span>
+                  {' / '}
+                  <span className={matchInfo.captainBResultClass}>{matchInfo.captainBName}</span>
+                </>
+              )}
             </strong>
           </div>
+          {!matchInfo.isNoMatch && (
+            <>
+              <div className="match-details-row">
+                <span className="match-details-label">पराभूत कर्णधार</span>
+                <strong className="match-details-value captain-loss-color">{matchInfo.loserName}</strong>
+              </div>
+              <div className="match-details-row">
+                <span className="match-details-label">मॅच फी</span>
+                <strong className="match-details-value">₹{matchInfo.penaltyAmount}</strong>
+              </div>
+              <div className="match-details-row">
+                <span className="match-details-label">पेमेंट स्थिती</span>
+                <strong className={`match-details-value ${matchInfo.pendingFee ? 'pending' : 'paid'}`}>
+                  {matchInfo.pendingFee ? 'बाकी आहे' : 'भरली आहे'}
+                </strong>
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -92,7 +121,8 @@ function MatchDetails({ todayMatch, players, pendingMatches = [] }) {
           <ul className="match-fee-toast-list">
             {pendingNotices.map((notice) => (
               <li key={notice.id}>
-                दिनांक {notice.date}: कृपया <strong className="match-fee-toast-name">{notice.loserName}</strong> लवकरात लवकर {notice.penaltyText} रुपये उबेद पानसरे यांच्याकडे जमा करा.
+                दिनांक {notice.date}: कृपया <strong className="match-fee-toast-name">{notice.loserName}</strong>{' '}
+                लवकरात लवकर {notice.penaltyText} रुपये उबेद पानसरे यांच्याकडे जमा करा.
               </li>
             ))}
           </ul>

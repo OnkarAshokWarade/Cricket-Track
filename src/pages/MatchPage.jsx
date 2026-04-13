@@ -26,7 +26,7 @@ function MatchPage() {
   const pendingMatches = useMemo(
     () =>
       matches
-        .filter((match) => match.penaltyPaid !== true)
+        .filter((match) => match.status !== 'no-match' && match.penaltyPaid !== true)
         .slice()
         .sort((a, b) => (a.date < b.date ? 1 : -1)),
     [matches]
@@ -37,6 +37,7 @@ function MatchPage() {
   }, [currentTeams]);
 
   const canRecordMatch = useMemo(() => !!currentTeams && !!todayCaptains && !todayMatch, [currentTeams, todayCaptains, todayMatch]);
+  const canMarkNoMatch = useMemo(() => !!currentTeams && !todayMatch, [currentTeams, todayMatch]);
 
   const handleSaveMatch = async () => {
     if (!canRecordMatch) {
@@ -69,6 +70,36 @@ function MatchPage() {
     }
   };
 
+  const handleSaveNoMatch = async () => {
+    if (!canMarkNoMatch) {
+      setMessage('A no-match entry cannot be recorded right now. Please check today\'s data.');
+      return;
+    }
+
+    const noMatchEntry = {
+      date: todayKey(),
+      weekId,
+      status: 'no-match',
+      teamA: currentTeams.teamA,
+      teamB: currentTeams.teamB,
+      score: 'No match',
+      captainA: todayCaptains?.teamA || '',
+      captainB: todayCaptains?.teamB || '',
+      winnerTeam: '',
+      loserCaptain: '',
+      penalty: 0,
+      penaltyPaid: true,
+    };
+
+    try {
+      await addMatch(noMatchEntry);
+      setMessage('No match was recorded for today.');
+    } catch (error) {
+      console.error('Error recording no-match day:', error);
+      setMessage('No-match status could not be recorded. Please verify Firebase configuration and try again.');
+    }
+  };
+
   return (
     <section>
       <div className="top-nav">
@@ -88,17 +119,28 @@ function MatchPage() {
 
           {todayMatch && (
             <div>
-              <p className="success-text">A match is already recorded today.</p>
-              <p>
-                Winner: <strong>{todayMatch.winnerTeam === 'teamA' ? 'Team A' : 'Team B'}</strong>
-              </p>
-              <p>
-                Penalty paid by: <strong>{getPlayerName(players, todayMatch.loserCaptain)}</strong>
-              </p>
+              {todayMatch.status === 'no-match' ? (
+                <>
+                  <p className="success-text">Today is marked as a no-match day.</p>
+                  <p>
+                    Status: <strong>No match</strong>
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="success-text">A match is already recorded today.</p>
+                  <p>
+                    Winner: <strong>{todayMatch.winnerTeam === 'teamA' ? 'Team A' : 'Team B'}</strong>
+                  </p>
+                  <p>
+                    Penalty paid by: <strong>{getPlayerName(players, todayMatch.loserCaptain)}</strong>
+                  </p>
+                </>
+              )}
             </div>
           )}
 
-          {currentTeams && todayCaptains && !todayMatch && (
+          {currentTeams && !todayMatch && (
             <div className="input-group">
               <div>
                 <p className="card-title">Teams and captains</p>
@@ -150,7 +192,7 @@ function MatchPage() {
               </div>
               <div>
                 <label className="input-label">Winning team</label>
-                <select value={selectedWinner} onChange={(event) => setSelectedWinner(event.target.value)}>
+                <select value={selectedWinner} onChange={(event) => setSelectedWinner(event.target.value)} disabled={!todayCaptains}>
                   <option value="A">Team A</option>
                   <option value="B">Team B</option>
                 </select>
@@ -158,6 +200,9 @@ function MatchPage() {
               <div className="button-row">
                 <button className="button-primary button-small" type="button" onClick={handleSaveMatch} disabled={!canRecordMatch}>
                   Record Match
+                </button>
+                <button className="button-secondary button-small" type="button" onClick={handleSaveNoMatch} disabled={!canMarkNoMatch}>
+                  No Match Today
                 </button>
               </div>
             </div>

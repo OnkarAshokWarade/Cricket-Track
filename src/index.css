@@ -457,17 +457,9 @@ textarea {
 
 .match-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.match-date {
-  font-weight: 600;
-  color: #1e293b;
-  font-size: 1.1rem;
+  margin-bottom: 12px;
 }
 
 .match-week {
@@ -481,21 +473,28 @@ textarea {
 
 .match-details {
   display: grid;
-  gap: 16px;
+  gap: 12px;
 }
 
-.match-result {
+.match-summary-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-radius: 10px;
 }
 
-.winner-badge {
-  background: #dbeafe;
-  color: #1e40af;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-weight: 600;
-  font-size: 0.95rem;
+.match-summary-label {
+  color: #475569;
+  font-weight: 700;
+}
+
+.match-summary-value {
+  color: #0f172a;
+  font-size: 1rem;
+  font-weight: 800;
 }
 
 .captains-info {
@@ -520,6 +519,25 @@ textarea {
 .captain-item .name {
   color: #1e293b;
   font-weight: 600;
+}
+
+.captain-item .name.captain-loss-color,
+.captain-item .name.captain-win-color,
+.team-table .team-player-name.captain-loss-color,
+.team-table .team-player-name.captain-win-color {
+  font-weight: 800;
+}
+
+.captain-item .name.captain-loss-color,
+.team-table .team-player-name.captain-loss-color,
+.match-details-value.captain-loss-color {
+  color: #dc2626;
+}
+
+.captain-item .name.captain-win-color,
+.team-table .team-player-name.captain-win-color,
+.match-details-value.captain-win-color {
+  color: #15803d;
 }
 
 .penalty-section {

@@ -107,6 +107,7 @@ function HistoryPage() {
                         <th>Date</th>
                         <th>Team A Captain</th>
                         <th>Team B Captain</th>
+                        <th>Winner</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -115,17 +116,24 @@ function HistoryPage() {
                         .sort((a, b) => (a.date < b.date ? 1 : -1))
                         .map((match) => (
                           <tr key={match.id}>
-                            <td>{formatDate(match.date)}</td>
+                            <td style={{ fontWeight: 800 }}>{formatDate(match.date)}</td>
                             <td>
-                              <span className={match.captainA === match.loserCaptain ? 'captain-loss-color' : 'captain-win-color'}>
-                                {getPlayerName(players, match.captainA)}
+                              <span
+                                className={match.status === 'no-match' ? '' : match.captainA === match.loserCaptain ? 'captain-loss-color' : 'captain-win-color'}
+                                style={{ fontWeight: 700 }}
+                              >
+                                {match.captainA ? getPlayerName(players, match.captainA) : match.status === 'no-match' ? 'No match' : '--'}
                               </span>
                             </td>
                             <td>
-                              <span className={match.captainB === match.loserCaptain ? 'captain-loss-color' : 'captain-win-color'}>
-                                {getPlayerName(players, match.captainB)}
+                              <span
+                                className={match.status === 'no-match' ? '' : match.captainB === match.loserCaptain ? 'captain-loss-color' : 'captain-win-color'}
+                                style={{ fontWeight: 700 }}
+                              >
+                                {match.captainB ? getPlayerName(players, match.captainB) : match.status === 'no-match' ? 'No match' : '--'}
                               </span>
                             </td>
+                            <td style={{ fontWeight: 800 }}>{match.status === 'no-match' ? 'No Match' : match.winnerTeam === 'teamA' ? 'Team A' : 'Team B'}</td>
                           </tr>
                         ))}
                     </tbody>

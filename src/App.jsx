@@ -1,11 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Navigate, Routes, Route, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import PlayersPage from './pages/PlayersPage';
-import TeamsPage from './pages/TeamsPage';
-import CaptainsPage from './pages/CaptainsPage';
-import MatchPage from './pages/MatchPage';
+import MatchCenterPage from './pages/MatchCenterPage';
 import HistoryPage from './pages/HistoryPage';
 import GroundExpensePage from './pages/GroundExpensePage';
 import WeeklySummaryPage from './pages/WeeklySummaryPage';
@@ -178,19 +176,14 @@ function AppContent() {
           </div>
         ) : null}
 
-        {!isReady ? (
-          <div className="readonly-banner" style={{ marginBottom: '14px' }}>
-            Connecting to shared Firebase data...
-          </div>
-        ) : null}
-
         <div className="route-scroll-area" ref={routeScrollRef}>
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/players" element={<PlayersPage />} />
-            <Route path="/teams" element={<TeamsPage />} />
-            <Route path="/captains" element={<CaptainsPage />} />
-            <Route path="/match" element={<MatchPage />} />
+            <Route path="/match-center" element={<MatchCenterPage />} />
+            <Route path="/teams" element={<Navigate to="/match-center" replace />} />
+            <Route path="/captains" element={<Navigate to="/match-center" replace />} />
+            <Route path="/match" element={<Navigate to="/match-center" replace />} />
             <Route path="/history" element={<HistoryPage />} />
             <Route path="/ground-expense" element={<GroundExpensePage accessMode={accessMode} />} />
             <Route path="/weekly-summary" element={<WeeklySummaryPage />} />

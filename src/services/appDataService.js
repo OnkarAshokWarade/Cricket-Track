@@ -91,6 +91,10 @@ const dateKeyToTimestamp = (dateKey) => {
 };
 
 const buildMatchScore = (match) => {
+  if (match?.status === 'no-match') {
+    return 'No match';
+  }
+
   if (typeof match?.score === 'string' && match.score.trim()) {
     return match.score.trim();
   }
@@ -206,6 +210,7 @@ export const sanitizeMatchesData = (matchesData) => {
         id: String(match?.id || createMatchId()),
         date: dateKey,
         weekId: String(match?.weekId || ''),
+        status: match?.status === 'no-match' ? 'no-match' : 'played',
         teamA: Array.isArray(match?.teamA) ? match.teamA.filter(Boolean).map(String) : [],
         teamB: Array.isArray(match?.teamB) ? match.teamB.filter(Boolean).map(String) : [],
         score: buildMatchScore(match),
@@ -219,7 +224,8 @@ export const sanitizeMatchesData = (matchesData) => {
       captainA: match?.captainA ? String(match.captainA) : '',
       captainB: match?.captainB ? String(match.captainB) : '',
       loserCaptain: match?.loserCaptain ? String(match.loserCaptain) : '',
-      winnerTeam: match?.winnerTeam === 'teamB' ? 'teamB' : 'teamA',
+      winnerTeam:
+        match?.winnerTeam === 'teamA' || match?.winnerTeam === 'teamB' ? match.winnerTeam : '',
     }));
 };
 
