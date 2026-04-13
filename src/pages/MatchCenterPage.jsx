@@ -47,15 +47,6 @@ function MatchCenterPage({ accessMode }) {
   const visibleCaptainAName = visibleCaptains?.teamA ? getPlayerName(players, visibleCaptains.teamA) : '--';
   const visibleCaptainBName = visibleCaptains?.teamB ? getPlayerName(players, visibleCaptains.teamB) : '--';
 
-  const pendingMatches = useMemo(
-    () =>
-      matches
-        .filter((match) => match.status !== 'no-match' && match.penaltyPaid !== true)
-        .slice()
-        .sort((a, b) => (a.date < b.date ? 1 : -1)),
-    [matches]
-  );
-
   const maxTeamSize = useMemo(() => {
     if (!currentTeams) return 0;
     return Math.max(currentTeams.teamA.length, currentTeams.teamB.length);
@@ -488,8 +479,7 @@ function MatchCenterPage({ accessMode }) {
             </>
           )}
         </div>
-
-        <MatchDetails todayMatch={todayMatch} players={players} pendingMatches={pendingMatches} />
+        <MatchDetails todayMatch={todayMatch} players={players} />
 
         <div className="card">
           <h2 className="card-title">3. Today&apos;s Match</h2>

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import PlayerForm from '../components/PlayerForm';
+import PendingFeeNotice from '../components/PendingFeeNotice';
 import { useAppData } from '../context/AppDataContext';
 
 function PlayersPage() {
-  const { players, updateAppState } = useAppData();
+  const { players, matches, updateAppState } = useAppData();
   const [editing, setEditing] = useState(null);
   const editFormRef = useRef(null);
 
@@ -36,6 +37,8 @@ function PlayersPage() {
       className="mx-auto w-full max-w-7xl space-y-4 text-slate-800 md:space-y-6"
       style={{ fontFamily: "Inter, 'Noto Sans Devanagari', 'Nirmala UI', sans-serif" }}
     >
+      <PendingFeeNotice matches={matches} players={players} />
+
       <div className="rounded-2xl border border-slate-200 bg-white px-4 py-5 shadow-sm sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="space-y-1">

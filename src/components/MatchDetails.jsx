@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { getPlayerName } from '../utils/teamUtils';
-import { formatDate } from '../utils/dateUtils';
+import PendingFeeNotice from './PendingFeeNotice';
 
 const UNKNOWN_PLAYER_LABEL = '\u0905\u091c\u094d\u091e\u093e\u0924';
 const NO_MATCH_STATUS_LABEL = '\u0906\u091c \u0938\u093e\u092e\u0928\u093e \u091d\u093e\u0932\u093e \u0928\u093e\u0939\u0940.';
@@ -15,8 +15,6 @@ const MATCH_FEE_LABEL = '\u092e\u0945\u091a \u092b\u0940';
 const PAYMENT_STATUS_LABEL = '\u092a\u0947\u092e\u0947\u0902\u091f \u0938\u094d\u0925\u093f\u0924\u0940';
 const PENDING_STATUS_LABEL = '\u092c\u093e\u0915\u0940 \u0906\u0939\u0947';
 const PAID_STATUS_LABEL = '\u092d\u0930\u0932\u0940 \u0906\u0939\u0947';
-const PENDING_NOTICE_TITLE = '\u092a\u094d\u0930\u0932\u0902\u092c\u093f\u0924 \u092e\u0945\u091a \u092b\u0940 \u0938\u0942\u091a\u0928\u093e';
-const RECEIVER_NAME_MR = '\u0909\u092c\u0947\u0926 \u0936\u0947\u0916';
 
 const formatMarathiDate = (dateValue = new Date()) =>
   new Intl.DateTimeFormat('mr-IN', {
@@ -30,9 +28,6 @@ const normalizePlayerName = (players, playerId) => {
   const name = getPlayerName(players, playerId);
   return name === 'Unknown' ? UNKNOWN_PLAYER_LABEL : name;
 };
-
-const formatAmountMarathi = (amount = 0) =>
-  new Intl.NumberFormat('mr-IN', { maximumFractionDigits: 0 }).format(amount);
 
 function MatchDetails({ todayMatch, players, pendingMatches = [] }) {
   const matchInfo = useMemo(() => {
@@ -65,19 +60,6 @@ function MatchDetails({ todayMatch, players, pendingMatches = [] }) {
       pendingFee: todayMatch.penaltyPaid !== true,
     };
   }, [players, todayMatch]);
-
-  const pendingNotices = useMemo(
-    () =>
-      pendingMatches.map((match) => ({
-        id: match.id,
-        date: formatDate(match.date),
-        loserName: normalizePlayerName(players, match.loserCaptain),
-        penaltyText: formatAmountMarathi(match.penalty || 0),
-      })),
-    [pendingMatches, players]
-  );
-
-  const hasPendingFee = pendingNotices.length > 0;
 
   return (
     <section className="card match-details-widget">
@@ -130,20 +112,7 @@ function MatchDetails({ todayMatch, players, pendingMatches = [] }) {
         </div>
       ) : null}
 
-      {hasPendingFee ? (
-        <aside className="match-fee-toast visible" role="status" aria-live="polite">
-          <p className="match-fee-toast-title">{PENDING_NOTICE_TITLE}</p>
-          <ul className="match-fee-toast-list">
-            {pendingNotices.map((notice) => (
-              <li key={notice.id}>
-                {`\u0926\u093f\u0928\u093e\u0902\u0915 ${notice.date}: `}
-                <strong className="match-fee-toast-name">{notice.loserName}</strong>
-                {` \u0932\u0935\u0915\u0930\u093e\u0924 \u0932\u0935\u0915\u0930 \u20B9${notice.penaltyText} ${RECEIVER_NAME_MR} \u092f\u093e\u0902\u091a\u094d\u092f\u093e\u0915\u0921\u0947 \u091c\u092e\u093e \u0915\u0930\u093e.`}
-              </li>
-            ))}
-          </ul>
-        </aside>
-      ) : null}
+      <PendingFeeNotice matches={pendingMatches} players={players} />
     </section>
   );
 }

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatDate, getWeekId, todayKey, isSameDay } from '../utils/dateUtils';
 import { getPlayerName } from '../utils/teamUtils';
+import PendingFeeNotice from '../components/PendingFeeNotice';
 import { useAppData } from '../context/AppDataContext';
 
 function Dashboard() {
@@ -57,6 +58,8 @@ function Dashboard() {
 
   return (
     <section>
+      <PendingFeeNotice matches={matches} players={players} />
+
       <div className="top-nav">
         <div>
           <h1 className="page-title">Dashboard</h1>

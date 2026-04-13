@@ -3,6 +3,7 @@ import { getWeekId, formatDate } from '../utils/dateUtils';
 import { getPlayerName } from '../utils/teamUtils';
 import MatchCard from '../components/MatchCard';
 import MatchFee from '../components/MatchFee';
+import PendingFeeNotice from '../components/PendingFeeNotice';
 import { useAppData } from '../context/AppDataContext';
 
 function HistoryPage() {
@@ -38,6 +39,8 @@ function HistoryPage() {
     <div className="history-layout">
       <div className="history-main">
         <section>
+          <PendingFeeNotice matches={matches} players={players} />
+
           <div className="top-nav">
             <div>
               <h1 className="page-title">Match History</h1>
