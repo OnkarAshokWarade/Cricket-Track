@@ -141,12 +141,17 @@ const sanitizeTeams = (teamsData) => {
   return Object.entries(teamsData).reduce((nextTeams, [weekId, weekData]) => {
     const teamA = Array.isArray(weekData?.teamA) ? weekData.teamA.filter(Boolean).map(String) : [];
     const teamB = Array.isArray(weekData?.teamB) ? weekData.teamB.filter(Boolean).map(String) : [];
+    const parsedGenerationCount = Number(weekData?.generationCount);
+    const fallbackGenerationCount = teamA.length + teamB.length > 0 ? 1 : 0;
 
     nextTeams[weekId] = {
       ...weekData,
       weekId: weekData?.weekId || weekId,
       date: isValidDateKey(weekData?.date) ? weekData.date : '',
-      generationCount: Number(weekData?.generationCount) > 0 ? Number(weekData.generationCount) : 1,
+      generationCount:
+        Number.isFinite(parsedGenerationCount) && parsedGenerationCount >= 0
+          ? parsedGenerationCount
+          : fallbackGenerationCount,
       teamA,
       teamB,
     };

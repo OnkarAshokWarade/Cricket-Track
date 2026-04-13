@@ -8,12 +8,15 @@ import {
   tomorrowKey,
 } from '../utils/dateUtils';
 import { captainSelector, getPlayerName, teamGenerator } from '../utils/teamUtils';
+import {
+  getTeamGenerationStatus,
+  MAX_TEAM_GENERATIONS,
+  TEAM_GENERATE_PASSWORD,
+} from '../utils/teamGenerationUtils';
 import MatchDetails from '../components/MatchDetails';
 import ubedUpiQr from '../assets/ubed-upi-qr.jpeg';
 import { useAppData } from '../context/AppDataContext';
 
-const MAX_TEAM_GENERATIONS = 2;
-const TEAM_GENERATE_PASSWORD = '9322070390';
 const PENALTY_AMOUNT = 100;
 const PAYMENT_RECEIVER_EN = 'Ubed Shaikh';
 const PAYMENT_RECEIVER_MR = '\u0909\u092c\u0947\u0926 \u0936\u0947\u0916';
@@ -27,7 +30,7 @@ function MatchCenterPage({ accessMode }) {
   const [teamMessageType, setTeamMessageType] = useState('success');
   const [showTeamPasswordModal, setShowTeamPasswordModal] = useState(false);
   const [teamPassword, setTeamPassword] = useState('');
-  const [teamPasswordError, setTeamPasswordError] = useState('');
+  const [isSubmittingTeamGeneration, setIsSubmittingTeamGeneration] = useState(false);
   const [captainMessage, setCaptainMessage] = useState('');
   const [matchMessage, setMatchMessage] = useState('');
 
@@ -58,12 +61,13 @@ function MatchCenterPage({ accessMode }) {
     return Math.max(currentTeams.teamA.length, currentTeams.teamB.length);
   }, [currentTeams]);
 
-  const currentGenerationCount = useMemo(() => {
-    if (!currentTeams) return 0;
-    return currentTeams.generationCount ?? 1;
-  }, [currentTeams]);
-
-  const hasReachedGenerationLimit = currentGenerationCount >= MAX_TEAM_GENERATIONS;
+  const {
+    currentGenerationCount,
+    isGenerationDay,
+    hasReachedGenerationLimit,
+    canGenerateTeams,
+    lockedMessage: teamGenerationLockedMessage,
+  } = useMemo(() => getTeamGenerationStatus(currentTeams), [currentTeams]);
 
   const availableCounts = useMemo(() => {
     if (!currentTeams) {
@@ -95,46 +99,90 @@ function MatchCenterPage({ accessMode }) {
   const canMarkNoMatch = useMemo(() => !!currentTeams && !todayMatch, [currentTeams, todayMatch]);
 
   const openTeamPasswordModal = () => {
+    if (!isAdmin) {
+      setTeamMessageType('warning');
+      setTeamMessage('Only admin can generate weekly teams.');
+      setShowTeamPasswordModal(false);
+      return;
+    }
+
+    if (!isGenerationDay) {
+      setTeamMessageType('warning');
+      setTeamMessage('You can generate teams only on Sunday, and only 2 times per week.');
+      setShowTeamPasswordModal(false);
+      return;
+    }
+
     if (hasReachedGenerationLimit) {
       setTeamMessageType('warning');
-      setTeamMessage('Generation limit reached. Teams can be generated only 2 times this week.');
+      setTeamMessage('This week\'s 2 team-generation chances are over. You can generate teams again next Sunday.');
+      setShowTeamPasswordModal(false);
       return;
     }
 
     setTeamPassword('');
-    setTeamPasswordError('');
     setShowTeamPasswordModal(true);
   };
 
   const closeTeamPasswordModal = () => {
     setShowTeamPasswordModal(false);
     setTeamPassword('');
-    setTeamPasswordError('');
   };
 
   const generateTeams = async (event) => {
     event.preventDefault();
 
-    if (teamPassword.trim() !== TEAM_GENERATE_PASSWORD) {
-      setTeamPasswordError('Incorrect admin password. Team generation not allowed.');
+    if (isSubmittingTeamGeneration) {
       return;
     }
 
-    const newTeams = teamGenerator(players);
-    const nextGenerationCount = currentGenerationCount + 1;
-    const nextTeams = {
-      ...teams,
-      [weekId]: { weekId, date: todayKey(), generationCount: nextGenerationCount, ...newTeams },
-    };
-
-    await updateAppState({ teams: nextTeams });
+    const enteredPassword = teamPassword.trim();
     closeTeamPasswordModal();
-    setTeamMessageType('success');
-    setTeamMessage(
-      nextGenerationCount >= MAX_TEAM_GENERATIONS
-        ? 'Weekly teams generated (2/2). Generate button is now disabled for this week.'
-        : `Weekly teams generated successfully (${nextGenerationCount}/2).`
-    );
+
+    if (enteredPassword !== TEAM_GENERATE_PASSWORD) {
+      setTeamMessageType('warning');
+      setTeamMessage('Incorrect admin password. Click "Generate Weekly Teams" to try again.');
+      return;
+    }
+
+    setIsSubmittingTeamGeneration(true);
+
+    if (!isGenerationDay) {
+      setTeamMessageType('warning');
+      setTeamMessage('You can generate teams only on Sunday, and only 2 times per week.');
+      setIsSubmittingTeamGeneration(false);
+      return;
+    }
+
+    if (hasReachedGenerationLimit) {
+      setTeamMessageType('warning');
+      setTeamMessage('This week\'s 2 team-generation chances are over. You can generate teams again next Sunday.');
+      setIsSubmittingTeamGeneration(false);
+      return;
+    }
+
+    try {
+      const newTeams = teamGenerator(players);
+      const nextGenerationCount = currentGenerationCount + 1;
+      const nextTeams = {
+        ...teams,
+        [weekId]: { weekId, date: todayKey(), generationCount: nextGenerationCount, ...newTeams },
+      };
+
+      await updateAppState({ teams: nextTeams });
+      setTeamMessageType('success');
+      setTeamMessage(
+        nextGenerationCount >= MAX_TEAM_GENERATIONS
+          ? 'Weekly teams generated successfully. Generated this week: 2/2. You can generate teams again next Sunday.'
+          : `Weekly teams generated successfully. Generated this week: ${nextGenerationCount}/2.`
+      );
+    } catch (error) {
+      console.error('Error generating weekly teams:', error);
+      setTeamMessageType('warning');
+      setTeamMessage('Teams could not be generated. Please verify Firebase configuration and try again.');
+    } finally {
+      setIsSubmittingTeamGeneration(false);
+    }
   };
 
   const selectCaptainsForDay = async (targetDate) => {
@@ -261,14 +309,25 @@ function MatchCenterPage({ accessMode }) {
           </p>
 
           <div className="button-row" style={{ marginTop: '14px' }}>
-            <button className="button-primary button-small" type="button" onClick={openTeamPasswordModal} disabled={hasReachedGenerationLimit}>
+            <button
+              className="button-primary button-small"
+              type="button"
+              onClick={openTeamPasswordModal}
+              disabled={!isAdmin || !canGenerateTeams || showTeamPasswordModal || isSubmittingTeamGeneration}
+            >
               Generate Weekly Teams
             </button>
           </div>
 
-          {hasReachedGenerationLimit ? (
+          {!isAdmin ? (
             <p className="warning-text" style={{ marginTop: '12px' }}>
-              Team generation limit reached for this week.
+              Login as admin to generate weekly teams.
+            </p>
+          ) : null}
+
+          {isAdmin && teamGenerationLockedMessage ? (
+            <p className="warning-text" style={{ marginTop: '12px' }}>
+              {teamGenerationLockedMessage}
             </p>
           ) : null}
 
@@ -276,6 +335,44 @@ function MatchCenterPage({ accessMode }) {
             <p className={teamMessageType === 'success' ? 'success-text' : 'warning-text'} style={{ marginTop: '14px' }}>
               {teamMessage}
             </p>
+          ) : null}
+
+          {showTeamPasswordModal ? (
+            <div className="team-password-panel">
+              <h3 id="team-password-title" className="card-title">
+                Enter Admin Password
+              </h3>
+              <p className="page-intro" style={{ marginBottom: '12px' }}>
+                Confirm password to use 1 team-generation chance.
+              </p>
+              <form className="team-password-form" onSubmit={generateTeams}>
+                <label className="input-label" htmlFor="team-generate-password">
+                  Admin Password
+                </label>
+                <input
+                  id="team-generate-password"
+                  type="password"
+                  value={teamPassword}
+                  onChange={(event) => setTeamPassword(event.target.value)}
+                  placeholder="Enter admin password"
+                  autoFocus
+                  required
+                />
+                <div className="button-row team-password-actions" style={{ marginTop: '8px' }}>
+                  <button className="button-primary button-small" type="submit" disabled={isSubmittingTeamGeneration}>
+                    Generate Teams
+                  </button>
+                  <button
+                    className="button-secondary button-small"
+                    type="button"
+                    onClick={closeTeamPasswordModal}
+                    disabled={isSubmittingTeamGeneration}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
           ) : null}
 
           <div className="overflow-x-auto" style={{ marginTop: '18px' }}>
@@ -516,45 +613,6 @@ function MatchCenterPage({ accessMode }) {
         ) : null}
       </div>
 
-      {showTeamPasswordModal ? (
-        <div className="team-password-overlay" role="presentation" onClick={closeTeamPasswordModal}>
-          <div
-            className="team-password-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="team-password-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <h2 id="team-password-title" className="card-title">Enter Admin Password</h2>
-            <p className="page-intro" style={{ marginBottom: '12px' }}>
-              Confirm password to generate weekly teams.
-            </p>
-            <form className="team-password-form" onSubmit={generateTeams}>
-              <label className="input-label" htmlFor="team-generate-password">
-                Admin Password
-              </label>
-              <input
-                id="team-generate-password"
-                type="password"
-                value={teamPassword}
-                onChange={(event) => setTeamPassword(event.target.value)}
-                placeholder="Enter admin password"
-                autoFocus
-                required
-              />
-              {teamPasswordError ? <p className="auth-error">{teamPasswordError}</p> : null}
-              <div className="button-row team-password-actions" style={{ marginTop: '8px' }}>
-                <button className="button-primary button-small" type="submit">
-                  Generate Teams
-                </button>
-                <button className="button-secondary button-small" type="button" onClick={closeTeamPasswordModal}>
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      ) : null}
     </section>
   );
 }

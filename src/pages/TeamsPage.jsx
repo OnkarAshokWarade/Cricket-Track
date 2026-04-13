@@ -2,64 +2,106 @@ import { useMemo, useState } from 'react';
 import { getWeekId, todayKey } from '../utils/dateUtils';
 import { teamGenerator, getPlayerName } from '../utils/teamUtils';
 import { useAppData } from '../context/AppDataContext';
-
-const MAX_TEAM_GENERATIONS = 2;
-const TEAM_GENERATE_PASSWORD = '9322070390';
+import {
+  getTeamGenerationStatus,
+  MAX_TEAM_GENERATIONS,
+  TEAM_GENERATE_PASSWORD,
+} from '../utils/teamGenerationUtils';
 
 function TeamsPage() {
   const { players, teams, updateAppState, resetAppState } = useAppData();
   const [weekId] = useState(getWeekId());
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('success');
+  const [showPasswordPanel, setShowPasswordPanel] = useState(false);
+  const [teamPassword, setTeamPassword] = useState('');
+  const [isSubmittingTeamGeneration, setIsSubmittingTeamGeneration] = useState(false);
 
   const currentTeams = useMemo(() => teams[weekId] || null, [teams, weekId]);
-  const currentGenerationCount = useMemo(() => {
-    if (!currentTeams) return 0;
-    return currentTeams.generationCount ?? 1;
-  }, [currentTeams]);
   const maxTeamSize = useMemo(() => {
     if (!currentTeams) return 0;
     return Math.max(currentTeams.teamA.length, currentTeams.teamB.length);
   }, [currentTeams]);
-  const hasReachedGenerationLimit = currentGenerationCount >= MAX_TEAM_GENERATIONS;
+  const {
+    currentGenerationCount,
+    hasReachedGenerationLimit,
+    canGenerateTeams,
+    lockedMessage,
+  } = useMemo(() => getTeamGenerationStatus(currentTeams), [currentTeams]);
   const pastWeeks = useMemo(
     () => Object.values(teams).sort((a, b) => (a.weekId < b.weekId ? 1 : -1)),
     [teams]
   );
 
-  const generateTeams = () => {
+  const openPasswordPanel = () => {
+    if (!canGenerateTeams) {
+      setMessageType('warning');
+      setMessage(lockedMessage || 'You can generate teams only on Sunday, and only 2 times per week.');
+      setShowPasswordPanel(false);
+      return;
+    }
+
+    setTeamPassword('');
+    setShowPasswordPanel(true);
+  };
+
+  const closePasswordPanel = () => {
+    setShowPasswordPanel(false);
+    setTeamPassword('');
+  };
+
+  const generateTeams = async (event) => {
+    event.preventDefault();
+
+    if (isSubmittingTeamGeneration) {
+      return;
+    }
+
+    const enteredPassword = teamPassword.trim();
+    closePasswordPanel();
+
+    if (enteredPassword !== TEAM_GENERATE_PASSWORD) {
+      setMessageType('warning');
+      setMessage('Incorrect admin password. Click "Generate Weekly Teams" to try again.');
+      return;
+    }
+
     if (hasReachedGenerationLimit) {
       setMessageType('warning');
-      setMessage('Generation limit reached. Teams can be generated only 2 times this week.');
+      setMessage('This week\'s 2 team-generation chances are over. You can generate teams again next Sunday.');
       return;
     }
 
-    const enteredPassword = window.prompt('Enter admin password to generate teams:');
-    if (enteredPassword === null) {
+    if (!canGenerateTeams) {
       setMessageType('warning');
-      setMessage('Team generation cancelled.');
+      setMessage(lockedMessage || 'You can generate teams only on Sunday, and only 2 times per week.');
       return;
     }
 
-    if (enteredPassword.trim() !== TEAM_GENERATE_PASSWORD) {
+    setIsSubmittingTeamGeneration(true);
+
+    try {
+      const newTeams = teamGenerator(players);
+      const nextGenerationCount = currentGenerationCount + 1;
+      const nextTeams = {
+        ...teams,
+        [weekId]: { weekId, date: todayKey(), generationCount: nextGenerationCount, ...newTeams },
+      };
+
+      await updateAppState({ teams: nextTeams });
+      setMessageType('success');
+      setMessage(
+        nextGenerationCount >= MAX_TEAM_GENERATIONS
+          ? 'Weekly teams generated successfully. Generated this week: 2/2. You can generate teams again next Sunday.'
+          : `Weekly teams generated successfully. Generated this week: ${nextGenerationCount}/2.`
+      );
+    } catch (error) {
+      console.error('Error generating weekly teams:', error);
       setMessageType('warning');
-      setMessage('Incorrect admin password. Team generation not allowed.');
-      return;
+      setMessage('Teams could not be generated. Please verify Firebase configuration and try again.');
+    } finally {
+      setIsSubmittingTeamGeneration(false);
     }
-
-    const newTeams = teamGenerator(players);
-    const nextGenerationCount = currentGenerationCount + 1;
-    const nextTeams = {
-      ...teams,
-      [weekId]: { weekId, date: todayKey(), generationCount: nextGenerationCount, ...newTeams },
-    };
-    updateAppState({ teams: nextTeams });
-    setMessageType('success');
-    setMessage(
-      nextGenerationCount >= MAX_TEAM_GENERATIONS
-        ? 'Weekly teams generated (2/2). Generate button is now disabled for this week.'
-        : `Weekly teams generated successfully (${nextGenerationCount}/2).`
-    );
   };
 
   const handleReset = () => {
@@ -75,7 +117,7 @@ function TeamsPage() {
       <div className="top-nav">
         <div>
           <h1 className="page-title">Teams</h1>
-          <p className="page-intro">Team generation requires admin password and is limited to 2 times per week.</p>
+          <p className="page-intro">Team generation opens on Sunday only, requires admin password, and is limited to 2 times per week.</p>
         </div>
       </div>
 
@@ -89,21 +131,57 @@ function TeamsPage() {
           <div className="button-row" style={{ marginTop: '14px' }}>
             <button
               className="button-primary button-small"
-              onClick={generateTeams}
-              disabled={hasReachedGenerationLimit}
+              type="button"
+              onClick={openPasswordPanel}
+              disabled={!canGenerateTeams || showPasswordPanel || isSubmittingTeamGeneration}
             >
               Generate Weekly Teams
             </button>
           </div>
-          {hasReachedGenerationLimit && (
+          {lockedMessage && (
             <p className="warning-text" style={{ marginTop: '12px' }}>
-              Team generation limit reached for this week.
+              {lockedMessage}
             </p>
           )}
           {message && (
             <p className={messageType === 'success' ? 'success-text' : 'warning-text'} style={{ marginTop: '14px' }}>
               {message}
             </p>
+          )}
+          {showPasswordPanel && (
+            <div className="team-password-panel">
+              <h3 className="card-title">Enter Admin Password</h3>
+              <p className="page-intro" style={{ marginBottom: '12px' }}>
+                Confirm password to use 1 team-generation chance.
+              </p>
+              <form className="team-password-form" onSubmit={generateTeams}>
+                <label className="input-label" htmlFor="teams-page-password">
+                  Admin Password
+                </label>
+                <input
+                  id="teams-page-password"
+                  type="password"
+                  value={teamPassword}
+                  onChange={(event) => setTeamPassword(event.target.value)}
+                  placeholder="Enter admin password"
+                  autoFocus
+                  required
+                />
+                <div className="button-row team-password-actions" style={{ marginTop: '8px' }}>
+                  <button className="button-primary button-small" type="submit" disabled={isSubmittingTeamGeneration}>
+                    Generate Teams
+                  </button>
+                  <button
+                    className="button-secondary button-small"
+                    type="button"
+                    onClick={closePasswordPanel}
+                    disabled={isSubmittingTeamGeneration}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
           )}
 
           <div className="button-row" style={{ marginTop: '14px' }}>
