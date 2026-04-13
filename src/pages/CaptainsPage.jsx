@@ -2,10 +2,13 @@ import { useMemo, useState } from 'react';
 import { getWeekId, todayKey, tomorrowKey, toDateKey, formatDate, isDateAllowedForCaptain } from '../utils/dateUtils';
 import { captainSelector, getPlayerName } from '../utils/teamUtils';
 import { useAppData } from '../context/AppDataContext';
+import useAutoClearMessage from '../hooks/useAutoClearMessage';
 
 function CaptainsPage() {
   const { players, teams, captains, updateAppState } = useAppData();
   const [message, setMessage] = useState('');
+
+  useAutoClearMessage(message, setMessage);
 
   const weekId = getWeekId();
   const currentTeams = teams[weekId] || null;

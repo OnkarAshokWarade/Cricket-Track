@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { getPlayerName } from '../utils/teamUtils';
 import { formatDate } from '../utils/dateUtils';
+import PendingFeeNotice from '../components/PendingFeeNotice';
 import { useAppData } from '../context/AppDataContext';
 
 const getWinnerLabel = (match) => {
@@ -76,6 +77,8 @@ function WeeklySummaryPage() {
 
   return (
     <section>
+      <PendingFeeNotice matches={matches} players={players} />
+
       <div className="top-nav">
         <div>
           <h1 className="page-title">Weekly Summary</h1>

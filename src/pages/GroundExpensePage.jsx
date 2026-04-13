@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import ubedUpiQr from '../assets/ubed-upi-qr.jpeg';
+import PaymentQrCard from '../components/PaymentQrCard';
 import { useAppData } from '../context/AppDataContext';
+import useAutoClearMessage from '../hooks/useAutoClearMessage';
 
 const FIXED_CONTRIBUTION = 100;
 const PAYMENT_RECEIVER_EN = 'Ubed Shaikh';
 const PAYMENT_RECEIVER_MR = '\u0909\u092c\u0947\u0926 \u0936\u0947\u0916';
 const PAYMENT_RECEIVER_LABEL = `${PAYMENT_RECEIVER_EN} (${PAYMENT_RECEIVER_MR})`;
-const PAYMENT_UPI_ID = 'ubbus313-3@okaxis';
-
 const normalizeName = (value) => String(value || '').trim().toLowerCase();
 
 const createId = () => {
@@ -34,6 +33,8 @@ function GroundExpensePage({ accessMode }) {
   const isAdmin = accessMode === 'admin';
   const formPanelRef = useRef(null);
   const nameInputRef = useRef(null);
+
+  useAutoClearMessage(fundMessage, setFundMessage);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -495,11 +496,6 @@ function GroundExpensePage({ accessMode }) {
         </div>
       </form>
 
-      <div className="fund-qr-card">
-        <h3 className="card-title" style={{ marginBottom: '8px' }}>Pay To {PAYMENT_RECEIVER_LABEL}</h3>
-        <img className="fund-qr-image" src={ubedUpiQr} alt={`UPI QR for ${PAYMENT_RECEIVER_LABEL}`} />
-        <p className="fund-upi-id">UPI ID: {PAYMENT_UPI_ID}</p>
-      </div>
     </>
   );
 
@@ -631,7 +627,9 @@ function GroundExpensePage({ accessMode }) {
         )}
       </div>
 
-      <div className="ground-expense-content">
+      {!isAdmin ? <PaymentQrCard title="Ground Contribution QR" /> : null}
+
+      <div className={`ground-expense-content ${isAdmin && !isMobileViewport ? '' : 'single-column'}`}>
         <section className="card fund-main-panel">
           <div className="top-nav" style={{ marginBottom: '10px' }}>
             <div>
@@ -706,7 +704,7 @@ function GroundExpensePage({ accessMode }) {
           )}
         </section>
 
-        {!isMobileViewport ? (
+        {isAdmin && !isMobileViewport ? (
           <aside ref={formPanelRef} className="card ground-expense-side-panel">
             {renderEditorContent(false)}
           </aside>

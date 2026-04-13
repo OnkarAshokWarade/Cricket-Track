@@ -9,6 +9,7 @@ import GroundExpensePage from './pages/GroundExpensePage';
 import WeeklySummaryPage from './pages/WeeklySummaryPage';
 import RulesPatodaPage from './pages/RulesPatodaPage';
 import { AppDataProvider, useAppData } from './context/AppDataContext';
+import useAutoClearMessage from './hooks/useAutoClearMessage';
 
 const ADMIN_PASSWORD = '9322070390';
 
@@ -32,6 +33,8 @@ function AppContent() {
   const [adminPassword, setAdminPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const { isReady } = useAppData();
+
+  useAutoClearMessage(authError, setAuthError);
 
   useEffect(() => {
     if (routeScrollRef.current) {
@@ -209,7 +212,7 @@ function AppContent() {
 
         <div className="route-scroll-area" ref={routeScrollRef}>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={<Dashboard accessMode={accessMode} />} />
             <Route path="/players" element={<PlayersPage />} />
             <Route path="/match-center" element={<MatchCenterPage accessMode={accessMode} />} />
             <Route path="/teams" element={<Navigate to="/match-center" replace />} />

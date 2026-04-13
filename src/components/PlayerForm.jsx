@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
+import useAutoClearMessage from '../hooks/useAutoClearMessage';
 
 function PlayerForm({ existingPlayer, onSave, onCancel, players }) {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
+
+  useAutoClearMessage(error, setError);
 
   useEffect(() => {
     setName(existingPlayer?.name || '');
@@ -29,8 +32,8 @@ function PlayerForm({ existingPlayer, onSave, onCancel, players }) {
   };
 
   return (
-    <form className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5" onSubmit={handleSubmit}>
-      <h2 className="text-lg font-semibold text-slate-900">{existingPlayer ? 'Edit Player' : 'Add Player'}</h2>
+    <form className="rounded-2xl border border-slate-300 bg-white p-4 shadow-md sm:p-5" onSubmit={handleSubmit}>
+      <h2 className="text-lg font-extrabold text-slate-900">{existingPlayer ? 'Edit Player' : 'Add Player'}</h2>
       <p className="mt-1 text-sm leading-relaxed text-slate-600">
         Use clear names for better search and Marathi readability.
       </p>

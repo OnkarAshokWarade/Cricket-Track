@@ -7,6 +7,7 @@ import {
   MAX_TEAM_GENERATIONS,
   TEAM_GENERATE_PASSWORD,
 } from '../utils/teamGenerationUtils';
+import useAutoClearMessage from '../hooks/useAutoClearMessage';
 
 function TeamsPage() {
   const { players, teams, updateAppState, resetAppState } = useAppData();
@@ -16,6 +17,8 @@ function TeamsPage() {
   const [showPasswordPanel, setShowPasswordPanel] = useState(false);
   const [teamPassword, setTeamPassword] = useState('');
   const [isSubmittingTeamGeneration, setIsSubmittingTeamGeneration] = useState(false);
+
+  useAutoClearMessage(message, setMessage);
 
   const currentTeams = useMemo(() => teams[weekId] || null, [teams, weekId]);
   const maxTeamSize = useMemo(() => {

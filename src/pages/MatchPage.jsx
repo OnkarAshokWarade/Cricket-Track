@@ -4,6 +4,7 @@ import { getPlayerName } from '../utils/teamUtils';
 import MatchDetails from '../components/MatchDetails';
 import ubedUpiQr from '../assets/ubed-upi-qr.jpeg';
 import { useAppData } from '../context/AppDataContext';
+import useAutoClearMessage from '../hooks/useAutoClearMessage';
 
 const PENALTY_AMOUNT = 100;
 const PAYMENT_RECEIVER_EN = 'Ubed Shaikh';
@@ -15,6 +16,8 @@ function MatchPage() {
   const { players, teams, captains, matches, addMatch } = useAppData();
   const [selectedWinner, setSelectedWinner] = useState('A');
   const [message, setMessage] = useState('');
+
+  useAutoClearMessage(message, setMessage);
 
   const weekId = getWeekId();
   const currentTeams = teams[weekId] || null;

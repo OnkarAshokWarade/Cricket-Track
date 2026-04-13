@@ -16,6 +16,7 @@ import {
 import MatchDetails from '../components/MatchDetails';
 import ubedUpiQr from '../assets/ubed-upi-qr.jpeg';
 import { useAppData } from '../context/AppDataContext';
+import useAutoClearMessage from '../hooks/useAutoClearMessage';
 
 const PENALTY_AMOUNT = 100;
 const PAYMENT_RECEIVER_EN = 'Ubed Shaikh';
@@ -34,6 +35,10 @@ function MatchCenterPage({ accessMode }) {
   const [captainMessage, setCaptainMessage] = useState('');
   const [matchMessage, setMatchMessage] = useState('');
 
+  useAutoClearMessage(teamMessage, setTeamMessage);
+  useAutoClearMessage(captainMessage, setCaptainMessage);
+  useAutoClearMessage(matchMessage, setMatchMessage);
+
   const weekId = getWeekId();
   const currentTeams = teams[weekId] || null;
   const currentWeekCaptains = captains[weekId] || { usedCaptains: { teamA: [], teamB: [] }, dailyCaptains: [] };
@@ -46,11 +51,20 @@ function MatchCenterPage({ accessMode }) {
   const captainBName = todayCaptains ? getPlayerName(players, todayCaptains.teamB) : '--';
   const visibleCaptainAName = visibleCaptains?.teamA ? getPlayerName(players, visibleCaptains.teamA) : '--';
   const visibleCaptainBName = visibleCaptains?.teamB ? getPlayerName(players, visibleCaptains.teamB) : '--';
+  const pendingMatches = useMemo(
+    () =>
+      matches
+        .filter((match) => match.status !== 'no-match' && match.penaltyPaid !== true)
+        .slice()
+        .sort((a, b) => (a.date < b.date ? 1 : -1)),
+    [matches]
+  );
 
   const maxTeamSize = useMemo(() => {
     if (!currentTeams) return 0;
     return Math.max(currentTeams.teamA.length, currentTeams.teamB.length);
   }, [currentTeams]);
+  const formatTeamPlayerLabel = (playerId, index) => (playerId ? `${index + 1}. ${getPlayerName(players, playerId)}` : '--');
 
   const {
     currentGenerationCount,
@@ -381,10 +395,10 @@ function MatchCenterPage({ accessMode }) {
                     return (
                       <tr key={`match-center-team-row-${index}`}>
                         <td className="team-players-cell team-col-a">
-                          {playerAId ? <span className="team-player-name">{getPlayerName(players, playerAId)}</span> : <span className="empty-state">--</span>}
+                          {playerAId ? <span className="team-player-name">{formatTeamPlayerLabel(playerAId, index)}</span> : <span className="empty-state">--</span>}
                         </td>
                         <td className="team-players-cell team-col-b">
-                          {playerBId ? <span className="team-player-name">{getPlayerName(players, playerBId)}</span> : <span className="empty-state">--</span>}
+                          {playerBId ? <span className="team-player-name">{formatTeamPlayerLabel(playerBId, index)}</span> : <span className="empty-state">--</span>}
                         </td>
                       </tr>
                     );
@@ -479,7 +493,7 @@ function MatchCenterPage({ accessMode }) {
             </>
           )}
         </div>
-        <MatchDetails todayMatch={todayMatch} players={players} />
+        <MatchDetails todayMatch={todayMatch} players={players} pendingMatches={pendingMatches} />
 
         <div className="card">
           <h2 className="card-title">3. Today&apos;s Match</h2>
@@ -534,10 +548,10 @@ function MatchCenterPage({ accessMode }) {
                           return (
                             <tr key={`match-center-row-${index}`}>
                               <td className="team-players-cell team-col-a">
-                                {playerAId ? <span className="team-player-name">{getPlayerName(players, playerAId)}</span> : <span className="empty-state">--</span>}
+                                {playerAId ? <span className="team-player-name">{formatTeamPlayerLabel(playerAId, index)}</span> : <span className="empty-state">--</span>}
                               </td>
                               <td className="team-players-cell team-col-b">
-                                {playerBId ? <span className="team-player-name">{getPlayerName(players, playerBId)}</span> : <span className="empty-state">--</span>}
+                                {playerBId ? <span className="team-player-name">{formatTeamPlayerLabel(playerBId, index)}</span> : <span className="empty-state">--</span>}
                               </td>
                             </tr>
                           );

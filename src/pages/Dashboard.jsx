@@ -3,11 +3,16 @@ import { Link } from 'react-router-dom';
 import { formatDate, getWeekId, todayKey, isSameDay } from '../utils/dateUtils';
 import { getPlayerName } from '../utils/teamUtils';
 import PendingFeeNotice from '../components/PendingFeeNotice';
+import PaymentQrCard from '../components/PaymentQrCard';
 import { useAppData } from '../context/AppDataContext';
+import useAutoClearMessage from '../hooks/useAutoClearMessage';
 
-function Dashboard() {
+function Dashboard({ accessMode }) {
   const { players, teams, captains, matches, resetAppState } = useAppData();
   const [message, setMessage] = useState('');
+  const isGuest = accessMode === 'guest';
+
+  useAutoClearMessage(message, setMessage);
 
   const currentWeekId = getWeekId();
   const currentWeekTeam = teams[currentWeekId] || null;
@@ -47,6 +52,7 @@ function Dashboard() {
     if (!currentWeekTeam) return 0;
     return Math.max(currentWeekTeam.teamA.length, currentWeekTeam.teamB.length);
   }, [currentWeekTeam]);
+  const formatTeamPlayerLabel = (playerId, index) => (playerId ? `${index + 1}. ${getPlayerName(players, playerId)}` : '--');
 
   const handleResetApp = async () => {
     const confirmed = window.confirm('This will reset ALL application data including players, teams, captains, and matches. Are you sure?');
@@ -109,6 +115,12 @@ function Dashboard() {
         </div>
       </div>
 
+      {isGuest ? (
+        <div style={{ marginTop: '20px' }}>
+          <PaymentQrCard title="Contribution Payment QR" />
+        </div>
+      ) : null}
+
       <div className="section-grid" style={{ gridTemplateColumns: '1fr', marginTop: '20px' }}>
         <div className="card">
           <h2 className="card-title">Current week status</h2>
@@ -143,14 +155,14 @@ function Dashboard() {
                       <tr key={`dashboard-team-row-${index}`}>
                         <td className="team-players-cell team-col-a">
                           {playerAId ? (
-                            <span className="team-player-name">{getPlayerName(players, playerAId)}</span>
+                            <span className="team-player-name">{formatTeamPlayerLabel(playerAId, index)}</span>
                           ) : (
                             <span className="empty-state">--</span>
                           )}
                         </td>
                         <td className="team-players-cell team-col-b">
                           {playerBId ? (
-                            <span className="team-player-name">{getPlayerName(players, playerBId)}</span>
+                            <span className="team-player-name">{formatTeamPlayerLabel(playerBId, index)}</span>
                           ) : (
                             <span className="empty-state">--</span>
                           )}

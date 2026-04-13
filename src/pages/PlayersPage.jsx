@@ -42,20 +42,24 @@ function PlayersPage() {
       <div className="rounded-2xl border border-slate-200 bg-white px-4 py-5 shadow-sm sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">Players</h1>
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 md:text-3xl">Players</h1>
             <p className="text-sm leading-relaxed text-slate-600 md:text-base">
               Add new members or edit the existing Patoda XI roster.
             </p>
           </div>
-          <span className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700">
+          <span className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-sm font-bold text-indigo-700">
             Total: {players.length}
           </span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:col-span-2">
-          <h2 className="mb-4 text-lg font-semibold text-slate-900">Player Roster</h2>
+        <div ref={editFormRef} className="scroll-mt-24 lg:col-span-1">
+          <PlayerForm existingPlayer={editing} onSave={handleSave} onCancel={() => setEditing(null)} players={players} />
+        </div>
+
+        <div className="rounded-2xl border border-slate-300 bg-white p-4 shadow-md sm:p-5 lg:col-span-2">
+          <h2 className="mb-4 text-lg font-extrabold text-slate-900">Player Roster</h2>
 
           {players.length === 0 && (
             <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm leading-relaxed text-slate-600">
@@ -65,7 +69,7 @@ function PlayersPage() {
 
           {players.length > 0 && (
             <>
-              <div className="space-y-3 md:hidden">
+              <div className="player-roster-scroll space-y-3 pr-1 md:hidden">
                 {players.map((player, index) => (
                   <article key={player.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm">
                     <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Number</p>
@@ -93,7 +97,7 @@ function PlayersPage() {
               </div>
 
               <div className="hidden md:block">
-                <div className="overflow-x-auto rounded-xl border border-slate-200">
+                <div className="player-roster-scroll overflow-x-auto rounded-xl border border-slate-200">
                   <table className="min-w-full border-separate border-spacing-0">
                     <thead className="bg-slate-100">
                       <tr>
@@ -143,10 +147,6 @@ function PlayersPage() {
               </div>
             </>
           )}
-        </div>
-
-        <div ref={editFormRef} className="scroll-mt-24 lg:col-span-1">
-          <PlayerForm existingPlayer={editing} onSave={handleSave} onCancel={() => setEditing(null)} players={players} />
         </div>
       </div>
     </section>
