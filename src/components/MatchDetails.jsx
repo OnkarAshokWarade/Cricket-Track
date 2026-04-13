@@ -138,7 +138,7 @@ function MatchDetails({ todayMatch, players, pendingMatches = [] }) {
               <li key={notice.id}>
                 {`\u0926\u093f\u0928\u093e\u0902\u0915 ${notice.date}: `}
                 <strong className="match-fee-toast-name">{notice.loserName}</strong>
-                {` \u092f\u093e\u0902\u0928\u0940 \u0932\u0935\u0915\u0930\u093e\u0924 \u0932\u0935\u0915\u0930 \u20B9${notice.penaltyText} ${RECEIVER_NAME_MR} \u092f\u093e\u0902\u091a\u094d\u092f\u093e\u0915\u0921\u0947 \u091c\u092e\u093e \u0915\u0930\u093e.`}
+                {` \u0932\u0935\u0915\u0930\u093e\u0924 \u0932\u0935\u0915\u0930 \u20B9${notice.penaltyText} ${RECEIVER_NAME_MR} \u092f\u093e\u0902\u091a\u094d\u092f\u093e\u0915\u0921\u0947 \u091c\u092e\u093e \u0915\u0930\u093e.`}
               </li>
             ))}
           </ul>

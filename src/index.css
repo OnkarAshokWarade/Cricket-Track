@@ -90,6 +90,7 @@ select {
     overflow: visible;
     padding-right: 0;
   }
+
 }
 
 .auth-shell {
@@ -97,6 +98,7 @@ select {
   display: grid;
   place-items: center;
   padding: 20px;
+  overflow-y: auto;
   background: radial-gradient(circle at top, #dbeafe 0%, #eef2ff 45%, #f8fafc 100%);
 }
 
@@ -107,6 +109,10 @@ select {
   border-radius: 22px;
   padding: 24px;
   box-shadow: 0 20px 35px rgba(15, 23, 42, 0.1);
+}
+
+.auth-card-active {
+  scroll-margin-top: 24px;
 }
 
 .auth-title {
@@ -142,6 +148,13 @@ select {
   margin: 0;
   color: #dc2626;
   font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .auth-shell {
+    place-items: start center;
+    padding: 24px 16px 80px;
+  }
 }
 
 .readonly-banner {
@@ -911,6 +924,32 @@ textarea {
   font-weight: 600;
 }
 
+.team-password-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(15, 23, 42, 0.46);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  animation: fade-in 0.24s ease;
+}
+
+.team-password-modal {
+  width: min(460px, 100%);
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  border-radius: 22px;
+  padding: 22px;
+  box-shadow: 0 24px 50px rgba(15, 23, 42, 0.24);
+  animation: modal-rise 0.28s ease;
+}
+
+.team-password-form {
+  display: grid;
+  gap: 10px;
+}
+
 @keyframes toast-slide-left-to-right {
   0% {
     transform: translateX(-120%);
@@ -920,6 +959,28 @@ textarea {
   100% {
     transform: translateX(0);
     opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -937,6 +998,15 @@ textarea {
 
   .match-details-value {
     text-align: left;
+  }
+
+  .team-password-overlay {
+    align-items: end;
+  }
+
+  .team-password-modal {
+    width: 100%;
+    max-width: 100%;
   }
 }
 
@@ -1115,67 +1185,59 @@ textarea {
   }
 }
 
-.captain-history-table-wrap {
-  overflow-x: auto;
+.captain-history-list {
+  display: grid;
+  gap: 12px;
 }
 
-.captain-history-table-wrap::-webkit-scrollbar {
-  height: 10px;
+.captain-history-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+  padding: 12px;
+  display: grid;
+  gap: 12px;
 }
 
-.captain-history-table-wrap::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 999px;
+.captain-history-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.captain-history-table-wrap::-webkit-scrollbar-track {
-  background: #e2e8f0;
-  border-radius: 999px;
+.captain-history-card-date {
+  color: #0f172a;
+}
+
+.captain-history-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.captain-history-field {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+.captain-history-field span {
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.captain-history-field strong {
+  color: #0f172a;
 }
 
 @media (max-width: 760px) {
-  .captain-history-table {
-    min-width: 0;
-  }
-
-  .captain-history-table thead {
-    display: none;
-  }
-
-  .captain-history-table,
-  .captain-history-table tbody {
-    display: block;
-  }
-
-  .captain-history-table tr {
-    display: block;
-    margin-bottom: 10px;
-    padding: 10px 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    background: #f8fafc;
-  }
-
-  .captain-history-table td {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    border-bottom: 0;
-    padding: 6px 0;
-    white-space: normal;
-    text-align: right;
-  }
-
-  .captain-history-table td::before {
-    content: attr(data-label);
-    color: #475569;
-    font-weight: 800;
-    text-align: left;
-  }
-
-  .captain-history-table tr:last-child {
-    margin-bottom: 0;
+  .captain-history-card-grid {
+    grid-template-columns: 1fr;
   }
 }
 

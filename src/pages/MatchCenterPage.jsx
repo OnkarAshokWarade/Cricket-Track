@@ -16,7 +16,7 @@ const MAX_TEAM_GENERATIONS = 2;
 const TEAM_GENERATE_PASSWORD = '9322070390';
 const PENALTY_AMOUNT = 100;
 const PAYMENT_RECEIVER_EN = 'Ubed Shaikh';
-const PAYMENT_RECEIVER_MR = 'उबेद शेख';
+const PAYMENT_RECEIVER_MR = '\u0909\u092c\u0947\u0926 \u0936\u0947\u0916';
 const PAYMENT_RECEIVER_LABEL = `${PAYMENT_RECEIVER_EN} (${PAYMENT_RECEIVER_MR})`;
 const PAYMENT_UPI_ID = 'ubbus313-3@okaxis';
 
@@ -25,6 +25,9 @@ function MatchCenterPage({ accessMode }) {
   const [selectedWinner, setSelectedWinner] = useState('A');
   const [teamMessage, setTeamMessage] = useState('');
   const [teamMessageType, setTeamMessageType] = useState('success');
+  const [showTeamPasswordModal, setShowTeamPasswordModal] = useState(false);
+  const [teamPassword, setTeamPassword] = useState('');
+  const [teamPasswordError, setTeamPasswordError] = useState('');
   const [captainMessage, setCaptainMessage] = useState('');
   const [matchMessage, setMatchMessage] = useState('');
 
@@ -91,23 +94,29 @@ function MatchCenterPage({ accessMode }) {
   const canRecordMatch = useMemo(() => !!currentTeams && !!todayCaptains && !todayMatch, [currentTeams, todayCaptains, todayMatch]);
   const canMarkNoMatch = useMemo(() => !!currentTeams && !todayMatch, [currentTeams, todayMatch]);
 
-  const generateTeams = async () => {
+  const openTeamPasswordModal = () => {
     if (hasReachedGenerationLimit) {
       setTeamMessageType('warning');
       setTeamMessage('Generation limit reached. Teams can be generated only 2 times this week.');
       return;
     }
 
-    const enteredPassword = window.prompt('Enter admin password to generate teams:');
-    if (enteredPassword === null) {
-      setTeamMessageType('warning');
-      setTeamMessage('Team generation cancelled.');
-      return;
-    }
+    setTeamPassword('');
+    setTeamPasswordError('');
+    setShowTeamPasswordModal(true);
+  };
 
-    if (enteredPassword.trim() !== TEAM_GENERATE_PASSWORD) {
-      setTeamMessageType('warning');
-      setTeamMessage('Incorrect admin password. Team generation not allowed.');
+  const closeTeamPasswordModal = () => {
+    setShowTeamPasswordModal(false);
+    setTeamPassword('');
+    setTeamPasswordError('');
+  };
+
+  const generateTeams = async (event) => {
+    event.preventDefault();
+
+    if (teamPassword.trim() !== TEAM_GENERATE_PASSWORD) {
+      setTeamPasswordError('Incorrect admin password. Team generation not allowed.');
       return;
     }
 
@@ -119,6 +128,7 @@ function MatchCenterPage({ accessMode }) {
     };
 
     await updateAppState({ teams: nextTeams });
+    closeTeamPasswordModal();
     setTeamMessageType('success');
     setTeamMessage(
       nextGenerationCount >= MAX_TEAM_GENERATIONS
@@ -251,22 +261,22 @@ function MatchCenterPage({ accessMode }) {
           </p>
 
           <div className="button-row" style={{ marginTop: '14px' }}>
-            <button className="button-primary button-small" type="button" onClick={generateTeams} disabled={hasReachedGenerationLimit}>
+            <button className="button-primary button-small" type="button" onClick={openTeamPasswordModal} disabled={hasReachedGenerationLimit}>
               Generate Weekly Teams
             </button>
           </div>
 
-          {hasReachedGenerationLimit && (
+          {hasReachedGenerationLimit ? (
             <p className="warning-text" style={{ marginTop: '12px' }}>
               Team generation limit reached for this week.
             </p>
-          )}
+          ) : null}
 
-          {teamMessage && (
+          {teamMessage ? (
             <p className={teamMessageType === 'success' ? 'success-text' : 'warning-text'} style={{ marginTop: '14px' }}>
               {teamMessage}
             </p>
-          )}
+          ) : null}
 
           <div className="overflow-x-auto" style={{ marginTop: '18px' }}>
             <table className="table team-table split-team-table">
@@ -323,7 +333,7 @@ function MatchCenterPage({ accessMode }) {
                 <span className="status-pill">Team B available: {availableCounts.teamB}</span>
               </div>
 
-              {captainMessage && <p className="success-text" style={{ marginTop: '14px' }}>{captainMessage}</p>}
+              {captainMessage ? <p className="success-text" style={{ marginTop: '14px' }}>{captainMessage}</p> : null}
 
               <div className="section-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
                 {actionableCaptainDays.map((day) => {
@@ -336,8 +346,8 @@ function MatchCenterPage({ accessMode }) {
                     >
                       <h3 className="card-title">
                         {day.formatted}
-                        {day.isToday && ' (Today)'}
-                        {day.isTomorrow && !day.isToday && ' (Tomorrow)'}
+                        {day.isToday ? ' (Today)' : ''}
+                        {day.isTomorrow && !day.isToday ? ' (Tomorrow)' : ''}
                       </h3>
 
                       {day.captains ? (
@@ -367,28 +377,27 @@ function MatchCenterPage({ accessMode }) {
               <div style={{ marginTop: '20px' }}>
                 <h3 className="card-title">Current Week Captain History</h3>
                 {currentWeekCaptains.dailyCaptains?.length > 0 ? (
-                  <div className="captain-history-table-wrap">
-                    <table className="table captain-history-table">
-                      <thead>
-                        <tr>
-                          <th>Date</th>
-                          <th>Team A Captain</th>
-                          <th>Team B Captain</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {currentWeekCaptains.dailyCaptains
-                          .slice()
-                          .sort((a, b) => (a.date < b.date ? -1 : 1))
-                          .map((entry) => (
-                            <tr key={entry.date}>
-                              <td data-label="Date">{formatDate(entry.date)}</td>
-                              <td data-label="Team A Captain">{getPlayerName(players, entry.teamA)}</td>
-                              <td data-label="Team B Captain">{getPlayerName(players, entry.teamB)}</td>
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
+                  <div className="captain-history-list">
+                    {currentWeekCaptains.dailyCaptains
+                      .slice()
+                      .sort((a, b) => (a.date < b.date ? -1 : 1))
+                      .map((entry) => (
+                        <article className="captain-history-card" key={entry.date}>
+                          <div className="captain-history-card-top">
+                            <strong className="captain-history-card-date">{formatDate(entry.date)}</strong>
+                          </div>
+                          <div className="captain-history-card-grid">
+                            <div className="captain-history-field">
+                              <span>Team A Captain</span>
+                              <strong>{getPlayerName(players, entry.teamA)}</strong>
+                            </div>
+                            <div className="captain-history-field">
+                              <span>Team B Captain</span>
+                              <strong>{getPlayerName(players, entry.teamB)}</strong>
+                            </div>
+                          </div>
+                        </article>
+                      ))}
                   </div>
                 ) : (
                   <p className="empty-state">No captain selections recorded yet this week.</p>
@@ -402,8 +411,8 @@ function MatchCenterPage({ accessMode }) {
 
         <div className="card">
           <h2 className="card-title">3. Today&apos;s Match</h2>
-          {!currentTeams && <p className="empty-state">Generate this week&apos;s teams first.</p>}
-          {!todayCaptains && currentTeams && <p className="empty-state">Select captains for today before recording a match.</p>}
+          {!currentTeams ? <p className="empty-state">Generate this week&apos;s teams first.</p> : null}
+          {!todayCaptains && currentTeams ? <p className="empty-state">Select captains for today before recording a match.</p> : null}
 
           {todayMatch ? (
             <div>
@@ -433,7 +442,7 @@ function MatchCenterPage({ accessMode }) {
               )}
             </div>
           ) : (
-            currentTeams && (
+            currentTeams ? (
               <div className="input-group">
                 <div>
                   <p className="card-title">Teams and captains</p>
@@ -483,14 +492,14 @@ function MatchCenterPage({ accessMode }) {
                   </button>
                 </div>
               </div>
-            )
+            ) : null
           )}
 
-          {matchMessage && (
+          {matchMessage ? (
             <p className="success-text" style={{ marginTop: '16px' }}>
               {matchMessage}
             </p>
-          )}
+          ) : null}
         </div>
 
         {!isAdmin ? (
@@ -506,6 +515,46 @@ function MatchCenterPage({ accessMode }) {
           </div>
         ) : null}
       </div>
+
+      {showTeamPasswordModal ? (
+        <div className="team-password-overlay" role="presentation" onClick={closeTeamPasswordModal}>
+          <div
+            className="team-password-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="team-password-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="team-password-title" className="card-title">Enter Admin Password</h2>
+            <p className="page-intro" style={{ marginBottom: '12px' }}>
+              Confirm password to generate weekly teams.
+            </p>
+            <form className="team-password-form" onSubmit={generateTeams}>
+              <label className="input-label" htmlFor="team-generate-password">
+                Admin Password
+              </label>
+              <input
+                id="team-generate-password"
+                type="password"
+                value={teamPassword}
+                onChange={(event) => setTeamPassword(event.target.value)}
+                placeholder="Enter admin password"
+                autoFocus
+                required
+              />
+              {teamPasswordError ? <p className="auth-error">{teamPasswordError}</p> : null}
+              <div className="button-row" style={{ marginTop: '8px' }}>
+                <button className="button-primary button-small" type="submit">
+                  Generate Teams
+                </button>
+                <button className="button-secondary button-small" type="button" onClick={closeTeamPasswordModal}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

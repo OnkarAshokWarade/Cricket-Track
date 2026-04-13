@@ -25,6 +25,8 @@ const isInteractiveWriteTarget = (target) => {
 function AppContent() {
   const location = useLocation();
   const routeScrollRef = useRef(null);
+  const authCardRef = useRef(null);
+  const adminPasswordInputRef = useRef(null);
   const [accessMode, setAccessMode] = useState(null);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
@@ -36,6 +38,33 @@ function AppContent() {
       routeScrollRef.current.scrollTo({ top: 0, behavior: 'auto' });
     }
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (!showAdminLogin) {
+      return undefined;
+    }
+
+    const scrollAuthCardIntoView = () => {
+      authCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      adminPasswordInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    const timerId = window.setTimeout(scrollAuthCardIntoView, 120);
+    const viewport = window.visualViewport;
+
+    if (viewport) {
+      viewport.addEventListener('resize', scrollAuthCardIntoView);
+      viewport.addEventListener('scroll', scrollAuthCardIntoView);
+    }
+
+    return () => {
+      window.clearTimeout(timerId);
+      if (viewport) {
+        viewport.removeEventListener('resize', scrollAuthCardIntoView);
+        viewport.removeEventListener('scroll', scrollAuthCardIntoView);
+      }
+    };
+  }, [showAdminLogin]);
 
   const isGuest = accessMode === 'guest';
 
@@ -98,7 +127,7 @@ function AppContent() {
   if (!accessMode) {
     return (
       <div className="auth-shell">
-        <div className="auth-card">
+        <div className={`auth-card ${showAdminLogin ? 'auth-card-active' : ''}`} ref={authCardRef}>
           <h1 className="auth-title">Patoda XI Access</h1>
           <p className="auth-subtitle">Choose how you want to open the app.</p>
 
@@ -126,8 +155,10 @@ function AppContent() {
               <input
                 id="admin-password"
                 type="password"
+                ref={adminPasswordInputRef}
                 value={adminPassword}
                 onChange={(event) => setAdminPassword(event.target.value)}
+                onFocus={() => adminPasswordInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                 placeholder="Enter admin password"
                 autoFocus
                 required
