@@ -932,22 +932,29 @@ textarea {
   display: grid;
   place-items: center;
   padding: 16px;
+  overflow-y: auto;
   animation: fade-in 0.24s ease;
 }
 
 .team-password-modal {
   width: min(460px, 100%);
+  max-height: min(560px, calc(100dvh - 32px));
   background: #ffffff;
   border: 1px solid #dbeafe;
   border-radius: 22px;
   padding: 22px;
   box-shadow: 0 24px 50px rgba(15, 23, 42, 0.24);
+  overflow-y: auto;
   animation: modal-rise 0.28s ease;
 }
 
 .team-password-form {
   display: grid;
   gap: 10px;
+}
+
+.team-password-actions > button {
+  flex: 1 1 0;
 }
 
 @keyframes toast-slide-left-to-right {
@@ -1002,11 +1009,23 @@ textarea {
 
   .team-password-overlay {
     align-items: end;
+    padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px));
   }
 
   .team-password-modal {
     width: 100%;
     max-width: 100%;
+    max-height: min(520px, calc(100dvh - 24px));
+    border-bottom-left-radius: 18px;
+    border-bottom-right-radius: 18px;
+  }
+
+  .team-password-actions {
+    flex-direction: column;
+  }
+
+  .team-password-actions > button {
+    width: 100%;
   }
 }
 
