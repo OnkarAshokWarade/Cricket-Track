@@ -854,6 +854,8 @@ textarea {
   top: 20px;
   left: 20px;
   width: min(420px, calc(100vw - 30px));
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
   padding: 14px 16px;
   border-radius: 14px;
   border: 1px solid #fed7aa;
@@ -865,7 +867,8 @@ textarea {
   opacity: 1;
   transform: translateX(0);
   z-index: 1000;
-  pointer-events: none;
+  pointer-events: auto;
+  overscroll-behavior: contain;
 }
 
 .match-fee-toast.visible {
@@ -887,6 +890,20 @@ textarea {
 .match-fee-toast-name {
   font-weight: 800;
   color: #7c2d12;
+}
+
+.match-fee-toast::-webkit-scrollbar {
+  width: 10px;
+}
+
+.match-fee-toast::-webkit-scrollbar-thumb {
+  background: #fdba74;
+  border-radius: 999px;
+}
+
+.match-fee-toast::-webkit-scrollbar-track {
+  background: #ffedd5;
+  border-radius: 999px;
 }
 
 .match-fee-toast-note {
@@ -931,12 +948,68 @@ textarea {
   font-weight: 700;
 }
 
+.weekly-summary-stats {
+  display: grid;
+  gap: 8px;
+}
+
 .weekly-status-pending {
   color: #dc2626;
 }
 
 .weekly-status-paid {
   color: #15803d;
+}
+
+.weekly-date-list {
+  display: grid;
+  gap: 12px;
+}
+
+.weekly-date-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+  padding: 12px;
+  display: grid;
+  gap: 12px;
+}
+
+.weekly-date-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.weekly-date-card-date {
+  color: #0f172a;
+}
+
+.weekly-date-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.weekly-date-field {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+.weekly-date-field span {
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.weekly-date-field strong {
+  color: #0f172a;
 }
 
 .weekly-date-table-wrap {
@@ -1034,6 +1107,74 @@ textarea {
   }
 
   .weekly-date-table tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .weekly-date-card-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.captain-history-table-wrap {
+  overflow-x: auto;
+}
+
+.captain-history-table-wrap::-webkit-scrollbar {
+  height: 10px;
+}
+
+.captain-history-table-wrap::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.captain-history-table-wrap::-webkit-scrollbar-track {
+  background: #e2e8f0;
+  border-radius: 999px;
+}
+
+@media (max-width: 760px) {
+  .captain-history-table {
+    min-width: 0;
+  }
+
+  .captain-history-table thead {
+    display: none;
+  }
+
+  .captain-history-table,
+  .captain-history-table tbody {
+    display: block;
+  }
+
+  .captain-history-table tr {
+    display: block;
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
+  }
+
+  .captain-history-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 0;
+    padding: 6px 0;
+    white-space: normal;
+    text-align: right;
+  }
+
+  .captain-history-table td::before {
+    content: attr(data-label);
+    color: #475569;
+    font-weight: 800;
+    text-align: left;
+  }
+
+  .captain-history-table tr:last-child {
     margin-bottom: 0;
   }
 }

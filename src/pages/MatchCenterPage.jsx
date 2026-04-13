@@ -20,7 +20,7 @@ const PAYMENT_RECEIVER_MR = 'उबेद शेख';
 const PAYMENT_RECEIVER_LABEL = `${PAYMENT_RECEIVER_EN} (${PAYMENT_RECEIVER_MR})`;
 const PAYMENT_UPI_ID = 'ubbus313-3@okaxis';
 
-function MatchCenterPage() {
+function MatchCenterPage({ accessMode }) {
   const { players, teams, captains, matches, addMatch, updateAppState } = useAppData();
   const [selectedWinner, setSelectedWinner] = useState('A');
   const [teamMessage, setTeamMessage] = useState('');
@@ -35,6 +35,7 @@ function MatchCenterPage() {
   const todayCaptains = currentWeekCaptains.dailyCaptains?.find((entry) => entry.date === todayKey()) || null;
   const latestWeekCaptains = currentWeekCaptains.dailyCaptains?.slice(-1)?.[0] || null;
   const visibleCaptains = todayCaptains || latestWeekCaptains;
+  const isAdmin = accessMode === 'admin';
   const captainAName = todayCaptains ? getPlayerName(players, todayCaptains.teamA) : '--';
   const captainBName = todayCaptains ? getPlayerName(players, todayCaptains.teamB) : '--';
   const visibleCaptainAName = visibleCaptains?.teamA ? getPlayerName(players, visibleCaptains.teamA) : '--';
@@ -195,7 +196,7 @@ function MatchCenterPage() {
         penaltyPaid: false,
       });
 
-      setMatchMessage(`Match recorded. ₹${PENALTY_AMOUNT} penalty assigned to ${getPlayerName(players, loserCaptain)}.`);
+      setMatchMessage(`Match recorded. \u20B9${PENALTY_AMOUNT} penalty assigned to ${getPlayerName(players, loserCaptain)}.`);
     } catch (error) {
       console.error('Error recording match:', error);
       setMatchMessage('Match could not be recorded. Please verify Firebase configuration and try again.');
@@ -366,27 +367,29 @@ function MatchCenterPage() {
               <div style={{ marginTop: '20px' }}>
                 <h3 className="card-title">Current Week Captain History</h3>
                 {currentWeekCaptains.dailyCaptains?.length > 0 ? (
-                  <table className="table">
-                    <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th>Team A Captain</th>
-                        <th>Team B Captain</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {currentWeekCaptains.dailyCaptains
-                        .slice()
-                        .sort((a, b) => (a.date < b.date ? -1 : 1))
-                        .map((entry) => (
-                          <tr key={entry.date}>
-                            <td>{formatDate(entry.date)}</td>
-                            <td>{getPlayerName(players, entry.teamA)}</td>
-                            <td>{getPlayerName(players, entry.teamB)}</td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
+                  <div className="captain-history-table-wrap">
+                    <table className="table captain-history-table">
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Team A Captain</th>
+                          <th>Team B Captain</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentWeekCaptains.dailyCaptains
+                          .slice()
+                          .sort((a, b) => (a.date < b.date ? -1 : 1))
+                          .map((entry) => (
+                            <tr key={entry.date}>
+                              <td data-label="Date">{formatDate(entry.date)}</td>
+                              <td data-label="Team A Captain">{getPlayerName(players, entry.teamA)}</td>
+                              <td data-label="Team B Captain">{getPlayerName(players, entry.teamB)}</td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
                 ) : (
                   <p className="empty-state">No captain selections recorded yet this week.</p>
                 )}
@@ -490,16 +493,18 @@ function MatchCenterPage() {
           )}
         </div>
 
-        <div className="card match-payment-card">
-          <h2 className="card-title">Contribution Payment QR</h2>
-          <p className="page-intro" style={{ marginBottom: '12px' }}>
-            Pay contribution to {PAYMENT_RECEIVER_LABEL}
-          </p>
-          <div style={{ display: 'grid', gap: '10px', width: 'fit-content' }}>
-            <img className="fund-qr-image" src={ubedUpiQr} alt={`UPI QR for ${PAYMENT_RECEIVER_LABEL}`} />
-            <p className="fund-upi-id">UPI ID: {PAYMENT_UPI_ID}</p>
+        {!isAdmin ? (
+          <div className="card match-payment-card">
+            <h2 className="card-title">Contribution Payment QR</h2>
+            <p className="page-intro" style={{ marginBottom: '12px' }}>
+              Pay contribution to {PAYMENT_RECEIVER_LABEL}
+            </p>
+            <div style={{ display: 'grid', gap: '10px', width: 'fit-content' }}>
+              <img className="fund-qr-image" src={ubedUpiQr} alt={`UPI QR for ${PAYMENT_RECEIVER_LABEL}`} />
+              <p className="fund-upi-id">UPI ID: {PAYMENT_UPI_ID}</p>
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
     </section>
   );

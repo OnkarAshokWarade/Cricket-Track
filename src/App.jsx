@@ -180,7 +180,7 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/players" element={<PlayersPage />} />
-            <Route path="/match-center" element={<MatchCenterPage />} />
+            <Route path="/match-center" element={<MatchCenterPage accessMode={accessMode} />} />
             <Route path="/teams" element={<Navigate to="/match-center" replace />} />
             <Route path="/captains" element={<Navigate to="/match-center" replace />} />
             <Route path="/match" element={<Navigate to="/match-center" replace />} />
