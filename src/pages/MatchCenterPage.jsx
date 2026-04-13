@@ -64,7 +64,6 @@ function MatchCenterPage({ accessMode }) {
   }, [currentTeams]);
 
   const hasReachedGenerationLimit = currentGenerationCount >= MAX_TEAM_GENERATIONS;
-  const showWeeklyTeamGenerator = !currentTeams;
 
   const availableCounts = useMemo(() => {
     if (!currentTeams) {
@@ -255,37 +254,29 @@ function MatchCenterPage({ accessMode }) {
       <div className="section-grid" style={{ gridTemplateColumns: '1fr', gap: '18px' }}>
         <div className="card">
           <h2 className="card-title">1. Weekly Teams</h2>
-          {showWeeklyTeamGenerator ? (
-            <div className="weekly-team-generator-panel">
-              <p className="pill">Current week: {weekId}</p>
-              <p className="pill" style={{ marginTop: '10px' }}>Members available: {players.length}</p>
-              <p className="pill" style={{ marginTop: '10px' }}>
-                Generated this week: {currentGenerationCount}/{MAX_TEAM_GENERATIONS}
-              </p>
+          <p className="pill">Current week: {weekId}</p>
+          <p className="pill" style={{ marginTop: '10px' }}>Members available: {players.length}</p>
+          <p className="pill" style={{ marginTop: '10px' }}>
+            Generated this week: {currentGenerationCount}/{MAX_TEAM_GENERATIONS}
+          </p>
 
-              <div className="button-row" style={{ marginTop: '14px' }}>
-                <button className="button-primary button-small" type="button" onClick={openTeamPasswordModal} disabled={hasReachedGenerationLimit}>
-                  Generate Weekly Teams
-                </button>
-              </div>
+          <div className="button-row" style={{ marginTop: '14px' }}>
+            <button className="button-primary button-small" type="button" onClick={openTeamPasswordModal} disabled={hasReachedGenerationLimit}>
+              Generate Weekly Teams
+            </button>
+          </div>
 
-              {hasReachedGenerationLimit ? (
-                <p className="warning-text" style={{ marginTop: '12px' }}>
-                  Team generation limit reached for this week.
-                </p>
-              ) : null}
-
-              {teamMessage ? (
-                <p className={teamMessageType === 'success' ? 'success-text' : 'warning-text'} style={{ marginTop: '14px' }}>
-                  {teamMessage}
-                </p>
-              ) : null}
-            </div>
-          ) : (
-            <p className="success-text" style={{ marginBottom: '14px' }}>
-              Weekly teams are already generated for this week, so the generate panel is hidden here.
+          {hasReachedGenerationLimit ? (
+            <p className="warning-text" style={{ marginTop: '12px' }}>
+              Team generation limit reached for this week.
             </p>
-          )}
+          ) : null}
+
+          {teamMessage ? (
+            <p className={teamMessageType === 'success' ? 'success-text' : 'warning-text'} style={{ marginTop: '14px' }}>
+              {teamMessage}
+            </p>
+          ) : null}
 
           <div className="overflow-x-auto" style={{ marginTop: '18px' }}>
             <table className="table team-table split-team-table">
