@@ -679,10 +679,15 @@ function GroundExpensePage({ accessMode }) {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: 'auto' }}>
               <p className="pill" style={{ margin: 0, fontWeight: 800 }}>
-                {'\u091c\u092e\u093e: '}
-                {transactionTypeCounts.credit}
-                {' | \u0916\u0930\u094d\u091a: '}
-                {transactionTypeCounts.debit}
+                <span className="fund-count-credit">
+                  {'\u091c\u092e\u093e: '}
+                  {transactionTypeCounts.credit}
+                </span>
+                {' | '}
+                <span className="fund-count-debit">
+                  {'\u0916\u0930\u094d\u091a: '}
+                  {transactionTypeCounts.debit}
+                </span>
               </p>
               {isAdmin && isMobileViewport ? (
                 <button
@@ -715,16 +720,16 @@ function GroundExpensePage({ accessMode }) {
                 <tbody>
                   {transactions.map((transaction) => (
                     <tr key={transaction.id}>
-                      <td>{transaction.date ? formatDate(transaction.date) : '--'}</td>
-                      <td>{transaction.weekId || '--'}</td>
-                      <td>{transaction.name}</td>
-                      <td>{formatINR(transaction.amount)}</td>
-                      <td>
+                      <td data-label="Date">{transaction.date ? formatDate(transaction.date) : '--'}</td>
+                      <td data-label="Week">{transaction.weekId || '--'}</td>
+                      <td data-label="Name">{transaction.name}</td>
+                      <td data-label="Amount">{formatINR(transaction.amount)}</td>
+                      <td data-label="Type">
                         <span className={`fund-type-pill ${transaction.type}`}>
                           {transaction.type === 'credit' ? '\u091c\u092e\u093e' : '\u0916\u0930\u094d\u091a'}
                         </span>
                       </td>
-                      <td>
+                      <td data-label="Actions">
                         {isAdmin ? (
                           <div className="button-row" style={{ marginTop: 0 }}>
                             <button

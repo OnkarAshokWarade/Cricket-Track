@@ -317,19 +317,22 @@ function MatchCenterPage({ accessMode }) {
   };
 
   const handleCaptainPdf = (entry) => {
-    const relatedMatch = matches.find((match) => isSameDay(match.date, entry.date)) || null;
+    if (!isAdmin) {
+      setCaptainMessage('Only admin can open the captain team sheet.');
+      return;
+    }
+
     const didOpen = openCaptainDayPdf({
       date: entry.date,
       weekId,
       captains: entry,
       teams: currentTeams,
       players,
-      match: relatedMatch,
     });
 
     setCaptainMessage(
       didOpen
-        ? `Print dialog opened for ${formatDate(entry.date)}. Choose "Save as PDF" to download it.`
+        ? `Captain team sheet opened for ${formatDate(entry.date)}. Choose "Save as PDF" to share it.`
         : 'PDF preview could not be prepared. Please try again.'
     );
   };
@@ -497,13 +500,15 @@ function MatchCenterPage({ accessMode }) {
                               {getPlayerName(players, day.captains.teamB)}
                             </strong>
                           </p>
-                          <button
-                            className="button-secondary button-small"
-                            type="button"
-                            onClick={() => handleCaptainPdf(day.captains)}
-                          >
-                            Print / PDF
-                          </button>
+                          {isAdmin ? (
+                            <button
+                              className="button-secondary button-small"
+                              type="button"
+                              onClick={() => handleCaptainPdf(day.captains)}
+                            >
+                              Share Captain PDF
+                            </button>
+                          ) : null}
                         </div>
                       ) : (
                         <button
@@ -534,13 +539,6 @@ function MatchCenterPage({ accessMode }) {
                           <article className="captain-history-card" key={entry.date}>
                             <div className="captain-history-card-top">
                               <strong className="captain-history-card-date">{formatDate(entry.date)}</strong>
-                              <button
-                                type="button"
-                                className="button-secondary button-small"
-                                onClick={() => handleCaptainPdf(entry)}
-                              >
-                                Print / PDF
-                              </button>
                             </div>
                             <div className="captain-history-card-grid">
                               <div className="captain-history-field">

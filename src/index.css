@@ -1419,12 +1419,14 @@ textarea {
 }
 
 .fund-table-wrap {
-  overflow-x: auto;
+  overflow-x: hidden;
 }
 
 .fund-table th,
 .fund-table td {
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
+  vertical-align: top;
 }
 
 .fund-type-pill {
@@ -1638,16 +1640,26 @@ textarea {
   word-break: break-all;
 }
 
+.fund-count-credit {
+  color: #15803d;
+}
+
+.fund-count-debit {
+  color: #dc2626;
+}
+
 .fund-table-wrap {
   max-height: 460px;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
   scroll-behavior: smooth;
 }
 
 .fund-table {
-  min-width: 860px;
+  min-width: 0;
+  table-layout: fixed;
 }
 
 .fund-table thead th {
@@ -1673,6 +1685,10 @@ textarea {
 .player-status-grid::-webkit-scrollbar-track {
   background: #f1f5f9;
   border-radius: 999px;
+}
+
+.fund-table td .button-row {
+  margin-top: 0;
 }
 
 .fund-archive-list {
@@ -1722,5 +1738,55 @@ textarea {
 
   .player-status-grid {
     grid-template-columns: 1fr;
+  }
+
+  .fund-table-wrap {
+    border: 0;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .fund-table thead {
+    display: none;
+  }
+
+  .fund-table,
+  .fund-table tbody,
+  .fund-table tr,
+  .fund-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .fund-table tr {
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #f8fafc;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .fund-table tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .fund-table td {
+    border: 0;
+    padding: 8px 0;
+  }
+
+  .fund-table td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    color: #64748b;
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .fund-table td .button-row {
+    justify-content: flex-start;
   }
 }

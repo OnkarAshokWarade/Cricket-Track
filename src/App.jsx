@@ -71,6 +71,7 @@ function AppContent() {
   }, [showAdminLogin]);
 
   const isGuest = accessMode === 'guest';
+  const shouldShowPendingFeeNotice = location.pathname !== '/rules-patodag' && location.pathname !== '/ground-expense';
 
   const handleGuestEntry = () => {
     setAccessMode('guest');
@@ -211,7 +212,9 @@ function AppContent() {
           </div>
         ) : null}
 
-        <PendingFeeNotice matches={matches} players={players} resetKey={location.pathname} />
+        {shouldShowPendingFeeNotice ? (
+          <PendingFeeNotice matches={matches} players={players} resetKey={location.pathname} />
+        ) : null}
 
         {!isDatabaseConfigured ? (
           <div className="database-banner database-banner-warning">
