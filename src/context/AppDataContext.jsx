@@ -23,6 +23,7 @@ import {
 const APP_STATE_PATH = 'appState/main';
 const MATCHES_PATH = 'matches';
 const AppDataContext = createContext(null);
+const DATABASE_READY_TIMEOUT_MS = 6000;
 
 const mergeState = (appState, matches) => ({
   ...appState,
@@ -115,40 +116,60 @@ export function AppDataProvider({ children }) {
     setSyncError('');
     hasAppSnapshotRef.current = false;
     hasMatchesSnapshotRef.current = false;
+    hasMigratedLegacyMatchesRef.current = false;
 
     const matchesQuery = query(matchesRef, orderByChild('date'));
+    const readyTimeoutId = window.setTimeout(() => {
+      if (!hasAppSnapshotRef.current || !hasMatchesSnapshotRef.current) {
+        setIsReady(true);
+        setSyncError('Firebase is taking longer than expected. Showing available data while the database keeps syncing.');
+      }
+    }, DATABASE_READY_TIMEOUT_MS);
 
     const unsubscribeAppState = onValue(
       appDataRef,
       async (snapshot) => {
-        const rawState = snapshot.exists() ? snapshot.val() : createDefaultAppState();
-        const sanitizedState = sanitizeAppState({
-          ...rawState,
-          matches: [],
-        });
-        const nextAppState = stripMatchesFromAppState(sanitizedState);
-
-        legacyMatchesRef.current = sanitizeMatchesData(rawState?.matches);
-        latestAppStateRef.current = nextAppState;
-        setAppState(nextAppState);
-        setSyncError('');
-
-        if (!snapshot.exists()) {
-          await set(appDataRef, serializeAppStateForDatabase(defaultState));
-        } else if (
-          Object.prototype.hasOwnProperty.call(rawState, 'matches') ||
-          Object.prototype.hasOwnProperty.call(rawState, 'stats')
-        ) {
-          await update(appDataRef, {
-            ...serializeAppStateForDatabase(nextAppState),
-            matches: null,
-            stats: null,
+        try {
+          const rawState = snapshot.exists() ? snapshot.val() : createDefaultAppState();
+          const sanitizedState = sanitizeAppState({
+            ...rawState,
+            matches: [],
           });
-        }
+          const nextAppState = stripMatchesFromAppState(sanitizedState);
 
-        hasAppSnapshotRef.current = true;
-        syncReadyState();
-        await migrateLegacyMatches();
+          legacyMatchesRef.current = sanitizeMatchesData(rawState?.matches);
+          latestAppStateRef.current = nextAppState;
+          setAppState(nextAppState);
+          setSyncError('');
+
+          hasAppSnapshotRef.current = true;
+          syncReadyState();
+
+          try {
+            if (!snapshot.exists()) {
+              await set(appDataRef, serializeAppStateForDatabase(defaultState));
+            } else if (
+              Object.prototype.hasOwnProperty.call(rawState, 'matches') ||
+              Object.prototype.hasOwnProperty.call(rawState, 'stats')
+            ) {
+              await update(appDataRef, {
+                ...serializeAppStateForDatabase(nextAppState),
+                matches: null,
+                stats: null,
+              });
+            }
+          } catch (writeError) {
+            console.error('Realtime app state write failed:', writeError);
+            setSyncError('Database data loaded, but Firebase rejected an automatic setup write. Admin changes may need database rules/configuration checked.');
+          }
+
+          await migrateLegacyMatches();
+        } catch (error) {
+          console.error('Realtime app state parsing failed:', error);
+          setSyncError('Database data could not be read correctly. Showing the default roster for now.');
+          hasAppSnapshotRef.current = true;
+          syncReadyState();
+        }
       },
       (error) => {
         console.error('Realtime app state sync failed:', error);
@@ -161,24 +182,31 @@ export function AppDataProvider({ children }) {
     const unsubscribeMatches = onValue(
       matchesQuery,
       async (snapshot) => {
-        const data = [];
-        snapshot.forEach((matchSnapshot) => {
-          data.push({
-            id: matchSnapshot.key,
-            ...matchSnapshot.val(),
+        try {
+          const data = [];
+          snapshot.forEach((matchSnapshot) => {
+            data.push({
+              id: matchSnapshot.key,
+              ...matchSnapshot.val(),
+            });
           });
-        });
-        const nextMatches = sanitizeMatchesData(data).sort((a, b) => (a.date < b.date ? 1 : -1));
+          const nextMatches = sanitizeMatchesData(data).sort((a, b) => (a.date < b.date ? 1 : -1));
 
-        latestMatchesRef.current = nextMatches;
-        setMatches(nextMatches);
-        setSyncError('');
+          latestMatchesRef.current = nextMatches;
+          setMatches(nextMatches);
+          setSyncError('');
 
-        hasMatchesSnapshotRef.current = true;
-        syncReadyState();
+          hasMatchesSnapshotRef.current = true;
+          syncReadyState();
 
-        if (!snapshot.exists()) {
-          await migrateLegacyMatches();
+          if (!snapshot.exists()) {
+            await migrateLegacyMatches();
+          }
+        } catch (error) {
+          console.error('Realtime matches parsing failed:', error);
+          setSyncError('Match data could not be read correctly. Showing available match data for now.');
+          hasMatchesSnapshotRef.current = true;
+          syncReadyState();
         }
       },
       (error) => {
@@ -190,6 +218,7 @@ export function AppDataProvider({ children }) {
     );
 
     return () => {
+      window.clearTimeout(readyTimeoutId);
       unsubscribeAppState();
       unsubscribeMatches();
     };

@@ -221,25 +221,18 @@ function AppContent() {
         ) : null}
 
         <div className="route-scroll-area" ref={routeScrollRef}>
-          {!isReady ? (
-            <div className="card">
-              <h1 className="page-title">Loading Patoda XI data</h1>
-              <p className="page-intro">Fetching players, teams, captains, matches, and money records from Firebase.</p>
-            </div>
-          ) : (
-            <Routes>
-              <Route path="/" element={<Dashboard accessMode={accessMode} />} />
-              <Route path="/players" element={<PlayersPage accessMode={accessMode} />} />
-              <Route path="/match-center" element={<MatchCenterPage accessMode={accessMode} />} />
-              <Route path="/teams" element={<Navigate to="/match-center" replace />} />
-              <Route path="/captains" element={<Navigate to="/match-center" replace />} />
-              <Route path="/match" element={<Navigate to="/match-center" replace />} />
-              <Route path="/history" element={<HistoryPage accessMode={accessMode} />} />
-              <Route path="/ground-expense" element={<GroundExpensePage accessMode={accessMode} />} />
-              <Route path="/weekly-summary" element={<WeeklySummaryPage />} />
-              <Route path="/rules-patodag" element={<RulesPatodaPage />} />
-            </Routes>
-          )}
+          <Routes>
+            <Route path="/" element={<Dashboard accessMode={accessMode} />} />
+            <Route path="/players" element={<PlayersPage accessMode={accessMode} />} />
+            <Route path="/match-center" element={<MatchCenterPage accessMode={accessMode} />} />
+            <Route path="/teams" element={<Navigate to="/match-center" replace />} />
+            <Route path="/captains" element={<Navigate to="/match-center" replace />} />
+            <Route path="/match" element={<Navigate to="/match-center" replace />} />
+            <Route path="/history" element={<HistoryPage accessMode={accessMode} />} />
+            <Route path="/ground-expense" element={<GroundExpensePage accessMode={accessMode} />} />
+            <Route path="/weekly-summary" element={<WeeklySummaryPage />} />
+            <Route path="/rules-patodag" element={<RulesPatodaPage />} />
+          </Routes>
         </div>
       </main>
     </div>
