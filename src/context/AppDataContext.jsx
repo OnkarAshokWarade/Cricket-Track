@@ -1,30 +1,27 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  addDoc,
-  collection,
-  deleteDoc,
-  deleteField,
-  doc,
-  onSnapshot,
-  orderBy,
+  onValue,
+  orderByChild,
+  push,
   query,
-  setDoc,
-  updateDoc,
-} from 'firebase/firestore';
-import { db, isFirebaseConfigured } from '../lib/firebase';
+  ref,
+  remove,
+  set,
+  update,
+} from 'firebase/database';
+import { isRealtimeDatabaseConfigured, realtimeDb } from '../lib/firebase';
 import {
   buildStatsFromMatches,
   createDefaultAppState,
   sanitizeAppState,
   sanitizeMatchesData,
-  serializeAppStateForFirestore,
-  serializeMatchForFirestore,
+  serializeAppStateForDatabase,
+  serializeMatchForDatabase,
   stripMatchesFromAppState,
 } from '../services/appDataService';
 
-const APP_COLLECTION = 'appState';
-const APP_DOCUMENT = 'main';
-const MATCHES_COLLECTION = 'matches';
+const APP_STATE_PATH = 'appState/main';
+const MATCHES_PATH = 'matches';
 const AppDataContext = createContext(null);
 
 const mergeState = (appState, matches) => ({
@@ -33,8 +30,8 @@ const mergeState = (appState, matches) => ({
   stats: buildStatsFromMatches(matches),
 });
 
-const createFirestoreRequiredError = () =>
-  new Error('Firebase is not configured. Firestore is required as the shared data source.');
+const createDatabaseRequiredError = () =>
+  new Error('Firebase Realtime Database is not configured. Check VITE_FIREBASE_DATABASE_URL.');
 
 export function AppDataProvider({ children }) {
   const defaultState = useMemo(() => createDefaultAppState(), []);
@@ -47,8 +44,14 @@ export function AppDataProvider({ children }) {
   const hasMatchesSnapshotRef = useRef(false);
   const legacyMatchesRef = useRef([]);
   const hasMigratedLegacyMatchesRef = useRef(false);
-  const appDocRef = useMemo(() => (isFirebaseConfigured ? doc(db, APP_COLLECTION, APP_DOCUMENT) : null), []);
-  const matchesCollectionRef = useMemo(() => (isFirebaseConfigured ? collection(db, MATCHES_COLLECTION) : null), []);
+  const appDataRef = useMemo(
+    () => (isRealtimeDatabaseConfigured ? ref(realtimeDb, APP_STATE_PATH) : null),
+    []
+  );
+  const matchesRef = useMemo(
+    () => (isRealtimeDatabaseConfigured ? ref(realtimeDb, MATCHES_PATH) : null),
+    []
+  );
 
   const syncReadyState = useCallback(() => {
     if (hasAppSnapshotRef.current && hasMatchesSnapshotRef.current) {
@@ -58,8 +61,8 @@ export function AppDataProvider({ children }) {
 
   const migrateLegacyMatches = useCallback(async () => {
     if (
-      !isFirebaseConfigured ||
-      !matchesCollectionRef ||
+      !isRealtimeDatabaseConfigured ||
+      !matchesRef ||
       !hasMatchesSnapshotRef.current ||
       legacyMatchesRef.current.length === 0 ||
       latestMatchesRef.current.length > 0 ||
@@ -73,19 +76,19 @@ export function AppDataProvider({ children }) {
     try {
       await Promise.all(
         legacyMatchesRef.current.map((match) => {
-          const payload = serializeMatchForFirestore(match);
+          const payload = serializeMatchForDatabase(match);
           if (!payload) {
             return Promise.resolve();
           }
 
-          return setDoc(doc(matchesCollectionRef, match.id), payload);
+          return set(ref(realtimeDb, `${MATCHES_PATH}/${match.id}`), payload);
         })
       );
     } catch (error) {
       hasMigratedLegacyMatchesRef.current = false;
       console.error('Legacy match migration failed:', error);
     }
-  }, [matchesCollectionRef]);
+  }, [matchesRef]);
 
   useEffect(() => {
     latestAppStateRef.current = appState;
@@ -96,7 +99,7 @@ export function AppDataProvider({ children }) {
   }, [matches]);
 
   useEffect(() => {
-    if (!isFirebaseConfigured || !appDocRef || !matchesCollectionRef) {
+    if (!isRealtimeDatabaseConfigured || !appDataRef || !matchesRef) {
       const nextAppState = stripMatchesFromAppState(createDefaultAppState());
       latestAppStateRef.current = nextAppState;
       latestMatchesRef.current = [];
@@ -110,12 +113,12 @@ export function AppDataProvider({ children }) {
     hasAppSnapshotRef.current = false;
     hasMatchesSnapshotRef.current = false;
 
-    const matchesQuery = query(matchesCollectionRef, orderBy('date', 'desc'));
+    const matchesQuery = query(matchesRef, orderByChild('date'));
 
-    const unsubscribeAppState = onSnapshot(
-      appDocRef,
-      async (docSnap) => {
-        const rawState = docSnap.exists() ? docSnap.data() : createDefaultAppState();
+    const unsubscribeAppState = onValue(
+      appDataRef,
+      async (snapshot) => {
+        const rawState = snapshot.exists() ? snapshot.val() : createDefaultAppState();
         const sanitizedState = sanitizeAppState({
           ...rawState,
           matches: [],
@@ -126,21 +129,17 @@ export function AppDataProvider({ children }) {
         latestAppStateRef.current = nextAppState;
         setAppState(nextAppState);
 
-        if (!docSnap.exists()) {
-          await setDoc(appDocRef, serializeAppStateForFirestore(defaultState));
+        if (!snapshot.exists()) {
+          await set(appDataRef, serializeAppStateForDatabase(defaultState));
         } else if (
           Object.prototype.hasOwnProperty.call(rawState, 'matches') ||
           Object.prototype.hasOwnProperty.call(rawState, 'stats')
         ) {
-          await setDoc(
-            appDocRef,
-            {
-              ...serializeAppStateForFirestore(nextAppState),
-              matches: deleteField(),
-              stats: deleteField(),
-            },
-            { merge: true }
-          );
+          await update(appDataRef, {
+            ...serializeAppStateForDatabase(nextAppState),
+            matches: null,
+            stats: null,
+          });
         }
 
         hasAppSnapshotRef.current = true;
@@ -154,14 +153,17 @@ export function AppDataProvider({ children }) {
       }
     );
 
-    const unsubscribeMatches = onSnapshot(
+    const unsubscribeMatches = onValue(
       matchesQuery,
       async (snapshot) => {
-        const data = snapshot.docs.map((docSnapshot) => ({
-          id: docSnapshot.id,
-          ...docSnapshot.data(),
-        }));
-        const nextMatches = sanitizeMatchesData(data);
+        const data = [];
+        snapshot.forEach((matchSnapshot) => {
+          data.push({
+            id: matchSnapshot.key,
+            ...matchSnapshot.val(),
+          });
+        });
+        const nextMatches = sanitizeMatchesData(data).sort((a, b) => (a.date < b.date ? 1 : -1));
 
         latestMatchesRef.current = nextMatches;
         setMatches(nextMatches);
@@ -169,7 +171,7 @@ export function AppDataProvider({ children }) {
         hasMatchesSnapshotRef.current = true;
         syncReadyState();
 
-        if (snapshot.empty) {
+        if (!snapshot.exists()) {
           await migrateLegacyMatches();
         }
       },
@@ -184,7 +186,7 @@ export function AppDataProvider({ children }) {
       unsubscribeAppState();
       unsubscribeMatches();
     };
-  }, [appDocRef, defaultState, matchesCollectionRef, migrateLegacyMatches, syncReadyState]);
+  }, [appDataRef, defaultState, matchesRef, migrateLegacyMatches, syncReadyState]);
 
   const updateAppState = useCallback(
     async (updater) => {
@@ -198,46 +200,43 @@ export function AppDataProvider({ children }) {
       });
       const nextAppState = stripMatchesFromAppState(nextState);
 
-      if (!isFirebaseConfigured || !appDocRef) {
-        throw createFirestoreRequiredError();
+      if (!isRealtimeDatabaseConfigured || !appDataRef) {
+        throw createDatabaseRequiredError();
       }
 
-      await setDoc(
-        appDocRef,
-        {
-          ...serializeAppStateForFirestore(nextAppState),
-          matches: deleteField(),
-          stats: deleteField(),
-        },
-        { merge: true }
-      );
+      await update(appDataRef, {
+        ...serializeAppStateForDatabase(nextAppState),
+        matches: null,
+        stats: null,
+      });
 
       return mergeState(nextAppState, latestMatchesRef.current);
     },
-    [appDocRef]
+    [appDataRef]
   );
 
   const addMatch = useCallback(
     async (match) => {
-      if (!isFirebaseConfigured || !matchesCollectionRef) {
-        throw createFirestoreRequiredError();
+      if (!isRealtimeDatabaseConfigured || !matchesRef) {
+        throw createDatabaseRequiredError();
       }
 
-      const payload = serializeMatchForFirestore(match);
+      const payload = serializeMatchForDatabase(match);
       if (!payload) {
         throw new Error('Match payload is invalid.');
       }
 
-      const docRef = await addDoc(matchesCollectionRef, payload);
-      return docRef.id;
+      const matchRef = push(matchesRef);
+      await set(matchRef, payload);
+      return matchRef.key;
     },
-    [matchesCollectionRef]
+    [matchesRef]
   );
 
   const updateMatch = useCallback(
     async (matchId, updates) => {
-      if (!isFirebaseConfigured || !matchesCollectionRef) {
-        throw createFirestoreRequiredError();
+      if (!isRealtimeDatabaseConfigured || !matchesRef) {
+        throw createDatabaseRequiredError();
       }
 
       const currentMatch = latestMatchesRef.current.find((match) => match.id === matchId);
@@ -253,24 +252,26 @@ export function AppDataProvider({ children }) {
         throw new Error(`Match "${matchId}" was not found.`);
       }
 
-      const payload = serializeMatchForFirestore(nextMatch);
+      const payload = serializeMatchForDatabase(nextMatch);
       if (!payload) {
         throw new Error('Match payload is invalid.');
       }
 
-      await updateDoc(doc(matchesCollectionRef, matchId), payload);
+      await update(ref(realtimeDb, `${MATCHES_PATH}/${matchId}`), payload);
     },
-    [matchesCollectionRef]
+    [matchesRef]
   );
 
   const resetAppState = useCallback(async () => {
-    if (!isFirebaseConfigured || !appDocRef || !matchesCollectionRef) {
-      throw createFirestoreRequiredError();
+    if (!isRealtimeDatabaseConfigured || !appDataRef || !matchesRef) {
+      throw createDatabaseRequiredError();
     }
 
-    await Promise.all(latestMatchesRef.current.map((match) => deleteDoc(doc(matchesCollectionRef, match.id))));
-    await setDoc(appDocRef, serializeAppStateForFirestore(createDefaultAppState()));
-  }, [appDocRef, matchesCollectionRef]);
+    await Promise.all([
+      remove(matchesRef),
+      set(appDataRef, serializeAppStateForDatabase(createDefaultAppState())),
+    ]);
+  }, [appDataRef, matchesRef]);
 
   const value = useMemo(
     () => ({

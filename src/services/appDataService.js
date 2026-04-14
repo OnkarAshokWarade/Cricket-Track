@@ -1,4 +1,3 @@
-import { Timestamp } from 'firebase/firestore';
 import { toDateKey } from '../utils/dateUtils';
 
 const APP_START_DATE = '2026-04-08';
@@ -73,21 +72,12 @@ const createMatchId = () => {
   return `match-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
-const getTimestampDateKey = (value) => {
+const getDateKey = (value) => {
   if (value && typeof value.toDate === 'function') {
     return toDateKey(value.toDate());
   }
 
   return toDateKey(value);
-};
-
-const dateKeyToTimestamp = (dateKey) => {
-  if (!isValidDateKey(dateKey)) {
-    return Timestamp.fromDate(new Date(0));
-  }
-
-  const [year, month, day] = dateKey.split('-').map(Number);
-  return Timestamp.fromDate(new Date(Date.UTC(year, month - 1, day)));
 };
 
 const buildMatchScore = (match) => {
@@ -208,7 +198,7 @@ export const sanitizeMatchesData = (matchesData) => {
 
   return matchesData
     .map((match) => {
-      const dateKey = getTimestampDateKey(match?.date);
+      const dateKey = getDateKey(match?.date);
 
       return {
         ...match,
@@ -302,7 +292,7 @@ export const stripMatchesFromAppState = (state = {}) => {
   return appState;
 };
 
-export const serializeAppStateForFirestore = (state = {}) => {
+export const serializeAppStateForDatabase = (state = {}) => {
   const appState = sanitizeAppState({
     ...stripMatchesFromAppState(state),
     matches: [],
@@ -311,18 +301,18 @@ export const serializeAppStateForFirestore = (state = {}) => {
   return stripMatchesFromAppState(appState);
 };
 
-export const serializeMatchForFirestore = (match = {}) => {
+export const serializeMatchForDatabase = (match = {}) => {
   const sanitizedMatch = sanitizeMatchesData([match])[0];
 
   if (!sanitizedMatch) {
     return null;
   }
 
-  const { id: _id, ...firestoreMatch } = sanitizedMatch;
+  const { id: _id, ...databaseMatch } = sanitizedMatch;
 
   return {
-    ...firestoreMatch,
-    date: dateKeyToTimestamp(sanitizedMatch.date),
+    ...databaseMatch,
+    date: sanitizedMatch.date,
     teamA: sanitizedMatch.teamA,
     teamB: sanitizedMatch.teamB,
     score: sanitizedMatch.score,
