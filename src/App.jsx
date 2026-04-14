@@ -149,94 +149,64 @@ function AppContent() {
     return (
       <div className="auth-shell">
         <div className={`auth-card ${showAdminLogin ? 'auth-card-active' : ''}`} ref={authCardRef}>
-          <div className="auth-badge">Patoda XI Control Panel</div>
+          <h1 className="auth-title">Patoda XI Access</h1>
+          <p className="auth-subtitle">Choose how you want to open the app.</p>
 
-          <div className="auth-hero">
-            <div>
-              <h1 className="auth-title">Choose how you want to enter the app.</h1>
-              <p className="auth-subtitle">
-                Guest mode is for viewing captain sheets, summaries, and payment QR. Admin mode keeps all management tools unlocked.
-              </p>
-            </div>
-            <div className="auth-highlight">
-              <span className="auth-highlight-label">Live workflow</span>
-              <strong>Teams, captains, history, and day-wise PDFs in one place</strong>
-            </div>
+          <div className="auth-actions">
+            <button type="button" className="button-secondary" onClick={handleGuestEntry}>
+              Continue as Guest
+            </button>
+            <button
+              type="button"
+              className="button-primary"
+              onClick={() => {
+                setShowAdminLogin(true);
+                setAuthError('');
+              }}
+            >
+              Login as Admin
+            </button>
           </div>
 
-          <div className="auth-mode-grid">
-            <article className="auth-option-card auth-option-card-guest">
-              <p className="auth-option-kicker">View Only</p>
-              <h2 className="auth-option-title">Continue as Guest</h2>
-              <p className="auth-option-copy">
-                Open dashboards, history, weekly summary, captain PDFs, and payment QR without changing data.
-              </p>
-              <button type="button" className="button-secondary" onClick={handleGuestEntry}>
-                Continue as Guest
-              </button>
-            </article>
-
-            <article className={`auth-option-card auth-option-card-admin ${showAdminLogin ? 'selected' : ''}`}>
-              <p className="auth-option-kicker">Manage App</p>
-              <h2 className="auth-option-title">Login as Admin</h2>
-              <p className="auth-option-copy">
-                Generate teams, select captains, record match results, and update all Firebase-backed sections.
-              </p>
-
-              {!showAdminLogin ? (
+          {showAdminLogin ? (
+            <form className="auth-form" onSubmit={handleAdminEntry}>
+              <label className="input-label" htmlFor="admin-password">
+                Admin Password
+              </label>
+              <input
+                id="admin-password"
+                type="password"
+                ref={adminPasswordInputRef}
+                value={adminPassword}
+                onChange={(event) => setAdminPassword(event.target.value)}
+                onFocus={() => adminPasswordInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                placeholder="Enter admin password"
+                autoFocus
+                required
+              />
+              <div className="auth-actions">
+                <button type="submit" className="button-primary">
+                  Unlock Admin
+                </button>
                 <button
                   type="button"
-                  className="button-primary"
+                  className="button-secondary"
                   onClick={() => {
-                    setShowAdminLogin(true);
+                    setShowAdminLogin(false);
+                    setAdminPassword('');
                     setAuthError('');
                   }}
                 >
-                  Login as Admin
+                  Cancel
                 </button>
-              ) : (
-                <form className="auth-form" onSubmit={handleAdminEntry}>
-                  <label className="input-label" htmlFor="admin-password">
-                    Admin Password
-                  </label>
-                  <input
-                    id="admin-password"
-                    type="password"
-                    ref={adminPasswordInputRef}
-                    value={adminPassword}
-                    onChange={(event) => setAdminPassword(event.target.value)}
-                    onFocus={() => adminPasswordInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-                    placeholder="Enter admin password"
-                    autoFocus
-                    required
-                  />
-                  <div className="auth-actions">
-                    <button type="submit" className="button-primary">
-                      Unlock Admin
-                    </button>
-                    <button
-                      type="button"
-                      className="button-secondary"
-                      onClick={() => {
-                        setShowAdminLogin(false);
-                        setAdminPassword('');
-                        setAuthError('');
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                  {authError ? <p className="auth-error">{authError}</p> : null}
-                </form>
-              )}
-            </article>
-          </div>
-
-          {!showAdminLogin ? (
+              </div>
+              {authError ? <p className="auth-error">{authError}</p> : null}
+            </form>
+          ) : (
             <p className="auth-note">
               Guest can only view data. Admin can manage and update all sections.
             </p>
-          ) : null}
+          )}
         </div>
       </div>
     );

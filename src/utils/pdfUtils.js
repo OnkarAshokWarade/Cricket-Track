@@ -304,125 +304,125 @@ const getCaptainSheetHtml = ({ title, weekId, date, captainAName, captainBName, 
             background: #ffffff;
             border: 1px solid #cbd5e1;
             border-radius: 14px;
-            padding: 14px 16px;
+            padding: 12px 14px;
             display: grid;
-            gap: 10px;
+            gap: 8px;
           }
 
           .hero {
             display: flex;
             justify-content: space-between;
-            gap: 16px;
+            gap: 12px;
             align-items: flex-start;
-            padding-bottom: 10px;
+            padding-bottom: 8px;
             border-bottom: 2px solid #e2e8f0;
           }
 
           .hero h1 {
-            margin: 0 0 8px;
-            font-size: 24px;
+            margin: 0 0 6px;
+            font-size: 21px;
           }
 
           .hero p {
-            margin: 2px 0;
+            margin: 1px 0;
             color: #475569;
-            font-size: 13px;
+            font-size: 12px;
           }
 
           .pill {
             display: inline-block;
-            margin-top: 6px;
-            padding: 6px 12px;
+            margin-top: 4px;
+            padding: 5px 10px;
             border-radius: 999px;
             background: #dbeafe;
             color: #1d4ed8;
             font-weight: 700;
+            font-size: 11px;
           }
 
-          .captain-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
+          .header-meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
           }
 
-          .captain-card,
           .team-card {
             border: 1px solid #e2e8f0;
             border-radius: 12px;
-            padding: 12px;
+            padding: 10px;
             background: #f8fafc;
             min-height: 100%;
             break-inside: avoid-page;
             page-break-inside: avoid;
+            display: grid;
+            grid-template-rows: auto 1fr;
           }
 
-          .captain-card h2,
           .team-card h2 {
-            margin: 0 0 8px;
-            font-size: 16px;
-          }
-
-          .captain-name {
-            font-size: 18px;
-            font-weight: 800;
-            color: #0f172a;
+            margin: 0 0 6px;
+            font-size: 15px;
           }
 
           .team-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
+            gap: 8px;
             align-items: stretch;
+            height: 100%;
           }
 
           .team-card-header {
             display: flex;
             justify-content: space-between;
-            gap: 12px;
+            gap: 10px;
             align-items: flex-start;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
           }
 
           .team-card-header p {
             margin: 0;
             color: #475569;
-            font-size: 12px;
+            font-size: 11px;
           }
 
           .team-count {
-            padding: 5px 9px;
+            padding: 4px 8px;
             border-radius: 999px;
             background: #e2e8f0;
             color: #334155;
             font-weight: 700;
             white-space: nowrap;
-            font-size: 11px;
+            font-size: 10px;
           }
 
           .player-list {
             margin: 0;
-            padding-left: 18px;
+            padding-left: 16px;
             display: grid;
-            gap: 4px;
+            gap: 3px;
+            align-content: start;
           }
 
           .player-list li {
             display: flex;
             justify-content: space-between;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
-            padding: 6px 8px;
-            border-radius: 8px;
+            padding: 4px 6px;
+            border-radius: 7px;
             background: #ffffff;
             border: 1px solid #e2e8f0;
-            font-size: 12px;
-            line-height: 1.25;
+            font-size: 11px;
+            line-height: 1.18;
           }
 
           .player-list li strong {
             color: #1d4ed8;
-            font-size: 10px;
+            font-size: 9px;
             text-transform: uppercase;
+            flex: 0 0 auto;
           }
 
           .captain-player {
@@ -431,9 +431,9 @@ const getCaptainSheetHtml = ({ title, weekId, date, captainAName, captainBName, 
           }
 
           .footer-note {
-            margin-top: 2px;
+            margin-top: 0;
             color: #475569;
-            font-size: 11px;
+            font-size: 10px;
           }
 
           @media print {
@@ -447,20 +447,17 @@ const getCaptainSheetHtml = ({ title, weekId, date, captainAName, captainBName, 
               border: 0;
               border-radius: 0;
               padding: 0;
-              gap: 8px;
+              gap: 6px;
             }
 
-            .captain-grid,
             .team-grid,
-            .team-card,
-            .captain-card {
+            .team-card {
               break-inside: avoid-page;
               page-break-inside: avoid;
             }
           }
 
           @media (max-width: 760px) {
-            .captain-grid,
             .team-grid {
               grid-template-columns: 1fr;
             }
@@ -476,21 +473,11 @@ const getCaptainSheetHtml = ({ title, weekId, date, captainAName, captainBName, 
               <p>Date: ${escapeHtml(formatDate(date))}</p>
               <span class="pill">Captain team sheet</span>
             </div>
-            <div>
-              <p>Share this sheet with both teams for the day.</p>
+            <div class="header-meta">
+              <span class="pill">Team A Captain: ${escapeHtml(captainAName)}</span>
+              <span class="pill">Team B Captain: ${escapeHtml(captainBName)}</span>
             </div>
           </header>
-
-          <section class="captain-grid">
-            <article class="captain-card">
-              <h2>Team A Captain</h2>
-              <div class="captain-name">${escapeHtml(captainAName)}</div>
-            </article>
-            <article class="captain-card">
-              <h2>Team B Captain</h2>
-              <div class="captain-name">${escapeHtml(captainBName)}</div>
-            </article>
-          </section>
 
           <section class="team-grid">
             ${getTeamListMarkup({ teamName: 'Team A', playerIds: teamAIds, captainId: captains?.teamA, players })}
