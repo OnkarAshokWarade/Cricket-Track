@@ -3,38 +3,7 @@ import { toDateKey } from '../utils/dateUtils';
 const APP_START_DATE = '2026-04-08';
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
-const defaultPlayers = [
-  'जगदीश',
-  'उबेद',
-  'राजू मोरे',
-  'सिद्दीक',
-  'थोरात साहेब',
-  'राहुल वाबळे',
-  'अनिरुद्ध',
-  'प्रवीण शेठ शिकारे',
-  'तंटामुक्ती अध्यक्ष श्री देवा मोरे',
-  'आदिनाथ गव्हाणे',
-  'सदाशिव कावदे',
-  'विष्णू गंडाळ',
-  'आयान पठाण',
-  'दत्ता आमटे',
-  'भैय्या थोरात',
-  'पृथ्वी',
-  'विष्णू बांधले',
-  'अतिश',
-  'मंगेश',
-  'आप्पा',
-  'शरद नाना',
-  'दादा शिंदे',
-  'रोहित',
-  'अतुल',
-  'विष्णू मेढकर',
-  'सूरज वाबळे',
-  'पंडित मोरे',
-  'गोळ्या',
-  'भाऊ शिंदे',
-  'ओंकार वराडे',
-];
+const LEGACY_DEFAULT_PLAYER_ID_PATTERN = /^player-(?:[1-9]|[12]\d|30)$/;
 
 const normalizeName = (value) => String(value || '').trim().toLowerCase();
 
@@ -101,10 +70,7 @@ const buildMatchScore = (match) => {
 };
 
 export const createPlayers = () => {
-  return defaultPlayers.map((name, index) => ({
-    id: `player-${index + 1}`,
-    name,
-  }));
+  return [];
 };
 
 export const buildStatsFromMatches = (matches) => {
@@ -267,18 +233,17 @@ const sanitizeContributionPlayers = (contributionPlayers, fundTransactions) => {
 
 const sanitizePlayers = (playersData) => {
   if (!Array.isArray(playersData)) {
-    return createPlayers();
+    return [];
   }
 
-  const players = playersData
+  return playersData
     .filter((player) => player && typeof player === 'object')
     .map((player, index) => ({
       id: String(player.id || `player-${index + 1}`),
       name: String(player.name || '').trim(),
     }))
+    .filter((player) => !LEGACY_DEFAULT_PLAYER_ID_PATTERN.test(player.id))
     .filter((player) => player.name);
-
-  return players.length > 0 ? players : createPlayers();
 };
 
 export const createDefaultAppState = () => {

@@ -167,7 +167,7 @@ export function AppDataProvider({ children }) {
           await migrateLegacyMatches();
         } catch (error) {
           console.error('Realtime app state parsing failed:', error);
-          setSyncError('Database data could not be read correctly. Showing the default roster for now.');
+          setSyncError('Database data could not be read correctly. Showing an empty player roster for now.');
           hasAppSnapshotRef.current = true;
           syncReadyState();
         }

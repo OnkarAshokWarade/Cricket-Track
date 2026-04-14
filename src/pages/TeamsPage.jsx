@@ -109,13 +109,13 @@ function TeamsPage() {
   };
 
   const handleReset = async () => {
-    const confirmed = window.confirm('Reset all Patoda XI app data and restore the default roster?');
+    const confirmed = window.confirm('Reset all Patoda XI app data and clear the player roster?');
     if (!confirmed) return;
 
     try {
       await resetAppState();
       setMessageType('success');
-      setMessage('App data has been reset. Default player roster restored.');
+      setMessage('App data has been reset. Player roster cleared.');
     } catch (error) {
       console.error('Error resetting app data:', error);
       setMessageType('warning');

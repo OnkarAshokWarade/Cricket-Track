@@ -84,7 +84,7 @@ function PlayersPage({ accessMode }) {
           <div className="space-y-1">
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 md:text-3xl">Players</h1>
             <p className="text-sm leading-relaxed text-slate-600 md:text-base">
-              Add new members or edit the existing Patoda XI roster.
+              Add new members or edit the Firebase player roster.
             </p>
           </div>
           <span className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-sm font-bold text-indigo-700">
