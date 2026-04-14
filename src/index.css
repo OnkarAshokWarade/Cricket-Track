@@ -1419,7 +1419,7 @@ textarea {
 }
 
 .fund-table-wrap {
-  overflow-x: auto;
+  overflow-x: hidden;
 }
 
 .fund-table th,
@@ -1662,16 +1662,15 @@ textarea {
 .fund-table-wrap {
   max-height: 460px;
   overflow-y: auto;
-  overflow-x: auto;
+  overflow-x: hidden;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
   scroll-behavior: smooth;
-  overscroll-behavior-x: contain;
 }
 
 .fund-table {
-  min-width: 900px;
-  table-layout: auto;
+  min-width: 0;
+  table-layout: fixed;
 }
 
 .fund-table thead th {
