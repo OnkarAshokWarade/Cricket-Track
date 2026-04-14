@@ -1491,6 +1491,17 @@ textarea {
   padding-right: 4px;
 }
 
+.ground-player-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.ground-player-form input {
+  flex: 1 1 auto;
+}
+
 .player-status-row {
   border: 1px solid #e2e8f0;
   border-radius: 14px;
@@ -1738,6 +1749,11 @@ textarea {
 
   .player-status-grid {
     grid-template-columns: 1fr;
+  }
+
+  .ground-player-form {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .fund-table-wrap {

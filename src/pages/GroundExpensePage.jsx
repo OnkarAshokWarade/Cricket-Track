@@ -20,13 +20,14 @@ const createId = () => {
 const formatINR = (value) => `\u20B9${value.toLocaleString('en-IN')}`;
 
 function GroundExpensePage({ accessMode }) {
-  const { players, fundTransactions, fundArchives, contributionPlayers, updateAppState } = useAppData();
+  const { fundTransactions, fundArchives, contributionPlayers, updateAppState } = useAppData();
   const transactions = fundTransactions;
   const [form, setForm] = useState({
     name: '',
     amount: '',
     type: 'debit',
   });
+  const [newContributionPlayer, setNewContributionPlayer] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [fundMessage, setFundMessage] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -101,7 +102,6 @@ function GroundExpensePage({ accessMode }) {
 
   const playerNames = useMemo(() => {
     const sourceNames = [
-      ...players.map((player) => String(player.name || '').trim()),
       ...contributionPlayers,
       ...transactions.filter((item) => item.type === 'credit').map((item) => item.name),
     ];
@@ -123,7 +123,7 @@ function GroundExpensePage({ accessMode }) {
     });
 
     return uniqueNames;
-  }, [players, contributionPlayers, transactions]);
+  }, [contributionPlayers, transactions]);
 
   const paidPlayerNameSet = useMemo(() => {
     const paid = new Set();
@@ -386,15 +386,6 @@ function GroundExpensePage({ accessMode }) {
       return;
     }
 
-    let didUpdatePlayers = false;
-    const updatedPlayers = players.map((player) => {
-      if (normalizeName(player.name) === key) {
-        didUpdatePlayers = true;
-        return { ...player, name: nextName };
-      }
-      return player;
-    });
-
     const updatedTransactions = transactions.map((transaction) =>
       normalizeName(transaction.name) === key ? { ...transaction, name: nextName } : transaction
     );
@@ -404,7 +395,6 @@ function GroundExpensePage({ accessMode }) {
     );
 
     await persistFundState({
-      players: didUpdatePlayers ? updatedPlayers : players,
       fundTransactions: updatedTransactions,
       contributionPlayers: updatedContributionPlayers,
     }, `Player name updated to "${nextName}".`);
@@ -425,8 +415,6 @@ function GroundExpensePage({ accessMode }) {
       return;
     }
 
-    const updatedPlayers = players.filter((player) => normalizeName(player.name) !== key);
-
     const editingWillBeRemoved = transactions.some(
       (transaction) => transaction.id === editingId && normalizeName(transaction.name) === key
     );
@@ -440,7 +428,6 @@ function GroundExpensePage({ accessMode }) {
     );
 
     const didSave = await persistFundState({
-      players: updatedPlayers,
       fundTransactions: updatedTransactions,
       contributionPlayers: updatedContributionPlayers,
     }, `"${playerName}" removed from contribution status.`);
@@ -459,6 +446,37 @@ function GroundExpensePage({ accessMode }) {
       type: 'debit',
     });
     setIsMobileEditorOpen(true);
+  };
+
+  const handleAddContributionPlayer = async (event) => {
+    event.preventDefault();
+    setFundMessage('');
+
+    if (!isAdmin || isSaving) {
+      return;
+    }
+
+    const trimmedName = newContributionPlayer.trim();
+    if (!trimmedName) {
+      setFundMessage('Enter a player name to add in contribution status.');
+      return;
+    }
+
+    const nextKey = normalizeName(trimmedName);
+    const duplicateExists = playerNames.some((existingName) => normalizeName(existingName) === nextKey);
+    if (duplicateExists) {
+      setFundMessage('This player already exists in contribution status.');
+      return;
+    }
+
+    const didSave = await persistFundState(
+      { contributionPlayers: [trimmedName, ...contributionPlayers] },
+      `"${trimmedName}" added to contribution status.`
+    );
+
+    if (didSave) {
+      setNewContributionPlayer('');
+    }
   };
 
   const renderEditorContent = (showMobileCloseButton = false) => (
@@ -548,7 +566,7 @@ function GroundExpensePage({ accessMode }) {
       <div className="card">
         <h1 className="page-title">Ground Expense</h1>
         <p className="page-intro" style={{ marginBottom: '14px' }}>
-          {'Select each player as Paid/Unpaid. Paid automatically adds a \u091c\u092e\u093e transaction of \u20B9100.'}
+          {'This page is separate from the Players page. Add contribution players manually here and mark them Paid/Unpaid. Paid automatically adds a \u091c\u092e\u093e transaction of \u20B9100.'}
         </p>
         <p className="pill" style={{ margin: '0 0 12px', fontWeight: 800 }}>
           Firebase history stays saved with date-wise and week-wise records.
@@ -581,7 +599,7 @@ function GroundExpensePage({ accessMode }) {
           <div>
             <h2 className="card-title" style={{ marginBottom: '4px' }}>Player Contribution Status</h2>
             <p className="page-intro" style={{ margin: 0 }}>
-              Mark players as Paid or Unpaid.
+              Add players manually here and mark them as Paid or Unpaid.
             </p>
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '14px', fontWeight: 800 }}>
@@ -590,8 +608,22 @@ function GroundExpensePage({ accessMode }) {
           </div>
         </div>
 
+        {isAdmin ? (
+          <form className="ground-player-form" onSubmit={handleAddContributionPlayer}>
+            <input
+              value={newContributionPlayer}
+              onChange={(event) => setNewContributionPlayer(event.target.value)}
+              placeholder="Add player name for ground contribution"
+              disabled={isSaving}
+            />
+            <button type="submit" className="button-primary button-small" disabled={isSaving}>
+              Add Player
+            </button>
+          </form>
+        ) : null}
+
         {playerNames.length === 0 ? (
-          <p className="empty-state">No players found yet. Add players first on Players page.</p>
+          <p className="empty-state">No contribution players yet. Admin can add them manually here.</p>
         ) : (
           <div className="player-status-grid">
             {playerNames.map((playerName) => {
