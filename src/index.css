@@ -1072,6 +1072,10 @@ textarea {
   color: #15803d;
 }
 
+.weekly-status-neutral {
+  color: #475569;
+}
+
 .weekly-date-list {
   display: grid;
   gap: 12px;
@@ -1107,7 +1111,7 @@ textarea {
 
 .weekly-date-card-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 10px;
 }
 

@@ -5,17 +5,18 @@ import { useAppData } from '../context/AppDataContext';
 import useAutoClearMessage from '../hooks/useAutoClearMessage';
 import { openMatchDayPdf } from '../utils/pdfUtils';
 
-const getWinnerLabel = (match) => {
+const getWinningCaptainLabel = (players, match) => {
   if (match.status === 'no-match') {
     return 'No Match';
   }
 
-  return match.winnerTeam === 'teamA' ? 'Team A' : 'Team B';
+  const winnerCaptainId = match.winnerTeam === 'teamA' ? match.captainA : match.captainB;
+  return winnerCaptainId ? getPlayerName(players, winnerCaptainId) : '--';
 };
 
 const getLosingCaptainLabel = (players, match) => {
   if (match.status === 'no-match') {
-    return '--';
+    return 'No Match';
   }
 
   return getPlayerName(players, match.loserCaptain);
@@ -23,22 +24,18 @@ const getLosingCaptainLabel = (players, match) => {
 
 const getStatusLabel = (match) => {
   if (match.status === 'no-match') {
-    return 'No Match';
+    return 'No payment needed';
   }
 
-  return match.penaltyPaid === true ? 'Paid' : 'Pending';
+  return match.penaltyPaid === true ? 'Paid' : 'Unpaid';
 };
 
-const getCaptainResultClass = (match, captainId) => {
-  if (!captainId) {
-    return '';
+const getStatusClassName = (match) => {
+  if (match.status === 'no-match') {
+    return 'weekly-status-neutral';
   }
 
-  if (match.status === 'no-match' || !match.winnerTeam || !match.loserCaptain) {
-    return 'captain-neutral-color';
-  }
-
-  return captainId === match.loserCaptain ? 'captain-loss-color' : 'captain-win-color';
+  return match.penaltyPaid === true ? 'weekly-status-paid' : 'weekly-status-pending';
 };
 
 function WeeklySummaryPage() {
@@ -97,8 +94,8 @@ function WeeklySummaryPage() {
     setPdfMessageType(didOpen ? 'success' : 'warning');
     setPdfMessage(
       didOpen
-        ? `Print window opened for ${formatDate(match.date)}. Choose "Save as PDF" to download it.`
-        : 'PDF window could not be opened. Please allow pop-ups for this site and try again.'
+        ? `Print dialog opened for ${formatDate(match.date)}. Choose "Save as PDF" to download it.`
+        : 'PDF preview could not be prepared. Please try again.'
     );
   };
 
@@ -138,17 +135,16 @@ function WeeklySummaryPage() {
                 <p className="card-title">Date-wise details</p>
                 <div className="weekly-date-list">
                   {week.matches.map((match) => {
-                    const isNoMatch = match.status === 'no-match';
                     const statusLabel = getStatusLabel(match);
-                    const captainAName = match.captainA ? getPlayerName(players, match.captainA) : '--';
-                    const captainBName = match.captainB ? getPlayerName(players, match.captainB) : '--';
+                    const winningCaptainLabel = getWinningCaptainLabel(players, match);
+                    const losingCaptainLabel = getLosingCaptainLabel(players, match);
 
                     return (
                       <article className="weekly-date-card" key={match.id}>
                         <div className="weekly-date-card-top">
                           <strong className="weekly-date-card-date">{formatDate(match.date)}</strong>
                           <div className="weekly-date-card-actions">
-                            <span className={isNoMatch || match.penaltyPaid === true ? 'weekly-status-paid' : 'weekly-status-pending'}>{statusLabel}</span>
+                            <span className={getStatusClassName(match)}>{statusLabel}</span>
                             <button type="button" className="button-secondary button-small" onClick={() => handleExportPdf(match)}>
                               Print / PDF
                             </button>
@@ -157,28 +153,12 @@ function WeeklySummaryPage() {
 
                         <div className="weekly-date-card-grid">
                           <div className="weekly-date-field">
-                            <span>Winner</span>
-                            <strong>{getWinnerLabel(match)}</strong>
+                            <span>Winning Captain</span>
+                            <strong className={match.status === 'no-match' ? '' : 'captain-win-color'}>{winningCaptainLabel}</strong>
                           </div>
                           <div className="weekly-date-field">
                             <span>Losing Captain</span>
-                            <strong>{getLosingCaptainLabel(players, match)}</strong>
-                          </div>
-                          <div className="weekly-date-field">
-                            <span>Penalty</span>
-                            <strong>{'\u20B9'} {match.penalty}</strong>
-                          </div>
-                          <div className="weekly-date-field">
-                            <span>Team A Captain</span>
-                            <strong className={getCaptainResultClass(match, match.captainA)}>{captainAName}</strong>
-                          </div>
-                          <div className="weekly-date-field">
-                            <span>Team B Captain</span>
-                            <strong className={getCaptainResultClass(match, match.captainB)}>{captainBName}</strong>
-                          </div>
-                          <div className="weekly-date-field">
-                            <span>Week Teams</span>
-                            <strong>{`${match.teamA.length} vs ${match.teamB.length} players`}</strong>
+                            <strong className={match.status === 'no-match' ? '' : 'captain-loss-color'}>{losingCaptainLabel}</strong>
                           </div>
                         </div>
                       </article>

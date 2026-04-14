@@ -8,7 +8,6 @@ import {
   getTeamGenerationLockedMessage,
   getTeamGenerationPromptText,
   getTeamGenerationSuccessMessage,
-  MAX_TEAM_GENERATIONS,
   TEAM_GENERATE_PASSWORD,
 } from '../utils/teamGenerationUtils';
 import useAutoClearMessage from '../hooks/useAutoClearMessage';
@@ -145,9 +144,6 @@ function TeamsPage() {
         <div className="card">
           <h2 className="card-title">Current week: {weekId}</h2>
           <p className="pill">Members available: {players.length}</p>
-          <p className="pill" style={{ marginTop: '10px' }}>
-            Generated today: {currentGenerationCount}/{MAX_TEAM_GENERATIONS}
-          </p>
           <div className="button-row" style={{ marginTop: '14px' }}>
             <button
               className="button-primary button-small"

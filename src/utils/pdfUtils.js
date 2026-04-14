@@ -9,44 +9,53 @@ const escapeHtml = (value) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
-const formatTeamList = (team = [], players = []) => {
-  if (!Array.isArray(team) || team.length === 0) {
-    return '<li>Not available</li>';
-  }
-
-  return team
-    .map((playerId, index) => `<li>${index + 1}. ${escapeHtml(getPlayerName(players, playerId))}</li>`)
-    .join('');
-};
-
-const getWinnerLabel = (match) => {
-  if (match.status === 'no-match') {
-    return 'No Match';
-  }
-
-  return match.winnerTeam === 'teamA' ? 'Team A' : 'Team B';
-};
-
 const getPaymentStatusLabel = (match) => {
+  if (!match) {
+    return 'Not recorded';
+  }
+
   if (match.status === 'no-match') {
     return 'No payment needed';
   }
 
-  return match.penaltyPaid === true ? 'Paid' : 'Pending';
+  return match.penaltyPaid === true ? 'Paid' : 'Unpaid';
 };
 
-const getCaptainSheetHtml = ({
-  title,
-  weekId,
-  date,
-  captainAName,
-  captainBName,
-  teamA = [],
-  teamB = [],
-  players = [],
-  match = null,
-}) => {
-  const loserCaptainName = match?.loserCaptain ? getPlayerName(players, match.loserCaptain) : '--';
+const getDayOutcome = ({ captainAName, captainBName, players = [], match = null }) => {
+  if (!match) {
+    return {
+      winningCaptainName: 'Not recorded',
+      losingCaptainName: 'Not recorded',
+      paymentStatusLabel: 'Not recorded',
+      matchStatusLabel: 'Result pending',
+      winningCaptainClass: 'neutral',
+      losingCaptainClass: 'neutral',
+    };
+  }
+
+  if (match.status === 'no-match') {
+    return {
+      winningCaptainName: 'No Match',
+      losingCaptainName: 'No Match',
+      paymentStatusLabel: getPaymentStatusLabel(match),
+      matchStatusLabel: 'No match',
+      winningCaptainClass: 'neutral',
+      losingCaptainClass: 'neutral',
+    };
+  }
+
+  return {
+    winningCaptainName: match.winnerTeam === 'teamA' ? captainAName : captainBName,
+    losingCaptainName: match.loserCaptain ? getPlayerName(players, match.loserCaptain) : '--',
+    paymentStatusLabel: getPaymentStatusLabel(match),
+    matchStatusLabel: match.winnerTeam === 'teamA' ? 'Team A' : 'Team B',
+    winningCaptainClass: 'win',
+    losingCaptainClass: 'loss',
+  };
+};
+
+const getCaptainSheetHtml = ({ title, weekId, date, captainAName, captainBName, players = [], match = null }) => {
+  const outcome = getDayOutcome({ captainAName, captainBName, players, match });
 
   return `
     <!doctype html>
@@ -107,19 +116,10 @@ const getCaptainSheetHtml = ({
             font-weight: 700;
           }
 
-          .summary-grid,
-          .team-grid {
-            display: grid;
-            gap: 16px;
-          }
-
           .summary-grid {
+            display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            margin-bottom: 24px;
-          }
-
-          .team-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
           }
 
           .card {
@@ -151,13 +151,16 @@ const getCaptainSheetHtml = ({
             text-align: right;
           }
 
-          ul {
-            margin: 0;
-            padding-left: 20px;
+          .value-win {
+            color: #15803d;
           }
 
-          li {
-            margin: 8px 0;
+          .value-loss {
+            color: #dc2626;
+          }
+
+          .value-neutral {
+            color: #334155;
           }
 
           .footer-note {
@@ -187,18 +190,29 @@ const getCaptainSheetHtml = ({
               <h1>${escapeHtml(title)}</h1>
               <p>Week: ${escapeHtml(weekId || '--')}</p>
               <p>Date: ${escapeHtml(formatDate(date))}</p>
-              <span class="pill">Captain sheet for this day</span>
+              <span class="pill">Day summary</span>
             </div>
             <div>
-              <p>Team A Captain: <strong>${escapeHtml(captainAName)}</strong></p>
-              <p>Team B Captain: <strong>${escapeHtml(captainBName)}</strong></p>
-              <p>Match status: <strong>${escapeHtml(match ? (match.status === 'no-match' ? 'No Match' : 'Played') : 'Not recorded')}</strong></p>
+              <p>Match status: <strong>${escapeHtml(outcome.matchStatusLabel)}</strong></p>
+              <p>Penalty status: <strong>${escapeHtml(outcome.paymentStatusLabel)}</strong></p>
             </div>
           </header>
 
           <section class="summary-grid">
             <article class="card">
-              <h2>Day Captains</h2>
+              <h2>Day Result</h2>
+              <div class="meta-row">
+                <span>Winning Captain</span>
+                <strong class="value-${escapeHtml(outcome.winningCaptainClass)}">${escapeHtml(outcome.winningCaptainName)}</strong>
+              </div>
+              <div class="meta-row">
+                <span>Losing Captain</span>
+                <strong class="value-${escapeHtml(outcome.losingCaptainClass)}">${escapeHtml(outcome.losingCaptainName)}</strong>
+              </div>
+            </article>
+
+            <article class="card">
+              <h2>Selected Captains</h2>
               <div class="meta-row">
                 <span>Team A Captain</span>
                 <strong>${escapeHtml(captainAName)}</strong>
@@ -208,49 +222,62 @@ const getCaptainSheetHtml = ({
                 <strong>${escapeHtml(captainBName)}</strong>
               </div>
             </article>
-
-            <article class="card">
-              <h2>Day Match Details</h2>
-              <div class="meta-row">
-                <span>Winner</span>
-                <strong>${escapeHtml(match ? getWinnerLabel(match) : 'Not recorded')}</strong>
-              </div>
-              <div class="meta-row">
-                <span>Losing captain</span>
-                <strong>${escapeHtml(match ? loserCaptainName : '--')}</strong>
-              </div>
-              <div class="meta-row">
-                <span>Payment status</span>
-                <strong>${escapeHtml(match ? getPaymentStatusLabel(match) : 'Not recorded')}</strong>
-              </div>
-            </article>
           </section>
 
-          <section class="team-grid">
-            <article class="card">
-              <h2>Week Team A</h2>
-              <ul>${formatTeamList(teamA, players)}</ul>
-            </article>
-            <article class="card">
-              <h2>Week Team B</h2>
-              <ul>${formatTeamList(teamB, players)}</ul>
-            </article>
-          </section>
-
-          <p class="footer-note">Use your browser print dialog and choose "Save as PDF" to keep this team and captain sheet for WhatsApp sharing.</p>
+          <p class="footer-note">Use the print dialog and choose "Save as PDF" to keep this day summary.</p>
         </main>
-
-        <script>
-          window.addEventListener('load', function () {
-            window.setTimeout(function () {
-              window.focus();
-              window.print();
-            }, 150);
-          });
-        </script>
       </body>
     </html>
   `;
+};
+
+const openPrintDocument = (html) => {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return false;
+  }
+
+  const existingFrame = document.getElementById('patoda-print-frame');
+  if (existingFrame) {
+    existingFrame.remove();
+  }
+
+  const printFrame = document.createElement('iframe');
+  printFrame.id = 'patoda-print-frame';
+  printFrame.title = 'Patoda XI PDF Preview';
+  printFrame.setAttribute('aria-hidden', 'true');
+  printFrame.style.position = 'fixed';
+  printFrame.style.width = '0';
+  printFrame.style.height = '0';
+  printFrame.style.border = '0';
+  printFrame.style.right = '0';
+  printFrame.style.bottom = '0';
+  document.body.appendChild(printFrame);
+
+  const frameWindow = printFrame.contentWindow;
+  if (!frameWindow) {
+    printFrame.remove();
+    return false;
+  }
+
+  const cleanup = () => {
+    window.setTimeout(() => {
+      if (printFrame.parentNode) {
+        printFrame.parentNode.removeChild(printFrame);
+      }
+    }, 1000);
+  };
+
+  frameWindow.onafterprint = cleanup;
+  frameWindow.document.open();
+  frameWindow.document.write(html);
+  frameWindow.document.close();
+
+  window.setTimeout(() => {
+    frameWindow.focus();
+    frameWindow.print();
+  }, 250);
+
+  return true;
 };
 
 export const openMatchDayPdf = ({ match, players = [] }) => {
@@ -258,30 +285,20 @@ export const openMatchDayPdf = ({ match, players = [] }) => {
     return false;
   }
 
-  const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=960,height=780');
-  if (!printWindow) {
-    return false;
-  }
-
   const captainAName = match.captainA ? getPlayerName(players, match.captainA) : '--';
   const captainBName = match.captainB ? getPlayerName(players, match.captainB) : '--';
-  const printTitle = `Patoda XI ${match.weekId || 'Weekly'} ${formatDate(match.date)}`;
 
-  printWindow.document.write(
+  return openPrintDocument(
     getCaptainSheetHtml({
       title: 'Patoda XI Day Summary',
       weekId: match.weekId,
       date: match.date,
       captainAName,
       captainBName,
-      teamA: match.teamA,
-      teamB: match.teamB,
       players,
       match,
     })
   );
-  printWindow.document.close();
-  return true;
 };
 
 export const openCaptainDayPdf = ({ date, weekId, captains, teams, players = [], match = null }) => {
@@ -289,27 +306,18 @@ export const openCaptainDayPdf = ({ date, weekId, captains, teams, players = [],
     return false;
   }
 
-  const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=960,height=780');
-  if (!printWindow) {
-    return false;
-  }
-
   const captainAName = captains.teamA ? getPlayerName(players, captains.teamA) : '--';
   const captainBName = captains.teamB ? getPlayerName(players, captains.teamB) : '--';
 
-  printWindow.document.write(
+  return openPrintDocument(
     getCaptainSheetHtml({
       title: 'Patoda XI Team and Captain Sheet',
       weekId,
       date,
       captainAName,
       captainBName,
-      teamA: teams?.teamA || [],
-      teamB: teams?.teamB || [],
       players,
       match,
     })
   );
-  printWindow.document.close();
-  return true;
 };

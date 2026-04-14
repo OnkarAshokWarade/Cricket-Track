@@ -13,7 +13,6 @@ import {
   getTeamGenerationLockedMessage,
   getTeamGenerationPromptText,
   getTeamGenerationSuccessMessage,
-  MAX_TEAM_GENERATIONS,
   TEAM_GENERATE_PASSWORD,
 } from '../utils/teamGenerationUtils';
 import MatchDetails from '../components/MatchDetails';
@@ -330,8 +329,8 @@ function MatchCenterPage({ accessMode }) {
 
     setCaptainMessage(
       didOpen
-        ? `Print window opened for ${formatDate(entry.date)}. Choose "Save as PDF" to share that team and captain sheet.`
-        : 'PDF window could not be opened. Please allow pop-ups for this site and try again.'
+        ? `Print dialog opened for ${formatDate(entry.date)}. Choose "Save as PDF" to download it.`
+        : 'PDF preview could not be prepared. Please try again.'
     );
   };
 
@@ -349,9 +348,6 @@ function MatchCenterPage({ accessMode }) {
           <h2 className="card-title">1. Weekly Teams</h2>
           <p className="pill">Current week: {weekId}</p>
           <p className="pill" style={{ marginTop: '10px' }}>Members available: {players.length}</p>
-          <p className="pill" style={{ marginTop: '10px' }}>
-            Generated today: {currentGenerationCount}/{MAX_TEAM_GENERATIONS}
-          </p>
 
           <div className="button-row" style={{ marginTop: '14px' }}>
             <button

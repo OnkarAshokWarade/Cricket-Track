@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { formatDate, getWeekId, todayKey, isSameDay } from '../utils/dateUtils';
+import { getWeekId, todayKey, isSameDay } from '../utils/dateUtils';
 import { getPlayerName } from '../utils/teamUtils';
 import PaymentQrCard from '../components/PaymentQrCard';
 import { useAppData } from '../context/AppDataContext';
@@ -19,30 +18,10 @@ function Dashboard({ accessMode }) {
   const currentWeekId = getWeekId();
   const currentWeekTeam = teams[currentWeekId] || null;
   const todayCaptains = captains[currentWeekId]?.dailyCaptains?.find((entry) => entry.date === todayKey()) || null;
-  const currentCaptains = captains[currentWeekId]?.dailyCaptains?.slice(-1)?.[0] || null;
   const todayMatch = matches.find((match) => isSameDay(match.date, todayKey()));
-  const currentCaptainsMatch = currentCaptains ? matches.find((match) => isSameDay(match.date, currentCaptains.date)) || null : null;
-  const visibleCaptains = todayCaptains || currentCaptains;
+  const visibleCaptains = todayCaptains || captains[currentWeekId]?.dailyCaptains?.slice(-1)?.[0] || null;
   const visibleCaptainAName = visibleCaptains?.teamA ? getPlayerName(players, visibleCaptains.teamA) : '--';
   const visibleCaptainBName = visibleCaptains?.teamB ? getPlayerName(players, visibleCaptains.teamB) : '--';
-  const latestWinnerLabel =
-    currentCaptainsMatch && currentCaptainsMatch.status !== 'no-match'
-      ? currentCaptainsMatch.winnerTeam === 'teamA'
-        ? 'Team A'
-        : 'Team B'
-      : null;
-  const captainAResultClass =
-    currentCaptainsMatch && currentCaptainsMatch.status !== 'no-match'
-      ? currentCaptainsMatch.winnerTeam === 'teamA'
-        ? 'captain-win-color'
-        : 'captain-loss-color'
-      : '';
-  const captainBResultClass =
-    currentCaptainsMatch && currentCaptainsMatch.status !== 'no-match'
-      ? currentCaptainsMatch.winnerTeam === 'teamB'
-        ? 'captain-win-color'
-        : 'captain-loss-color'
-      : '';
 
   const totalPenalty = useMemo(
     () => matches.reduce((sum, match) => sum + (match.penalty || 0), 0),
@@ -188,51 +167,6 @@ function Dashboard({ accessMode }) {
               </tbody>
             </table>
           </div>
-          {currentCaptains && (
-            <div style={{ marginTop: '18px' }}>
-              <p className="card-title" style={{ fontWeight: 800 }}>Last selected captains</p>
-              <p className="pill" style={{ marginBottom: '12px', fontWeight: 800 }}>
-                Date: {formatDate(currentCaptains.date)}
-              </p>
-              {latestWinnerLabel ? (
-                <p className="pill" style={{ marginBottom: '12px', fontWeight: 800 }}>
-                  Winner: {latestWinnerLabel}
-                </p>
-              ) : null}
-              <div className="overflow-x-auto">
-                <table className="table team-table split-team-table">
-                  <thead>
-                    <tr>
-                      <th>Captain A</th>
-                      <th>Captain B</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td className="team-players-cell team-col-a">
-                        <span className={`team-player-name ${captainAResultClass}`}>{getPlayerName(players, currentCaptains.teamA)}</span>
-                      </td>
-                      <td className="team-players-cell team-col-b">
-                        <span className={`team-player-name ${captainBResultClass}`}>{getPlayerName(players, currentCaptains.teamB)}</span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="card" style={{ marginTop: '24px' }}>
-        <h2 className="card-title">Quick navigation</h2>
-        <div className="button-row">
-          <Link to="/players" className="button-secondary button-small">
-            Manage players
-          </Link>
-          <Link to="/match-center" className="button-secondary button-small">
-            Open Match Center
-          </Link>
         </div>
       </div>
 
