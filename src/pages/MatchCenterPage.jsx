@@ -25,7 +25,7 @@ const PAYMENT_RECEIVER_LABEL = `${PAYMENT_RECEIVER_EN} (${PAYMENT_RECEIVER_MR})`
 const PAYMENT_UPI_ID = 'ubbus313-3@okaxis';
 
 function MatchCenterPage({ accessMode }) {
-  const { players, teams, captains, matches, addMatch, updateAppState } = useAppData();
+  const { players, teams, captains, matches, addMatch, updateAppState, saveWeeklyTeams } = useAppData();
   const [selectedWinner, setSelectedWinner] = useState('A');
   const [teamMessage, setTeamMessage] = useState('');
   const [teamMessageType, setTeamMessageType] = useState('success');
@@ -154,12 +154,13 @@ function MatchCenterPage({ accessMode }) {
     try {
       const newTeams = teamGenerator(players);
       const nextGenerationCount = currentGenerationCount + 1;
-      const nextTeams = {
-        ...teams,
-        [weekId]: { weekId, date: todayKey(), generationCount: nextGenerationCount, ...newTeams },
-      };
 
-      await updateAppState({ teams: nextTeams });
+      await saveWeeklyTeams(weekId, {
+        weekId,
+        date: todayKey(),
+        generationCount: nextGenerationCount,
+        ...newTeams,
+      });
       setTeamMessageType('success');
       setTeamMessage(
         nextGenerationCount >= MAX_TEAM_GENERATIONS

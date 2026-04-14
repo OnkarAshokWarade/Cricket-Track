@@ -2,15 +2,31 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
 
+const publicFirebaseConfig = {
+  apiKey: 'AIzaSyBBRzpkT-9DH4F7cGyofjJrbt2DlPNjC0s',
+  authDomain: 'patoda-xi-live.firebaseapp.com',
+  projectId: 'patoda-xi-live',
+  storageBucket: 'patoda-xi-live.firebasestorage.app',
+  messagingSenderId: '633983796288',
+  appId: '1:633983796288:web:ca7f0ce3a1932509a48ba5',
+  measurementId: 'G-T52BLFZYXT',
+  databaseURL: 'https://patoda-xi-live-default-rtdb.asia-southeast1.firebasedatabase.app',
+};
+
+const readEnv = (key, fallback = '') => {
+  const value = import.meta.env[key];
+  return String(value || fallback).trim();
+};
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+  apiKey: readEnv('VITE_FIREBASE_API_KEY', publicFirebaseConfig.apiKey),
+  authDomain: readEnv('VITE_FIREBASE_AUTH_DOMAIN', publicFirebaseConfig.authDomain),
+  projectId: readEnv('VITE_FIREBASE_PROJECT_ID', publicFirebaseConfig.projectId),
+  storageBucket: readEnv('VITE_FIREBASE_STORAGE_BUCKET', publicFirebaseConfig.storageBucket),
+  messagingSenderId: readEnv('VITE_FIREBASE_MESSAGING_SENDER_ID', publicFirebaseConfig.messagingSenderId),
+  appId: readEnv('VITE_FIREBASE_APP_ID', publicFirebaseConfig.appId),
+  measurementId: readEnv('VITE_FIREBASE_MEASUREMENT_ID', publicFirebaseConfig.measurementId),
+  databaseURL: readEnv('VITE_FIREBASE_DATABASE_URL', publicFirebaseConfig.databaseURL),
 };
 
 let app = null;

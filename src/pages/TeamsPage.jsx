@@ -10,7 +10,7 @@ import {
 import useAutoClearMessage from '../hooks/useAutoClearMessage';
 
 function TeamsPage() {
-  const { players, teams, updateAppState, resetAppState } = useAppData();
+  const { players, teams, saveWeeklyTeams, resetAppState } = useAppData();
   const [weekId] = useState(getWeekId());
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('success');
@@ -86,12 +86,13 @@ function TeamsPage() {
     try {
       const newTeams = teamGenerator(players);
       const nextGenerationCount = currentGenerationCount + 1;
-      const nextTeams = {
-        ...teams,
-        [weekId]: { weekId, date: todayKey(), generationCount: nextGenerationCount, ...newTeams },
-      };
 
-      await updateAppState({ teams: nextTeams });
+      await saveWeeklyTeams(weekId, {
+        weekId,
+        date: todayKey(),
+        generationCount: nextGenerationCount,
+        ...newTeams,
+      });
       setMessageType('success');
       setMessage(
         nextGenerationCount >= MAX_TEAM_GENERATIONS

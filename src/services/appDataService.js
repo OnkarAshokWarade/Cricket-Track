@@ -150,6 +150,17 @@ const sanitizeTeams = (teamsData) => {
   }, {});
 };
 
+export const serializeWeekTeamsForDatabase = (weekId, weekTeams = {}) => {
+  const sanitizedTeams = sanitizeTeams({
+    [weekId]: {
+      ...weekTeams,
+      weekId,
+    },
+  });
+
+  return sanitizedTeams[weekId] || null;
+};
+
 const sanitizeCaptainsData = (captainsData) => {
   if (!captainsData || typeof captainsData !== 'object' || Array.isArray(captainsData)) {
     return {};

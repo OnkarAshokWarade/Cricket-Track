@@ -17,6 +17,7 @@ import {
   sanitizeMatchesData,
   serializeAppStateForDatabase,
   serializeMatchForDatabase,
+  serializeWeekTeamsForDatabase,
   stripMatchesFromAppState,
 } from '../services/appDataService';
 
@@ -298,6 +299,33 @@ export function AppDataProvider({ children }) {
     [matchesRef]
   );
 
+  const saveWeeklyTeams = useCallback(async (weekId, weekTeams) => {
+    if (!isRealtimeDatabaseConfigured) {
+      throw createDatabaseRequiredError();
+    }
+
+    const payload = serializeWeekTeamsForDatabase(weekId, weekTeams);
+    if (!payload) {
+      throw new Error('Team payload is invalid.');
+    }
+
+    await set(ref(realtimeDb, `${APP_STATE_PATH}/teams/${weekId}`), payload);
+
+    setAppState((currentAppState) => {
+      const nextAppState = {
+        ...currentAppState,
+        teams: {
+          ...(currentAppState.teams || {}),
+          [weekId]: payload,
+        },
+      };
+      latestAppStateRef.current = nextAppState;
+      return nextAppState;
+    });
+
+    return payload;
+  }, []);
+
   const resetAppState = useCallback(async () => {
     if (!isRealtimeDatabaseConfigured || !appDataRef || !matchesRef) {
       throw createDatabaseRequiredError();
@@ -318,9 +346,10 @@ export function AppDataProvider({ children }) {
       updateAppState,
       addMatch,
       updateMatch,
+      saveWeeklyTeams,
       resetAppState,
     }),
-    [addMatch, appState, isReady, matches, resetAppState, syncError, updateAppState, updateMatch]
+    [addMatch, appState, isReady, matches, resetAppState, saveWeeklyTeams, syncError, updateAppState, updateMatch]
   );
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
