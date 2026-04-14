@@ -4,6 +4,7 @@ import { formatDate } from '../utils/dateUtils';
 import { useAppData } from '../context/AppDataContext';
 import useAutoClearMessage from '../hooks/useAutoClearMessage';
 import { openMatchDayPdf } from '../utils/pdfUtils';
+import PaymentQrCard from '../components/PaymentQrCard';
 
 const getWinningCaptainLabel = (players, match) => {
   if (match.status === 'no-match') {
@@ -38,10 +39,12 @@ const getStatusClassName = (match) => {
   return match.penaltyPaid === true ? 'weekly-status-paid' : 'weekly-status-pending';
 };
 
-function WeeklySummaryPage() {
+function WeeklySummaryPage({ accessMode }) {
   const { players, matches } = useAppData();
   const [pdfMessage, setPdfMessage] = useState('');
   const [pdfMessageType, setPdfMessageType] = useState('success');
+  const isAdmin = accessMode === 'admin';
+  const isGuest = accessMode === 'guest';
 
   useAutoClearMessage(pdfMessage, setPdfMessage);
 
@@ -90,6 +93,12 @@ function WeeklySummaryPage() {
   }, [matches]);
 
   const handleExportPdf = (match) => {
+    if (!isAdmin) {
+      setPdfMessageType('warning');
+      setPdfMessage('Guest mode can only open captain PDFs from the Captains section.');
+      return;
+    }
+
     const didOpen = openMatchDayPdf({ match, players });
     setPdfMessageType(didOpen ? 'success' : 'warning');
     setPdfMessage(
@@ -111,6 +120,12 @@ function WeeklySummaryPage() {
       {pdfMessage ? (
         <div className="card" style={{ marginBottom: '18px', padding: '14px 20px' }}>
           <p className={pdfMessageType === 'success' ? 'success-text' : 'warning-text'} style={{ margin: 0 }}>{pdfMessage}</p>
+        </div>
+      ) : null}
+
+      {isGuest ? (
+        <div style={{ marginBottom: '18px' }}>
+          <PaymentQrCard title="Guest Contribution QR" />
         </div>
       ) : null}
 
@@ -145,9 +160,11 @@ function WeeklySummaryPage() {
                           <strong className="weekly-date-card-date">{formatDate(match.date)}</strong>
                           <div className="weekly-date-card-actions">
                             <span className={getStatusClassName(match)}>{statusLabel}</span>
-                            <button type="button" className="button-secondary button-small" onClick={() => handleExportPdf(match)}>
-                              Print / PDF
-                            </button>
+                            {isAdmin ? (
+                              <button type="button" className="button-secondary button-small" onClick={() => handleExportPdf(match)}>
+                                Print / PDF
+                              </button>
+                            ) : null}
                           </div>
                         </div>
 

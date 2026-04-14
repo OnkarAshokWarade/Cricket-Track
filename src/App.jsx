@@ -24,6 +24,14 @@ const isInteractiveWriteTarget = (target) => {
   );
 };
 
+const isGuestAllowedTarget = (target) => {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  return Boolean(target.closest('[data-guest-allowed="true"]'));
+};
+
 function AppContent() {
   const location = useLocation();
   const routeScrollRef = useRef(null);
@@ -106,6 +114,10 @@ function AppContent() {
       return;
     }
 
+    if (isGuestAllowedTarget(event.target)) {
+      return;
+    }
+
     if (isInteractiveWriteTarget(event.target)) {
       event.preventDefault();
       event.stopPropagation();
@@ -114,6 +126,10 @@ function AppContent() {
 
   const blockGuestKeyboardWrite = (event) => {
     if (!isGuest) {
+      return;
+    }
+
+    if (isGuestAllowedTarget(event.target)) {
       return;
     }
 
@@ -133,64 +149,94 @@ function AppContent() {
     return (
       <div className="auth-shell">
         <div className={`auth-card ${showAdminLogin ? 'auth-card-active' : ''}`} ref={authCardRef}>
-          <h1 className="auth-title">Patoda XI Access</h1>
-          <p className="auth-subtitle">Choose how you want to open the app.</p>
+          <div className="auth-badge">Patoda XI Control Panel</div>
 
-          <div className="auth-actions">
-            <button type="button" className="button-secondary" onClick={handleGuestEntry}>
-              Continue as Guest
-            </button>
-            <button
-              type="button"
-              className="button-primary"
-              onClick={() => {
-                setShowAdminLogin(true);
-                setAuthError('');
-              }}
-            >
-              Login as Admin
-            </button>
+          <div className="auth-hero">
+            <div>
+              <h1 className="auth-title">Choose how you want to enter the app.</h1>
+              <p className="auth-subtitle">
+                Guest mode is for viewing captain sheets, summaries, and payment QR. Admin mode keeps all management tools unlocked.
+              </p>
+            </div>
+            <div className="auth-highlight">
+              <span className="auth-highlight-label">Live workflow</span>
+              <strong>Teams, captains, history, and day-wise PDFs in one place</strong>
+            </div>
           </div>
 
-          {showAdminLogin ? (
-            <form className="auth-form" onSubmit={handleAdminEntry}>
-              <label className="input-label" htmlFor="admin-password">
-                Admin Password
-              </label>
-              <input
-                id="admin-password"
-                type="password"
-                ref={adminPasswordInputRef}
-                value={adminPassword}
-                onChange={(event) => setAdminPassword(event.target.value)}
-                onFocus={() => adminPasswordInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-                placeholder="Enter admin password"
-                autoFocus
-                required
-              />
-              <div className="auth-actions">
-                <button type="submit" className="button-primary">
-                  Unlock Admin
-                </button>
+          <div className="auth-mode-grid">
+            <article className="auth-option-card auth-option-card-guest">
+              <p className="auth-option-kicker">View Only</p>
+              <h2 className="auth-option-title">Continue as Guest</h2>
+              <p className="auth-option-copy">
+                Open dashboards, history, weekly summary, captain PDFs, and payment QR without changing data.
+              </p>
+              <button type="button" className="button-secondary" onClick={handleGuestEntry}>
+                Continue as Guest
+              </button>
+            </article>
+
+            <article className={`auth-option-card auth-option-card-admin ${showAdminLogin ? 'selected' : ''}`}>
+              <p className="auth-option-kicker">Manage App</p>
+              <h2 className="auth-option-title">Login as Admin</h2>
+              <p className="auth-option-copy">
+                Generate teams, select captains, record match results, and update all Firebase-backed sections.
+              </p>
+
+              {!showAdminLogin ? (
                 <button
                   type="button"
-                  className="button-secondary"
+                  className="button-primary"
                   onClick={() => {
-                    setShowAdminLogin(false);
-                    setAdminPassword('');
+                    setShowAdminLogin(true);
                     setAuthError('');
                   }}
                 >
-                  Cancel
+                  Login as Admin
                 </button>
-              </div>
-              {authError ? <p className="auth-error">{authError}</p> : null}
-            </form>
-          ) : (
+              ) : (
+                <form className="auth-form" onSubmit={handleAdminEntry}>
+                  <label className="input-label" htmlFor="admin-password">
+                    Admin Password
+                  </label>
+                  <input
+                    id="admin-password"
+                    type="password"
+                    ref={adminPasswordInputRef}
+                    value={adminPassword}
+                    onChange={(event) => setAdminPassword(event.target.value)}
+                    onFocus={() => adminPasswordInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                    placeholder="Enter admin password"
+                    autoFocus
+                    required
+                  />
+                  <div className="auth-actions">
+                    <button type="submit" className="button-primary">
+                      Unlock Admin
+                    </button>
+                    <button
+                      type="button"
+                      className="button-secondary"
+                      onClick={() => {
+                        setShowAdminLogin(false);
+                        setAdminPassword('');
+                        setAuthError('');
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  {authError ? <p className="auth-error">{authError}</p> : null}
+                </form>
+              )}
+            </article>
+          </div>
+
+          {!showAdminLogin ? (
             <p className="auth-note">
               Guest can only view data. Admin can manage and update all sections.
             </p>
-          )}
+          ) : null}
         </div>
       </div>
     );
@@ -236,7 +282,7 @@ function AppContent() {
             <Route path="/match" element={<Navigate to="/match-center" replace />} />
             <Route path="/history" element={<HistoryPage accessMode={accessMode} />} />
             <Route path="/ground-expense" element={<GroundExpensePage accessMode={accessMode} />} />
-            <Route path="/weekly-summary" element={<WeeklySummaryPage />} />
+            <Route path="/weekly-summary" element={<WeeklySummaryPage accessMode={accessMode} />} />
             <Route path="/rules-patodag" element={<RulesPatodaPage />} />
           </Routes>
         </div>

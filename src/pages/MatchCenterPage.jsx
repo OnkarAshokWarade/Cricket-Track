@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   formatDate,
   getWeekId,
@@ -26,6 +26,12 @@ const PAYMENT_RECEIVER_EN = 'Ubed Shaikh';
 const PAYMENT_RECEIVER_MR = '\u0909\u092c\u0947\u0926 \u0936\u0947\u0916';
 const PAYMENT_RECEIVER_LABEL = `${PAYMENT_RECEIVER_EN} (${PAYMENT_RECEIVER_MR})`;
 const PAYMENT_UPI_ID = 'ubbus313-3@okaxis';
+const createEmptyWeekCaptains = (weekId) => ({
+  weekId,
+  usedCaptains: { teamA: [], teamB: [] },
+  dailyCaptains: [],
+});
+
 const getCaptainResultClass = (match, captainId) => {
   if (!captainId) {
     return '';
@@ -51,7 +57,10 @@ function MatchCenterPage({ accessMode }) {
   const [teamPassword, setTeamPassword] = useState('');
   const [isSubmittingTeamGeneration, setIsSubmittingTeamGeneration] = useState(false);
   const [captainMessage, setCaptainMessage] = useState('');
+  const [captainMessageType, setCaptainMessageType] = useState('success');
   const [matchMessage, setMatchMessage] = useState('');
+  const [captainOverride, setCaptainOverride] = useState(null);
+  const captainsSectionRef = useRef(null);
 
   useAutoClearMessage(teamMessage, setTeamMessage);
   useAutoClearMessage(captainMessage, setCaptainMessage);
@@ -59,7 +68,10 @@ function MatchCenterPage({ accessMode }) {
 
   const weekId = getWeekId();
   const currentTeams = teams[weekId] || null;
-  const currentWeekCaptains = captains[weekId] || { usedCaptains: { teamA: [], teamB: [] }, dailyCaptains: [] };
+  const currentWeekCaptains =
+    captainOverride?.weekId === weekId
+      ? captainOverride
+      : captains[weekId] || createEmptyWeekCaptains(weekId);
   const todayMatch = matches.find((match) => isSameDay(match.date, todayKey()));
   const todayCaptains = currentWeekCaptains.dailyCaptains?.find((entry) => entry.date === todayKey()) || null;
   const latestWeekCaptains = currentWeekCaptains.dailyCaptains?.slice(-1)?.[0] || null;
@@ -91,6 +103,10 @@ function MatchCenterPage({ accessMode }) {
     setTeamMessageType('warning');
     setTeamMessage((currentMessage) => currentMessage || teamGenerationLockedMessage);
   }, [isAdmin, teamGenerationLockedMessage]);
+
+  useEffect(() => {
+    setCaptainOverride(null);
+  }, [weekId]);
 
   const availableCounts = useMemo(() => {
     if (!currentTeams) {
@@ -173,6 +189,11 @@ function MatchCenterPage({ accessMode }) {
     try {
       const newTeams = teamGenerator(players);
       const nextGenerationCount = currentGenerationCount + 1;
+      const hadExistingCaptainSelections = (currentWeekCaptains.dailyCaptains?.length || 0) > 0;
+      const nextCaptainsData = { ...captains };
+      const clearedWeekCaptains = createEmptyWeekCaptains(weekId);
+
+      delete nextCaptainsData[weekId];
 
       await saveWeeklyTeams(weekId, {
         weekId,
@@ -180,8 +201,20 @@ function MatchCenterPage({ accessMode }) {
         generationCount: nextGenerationCount,
         ...newTeams,
       });
+      await updateAppState({ captains: nextCaptainsData });
+      setCaptainOverride(clearedWeekCaptains);
+
       setTeamMessageType('success');
       setTeamMessage(getTeamGenerationSuccessMessage(nextGenerationCount));
+      setCaptainMessageType('success');
+      setCaptainMessage(
+        hadExistingCaptainSelections
+          ? 'Captain selections were refreshed for the newly generated teams. Please choose fresh captains for this week.'
+          : 'New teams are ready. Please choose captains for today or tomorrow.'
+      );
+      window.setTimeout(() => {
+        captainsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 180);
     } catch (error) {
       console.error('Error generating weekly teams:', error);
       setTeamMessageType('warning');
@@ -193,34 +226,40 @@ function MatchCenterPage({ accessMode }) {
 
   const selectCaptainsForDay = async (targetDate) => {
     if (!isAdmin) {
+      setCaptainMessageType('warning');
       setCaptainMessage('Only admin can select captains.');
       return;
     }
 
     if (!currentTeams) {
+      setCaptainMessageType('warning');
       setCaptainMessage('Please generate weekly teams before selecting captains.');
       return;
     }
 
     if (!isDateAllowedForCaptain(targetDate)) {
+      setCaptainMessageType('warning');
       setCaptainMessage('Captain can only be selected for today or tomorrow.');
       return;
     }
 
     const existingCaptains = currentWeekCaptains.dailyCaptains?.find((item) => item.date === targetDate);
     if (existingCaptains) {
+      setCaptainMessageType('warning');
       setCaptainMessage('Captains have already been selected for this day.');
       return;
     }
 
     const selection = captainSelector(currentTeams, currentWeekCaptains.usedCaptains);
     if (!selection) {
+      setCaptainMessageType('warning');
       setCaptainMessage('No available captain candidates remain for one or both teams this week.');
       return;
     }
 
     const nextWeekCaptains = {
       ...currentWeekCaptains,
+      weekId,
       usedCaptains: {
         teamA: [...(currentWeekCaptains.usedCaptains.teamA || []), selection.teamA],
         teamB: [...(currentWeekCaptains.usedCaptains.teamB || []), selection.teamB],
@@ -239,9 +278,12 @@ function MatchCenterPage({ accessMode }) {
         },
       });
 
+      setCaptainOverride(nextWeekCaptains);
+      setCaptainMessageType('success');
       setCaptainMessage(`Captains selected successfully for ${formatDate(targetDate)}.`);
     } catch (error) {
       console.error('Error selecting captains:', error);
+      setCaptainMessageType('warning');
       setCaptainMessage('Captains could not be saved. Please verify Firebase configuration and try again.');
     }
   };
@@ -317,8 +359,9 @@ function MatchCenterPage({ accessMode }) {
   };
 
   const handleCaptainPdf = (entry) => {
-    if (!isAdmin) {
-      setCaptainMessage('Only admin can open the captain team sheet.');
+    if (!currentTeams || !entry) {
+      setCaptainMessageType('warning');
+      setCaptainMessage('Captain team sheet is not ready yet.');
       return;
     }
 
@@ -330,6 +373,7 @@ function MatchCenterPage({ accessMode }) {
       players,
     });
 
+    setCaptainMessageType(didOpen ? 'success' : 'warning');
     setCaptainMessage(
       didOpen
         ? `Captain team sheet opened for ${formatDate(entry.date)}. Choose "Save as PDF" to share it.`
@@ -457,7 +501,7 @@ function MatchCenterPage({ accessMode }) {
           </div>
         </div>
 
-        <div className="card">
+        <div className="card" ref={captainsSectionRef}>
           <h2 className="card-title">2. Captains</h2>
           {!currentTeams ? (
             <p className="empty-state">Generate weekly teams first to unlock captain selection.</p>
@@ -468,7 +512,11 @@ function MatchCenterPage({ accessMode }) {
                 <span className="status-pill">Team B available: {availableCounts.teamB}</span>
               </div>
 
-              {captainMessage ? <p className="success-text" style={{ marginTop: '14px' }}>{captainMessage}</p> : null}
+              {captainMessage ? (
+                <p className={captainMessageType === 'success' ? 'success-text' : 'warning-text'} style={{ marginTop: '14px' }}>
+                  {captainMessage}
+                </p>
+              ) : null}
 
               <div className="section-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
                 {actionableCaptainDays.map((day) => {
@@ -500,15 +548,14 @@ function MatchCenterPage({ accessMode }) {
                               {getPlayerName(players, day.captains.teamB)}
                             </strong>
                           </p>
-                          {isAdmin ? (
-                            <button
-                              className="button-secondary button-small"
-                              type="button"
-                              onClick={() => handleCaptainPdf(day.captains)}
-                            >
-                              Share Captain PDF
-                            </button>
-                          ) : null}
+                          <button
+                            className="button-secondary button-small"
+                            type="button"
+                            onClick={() => handleCaptainPdf(day.captains)}
+                            data-guest-allowed="true"
+                          >
+                            {isAdmin ? 'Share Captain PDF' : 'Open Captain PDF'}
+                          </button>
                         </div>
                       ) : (
                         <button

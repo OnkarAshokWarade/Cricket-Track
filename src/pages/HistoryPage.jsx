@@ -3,6 +3,7 @@ import { getWeekId, formatDate } from '../utils/dateUtils';
 import { getPlayerName } from '../utils/teamUtils';
 import MatchCard from '../components/MatchCard';
 import MatchFee from '../components/MatchFee';
+import PaymentQrCard from '../components/PaymentQrCard';
 import { useAppData } from '../context/AppDataContext';
 
 const getCaptainResultClass = (match, captainId) => {
@@ -22,6 +23,7 @@ function HistoryPage({ accessMode }) {
   const [weekFilter, setWeekFilter] = useState('all');
   const [playerFilter, setPlayerFilter] = useState('all');
   const isAdmin = accessMode === 'admin';
+  const isGuest = accessMode === 'guest';
 
   const weeks = useMemo(() => {
     return Array.from(new Set(matches.map((match) => match.weekId))).sort((a, b) => (a < b ? 1 : -1));
@@ -239,6 +241,11 @@ function HistoryPage({ accessMode }) {
 
       <aside className="history-sidebar">
         <MatchFee matches={matches} players={players} currentWeekId={currentWeekId} />
+        {isGuest ? (
+          <div style={{ marginTop: '18px' }}>
+            <PaymentQrCard title="Guest Contribution QR" />
+          </div>
+        ) : null}
       </aside>
     </div>
   );

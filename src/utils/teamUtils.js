@@ -20,17 +20,16 @@ export const teamGenerator = (players) => {
 export const captainSelector = ({ teamA, teamB }, usedCaptains = {}) => {
   const usedA = usedCaptains.teamA || [];
   const usedB = usedCaptains.teamB || [];
-  const availableA = teamA.filter((playerId) => !usedA.includes(playerId));
-  const availableB = teamB.filter((playerId) => !usedB.includes(playerId));
+  const availableA = shuffle(teamA.filter((playerId) => !usedA.includes(playerId)));
+  const availableB = shuffle(teamB.filter((playerId) => !usedB.includes(playerId)));
 
   if (availableA.length === 0 || availableB.length === 0) {
     return null;
   }
 
-  const pickRandom = (list) => list[Math.floor(Math.random() * list.length)];
   return {
-    teamA: pickRandom(availableA),
-    teamB: pickRandom(availableB),
+    teamA: availableA[0],
+    teamB: availableB[0],
   };
 };
 

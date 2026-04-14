@@ -56,6 +56,7 @@ const getDayOutcome = ({ captainAName, captainBName, players = [], match = null 
 
 const getMatchSummaryHtml = ({ title, weekId, date, captainAName, captainBName, players = [], match = null }) => {
   const outcome = getDayOutcome({ captainAName, captainBName, players, match });
+  const formattedDate = formatDate(date);
 
   return `
     <!doctype html>
@@ -71,7 +72,7 @@ const getMatchSummaryHtml = ({ title, weekId, date, captainAName, captainBName, 
 
           body {
             margin: 0;
-            padding: 32px;
+            padding: 20px;
             color: #0f172a;
             background: #f8fafc;
           }
@@ -82,7 +83,7 @@ const getMatchSummaryHtml = ({ title, weekId, date, captainAName, captainBName, 
             background: #ffffff;
             border: 1px solid #cbd5e1;
             border-radius: 20px;
-            padding: 28px;
+            padding: 24px;
           }
 
           .hero {
@@ -202,6 +203,10 @@ const getMatchSummaryHtml = ({ title, weekId, date, captainAName, captainBName, 
             <article class="card">
               <h2>Day Result</h2>
               <div class="meta-row">
+                <span>Result Date</span>
+                <strong>${escapeHtml(formattedDate)}</strong>
+              </div>
+              <div class="meta-row">
                 <span>Winning Captain</span>
                 <strong class="value-${escapeHtml(outcome.winningCaptainClass)}">${escapeHtml(outcome.winningCaptainName)}</strong>
               </div>
@@ -213,6 +218,10 @@ const getMatchSummaryHtml = ({ title, weekId, date, captainAName, captainBName, 
 
             <article class="card">
               <h2>Selected Captains</h2>
+              <div class="meta-row">
+                <span>Captain Date</span>
+                <strong>${escapeHtml(formattedDate)}</strong>
+              </div>
               <div class="meta-row">
                 <span>Team A Captain</span>
                 <strong>${escapeHtml(captainAName)}</strong>
@@ -269,52 +278,61 @@ const getCaptainSheetHtml = ({ title, weekId, date, captainAName, captainBName, 
         <meta charset="utf-8" />
         <title>${escapeHtml(title)}</title>
         <style>
+          @page {
+            size: A4 landscape;
+            margin: 7mm;
+          }
+
           :root {
             color-scheme: light;
             font-family: Arial, sans-serif;
           }
 
+          html,
           body {
             margin: 0;
-            padding: 32px;
+            padding: 0;
             color: #0f172a;
-            background: #f8fafc;
+            background: #f1f5f9;
+            font-size: 12px;
           }
 
           .sheet {
-            max-width: 980px;
+            max-width: 1120px;
+            min-height: calc(210mm - 14mm);
             margin: 0 auto;
             background: #ffffff;
             border: 1px solid #cbd5e1;
-            border-radius: 20px;
-            padding: 28px;
+            border-radius: 14px;
+            padding: 14px 16px;
+            display: grid;
+            gap: 10px;
           }
 
           .hero {
             display: flex;
             justify-content: space-between;
-            gap: 20px;
+            gap: 16px;
             align-items: flex-start;
-            margin-bottom: 24px;
-            padding-bottom: 20px;
+            padding-bottom: 10px;
             border-bottom: 2px solid #e2e8f0;
           }
 
           .hero h1 {
             margin: 0 0 8px;
-            font-size: 28px;
+            font-size: 24px;
           }
 
           .hero p {
-            margin: 4px 0;
+            margin: 2px 0;
             color: #475569;
-            font-size: 15px;
+            font-size: 13px;
           }
 
           .pill {
             display: inline-block;
-            margin-top: 8px;
-            padding: 8px 14px;
+            margin-top: 6px;
+            padding: 6px 12px;
             border-radius: 999px;
             background: #dbeafe;
             color: #1d4ed8;
@@ -324,26 +342,28 @@ const getCaptainSheetHtml = ({ title, weekId, date, captainAName, captainBName, 
           .captain-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 16px;
-            margin-bottom: 20px;
+            gap: 10px;
           }
 
           .captain-card,
           .team-card {
             border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 16px;
+            border-radius: 12px;
+            padding: 12px;
             background: #f8fafc;
+            min-height: 100%;
+            break-inside: avoid-page;
+            page-break-inside: avoid;
           }
 
           .captain-card h2,
           .team-card h2 {
-            margin: 0 0 10px;
-            font-size: 18px;
+            margin: 0 0 8px;
+            font-size: 16px;
           }
 
           .captain-name {
-            font-size: 22px;
+            font-size: 18px;
             font-weight: 800;
             color: #0f172a;
           }
@@ -351,52 +371,57 @@ const getCaptainSheetHtml = ({ title, weekId, date, captainAName, captainBName, 
           .team-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 16px;
+            gap: 10px;
+            align-items: stretch;
           }
 
           .team-card-header {
             display: flex;
             justify-content: space-between;
-            gap: 16px;
+            gap: 12px;
             align-items: flex-start;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
           }
 
           .team-card-header p {
             margin: 0;
             color: #475569;
+            font-size: 12px;
           }
 
           .team-count {
-            padding: 6px 10px;
+            padding: 5px 9px;
             border-radius: 999px;
             background: #e2e8f0;
             color: #334155;
             font-weight: 700;
             white-space: nowrap;
+            font-size: 11px;
           }
 
           .player-list {
             margin: 0;
-            padding-left: 20px;
+            padding-left: 18px;
             display: grid;
-            gap: 8px;
+            gap: 4px;
           }
 
           .player-list li {
             display: flex;
             justify-content: space-between;
-            gap: 12px;
+            gap: 10px;
             align-items: center;
-            padding: 8px 10px;
-            border-radius: 10px;
+            padding: 6px 8px;
+            border-radius: 8px;
             background: #ffffff;
             border: 1px solid #e2e8f0;
+            font-size: 12px;
+            line-height: 1.25;
           }
 
           .player-list li strong {
             color: #1d4ed8;
-            font-size: 12px;
+            font-size: 10px;
             text-transform: uppercase;
           }
 
@@ -406,9 +431,9 @@ const getCaptainSheetHtml = ({ title, weekId, date, captainAName, captainBName, 
           }
 
           .footer-note {
-            margin-top: 24px;
+            margin-top: 2px;
             color: #475569;
-            font-size: 13px;
+            font-size: 11px;
           }
 
           @media print {
@@ -418,9 +443,19 @@ const getCaptainSheetHtml = ({ title, weekId, date, captainAName, captainBName, 
             }
 
             .sheet {
+              max-width: none;
               border: 0;
               border-radius: 0;
               padding: 0;
+              gap: 8px;
+            }
+
+            .captain-grid,
+            .team-grid,
+            .team-card,
+            .captain-card {
+              break-inside: avoid-page;
+              page-break-inside: avoid;
             }
           }
 
