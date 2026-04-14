@@ -32,7 +32,7 @@ function AppContent() {
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
   const [authError, setAuthError] = useState('');
-  const { isReady } = useAppData();
+  const { isReady, isDatabaseConfigured, syncError } = useAppData();
 
   useAutoClearMessage(authError, setAuthError);
 
@@ -210,19 +210,36 @@ function AppContent() {
           </div>
         ) : null}
 
+        {!isDatabaseConfigured ? (
+          <div className="database-banner database-banner-warning">
+            Firebase Realtime Database is not configured. Admin changes cannot be saved.
+          </div>
+        ) : syncError ? (
+          <div className="database-banner database-banner-warning">{syncError}</div>
+        ) : !isReady ? (
+          <div className="database-banner">Loading database data...</div>
+        ) : null}
+
         <div className="route-scroll-area" ref={routeScrollRef}>
-          <Routes>
-            <Route path="/" element={<Dashboard accessMode={accessMode} />} />
-            <Route path="/players" element={<PlayersPage />} />
-            <Route path="/match-center" element={<MatchCenterPage accessMode={accessMode} />} />
-            <Route path="/teams" element={<Navigate to="/match-center" replace />} />
-            <Route path="/captains" element={<Navigate to="/match-center" replace />} />
-            <Route path="/match" element={<Navigate to="/match-center" replace />} />
-            <Route path="/history" element={<HistoryPage />} />
-            <Route path="/ground-expense" element={<GroundExpensePage accessMode={accessMode} />} />
-            <Route path="/weekly-summary" element={<WeeklySummaryPage />} />
-            <Route path="/rules-patodag" element={<RulesPatodaPage />} />
-          </Routes>
+          {!isReady ? (
+            <div className="card">
+              <h1 className="page-title">Loading Patoda XI data</h1>
+              <p className="page-intro">Fetching players, teams, captains, matches, and money records from Firebase.</p>
+            </div>
+          ) : (
+            <Routes>
+              <Route path="/" element={<Dashboard accessMode={accessMode} />} />
+              <Route path="/players" element={<PlayersPage accessMode={accessMode} />} />
+              <Route path="/match-center" element={<MatchCenterPage accessMode={accessMode} />} />
+              <Route path="/teams" element={<Navigate to="/match-center" replace />} />
+              <Route path="/captains" element={<Navigate to="/match-center" replace />} />
+              <Route path="/match" element={<Navigate to="/match-center" replace />} />
+              <Route path="/history" element={<HistoryPage accessMode={accessMode} />} />
+              <Route path="/ground-expense" element={<GroundExpensePage accessMode={accessMode} />} />
+              <Route path="/weekly-summary" element={<WeeklySummaryPage />} />
+              <Route path="/rules-patodag" element={<RulesPatodaPage />} />
+            </Routes>
+          )}
         </div>
       </main>
     </div>

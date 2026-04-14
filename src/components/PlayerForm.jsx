@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import useAutoClearMessage from '../hooks/useAutoClearMessage';
 
-function PlayerForm({ existingPlayer, onSave, onCancel, players }) {
+function PlayerForm({ existingPlayer, onSave, onCancel, players, isSubmitting = false }) {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
 
@@ -17,7 +17,7 @@ function PlayerForm({ existingPlayer, onSave, onCancel, players }) {
     (player) => player.name.trim().toLowerCase() === normalizedName && player.id !== existingPlayer?.id
   );
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     if (!normalizedName) {
       setError('Player name is required.');
@@ -27,8 +27,10 @@ function PlayerForm({ existingPlayer, onSave, onCancel, players }) {
       setError('This player already exists.');
       return;
     }
-    onSave({ id: existingPlayer?.id || `player-${Date.now()}`, name: name.trim() });
-    setName('');
+    const didSave = await onSave({ id: existingPlayer?.id || `player-${Date.now()}`, name: name.trim() });
+    if (didSave !== false) {
+      setName('');
+    }
   };
 
   return (
@@ -59,13 +61,15 @@ function PlayerForm({ existingPlayer, onSave, onCancel, players }) {
       <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <button
           type="submit"
+          disabled={isSubmitting}
           className="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 sm:w-auto"
         >
-          {existingPlayer ? 'Update player' : 'Save player'}
+          {isSubmitting ? 'Saving...' : existingPlayer ? 'Update player' : 'Save player'}
         </button>
         {existingPlayer && (
           <button
             type="button"
+            disabled={isSubmitting}
             className="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 sm:w-auto"
             onClick={onCancel}
           >

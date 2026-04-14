@@ -50,7 +50,7 @@ function CaptainsPage() {
     };
   }, [currentTeams, weekCaptains]);
 
-  const selectCaptainsForDay = (targetDate) => {
+  const selectCaptainsForDay = async (targetDate) => {
     if (!currentTeams) {
       setMessage('Please generate weekly teams before selecting captains.');
       return;
@@ -90,8 +90,13 @@ function CaptainsPage() {
       [weekId]: nextWeekCaptains,
     };
 
-    updateAppState({ captains: nextCaptainsData });
-    setMessage(`Captains selected successfully for ${formatDate(targetDate)}!`);
+    try {
+      await updateAppState({ captains: nextCaptainsData });
+      setMessage(`Captains selected successfully for ${formatDate(targetDate)}!`);
+    } catch (error) {
+      console.error('Error selecting captains:', error);
+      setMessage('Captains could not be saved. Please verify Firebase configuration and try again.');
+    }
   };
 
   return (

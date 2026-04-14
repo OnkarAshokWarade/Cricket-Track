@@ -3,19 +3,26 @@ import { formatDate } from '../utils/dateUtils';
 import { getPlayerName } from '../utils/teamUtils';
 import { useAppData } from '../context/AppDataContext';
 
-function MatchCard({ match, players }) {
+function MatchCard({ match, players, canEdit = false }) {
   const { updateMatch } = useAppData();
   const [isUpdating, setIsUpdating] = useState(false);
+  const [error, setError] = useState('');
   const isNoMatch = match.status === 'no-match';
   const captainAResultClass = !isNoMatch ? (match.winnerTeam === 'teamA' ? 'captain-win-color' : 'captain-loss-color') : '';
   const captainBResultClass = !isNoMatch ? (match.winnerTeam === 'teamB' ? 'captain-win-color' : 'captain-loss-color') : '';
 
   const handlePenaltyStatusChange = async (newStatus) => {
+    if (!canEdit) {
+      return;
+    }
+
     setIsUpdating(true);
+    setError('');
     try {
       await updateMatch(match.id, { penaltyPaid: newStatus });
     } catch (error) {
       console.error('Error updating penalty status:', error);
+      setError('Payment status could not be saved.');
     } finally {
       setIsUpdating(false);
     }
@@ -68,18 +75,28 @@ function MatchCard({ match, players }) {
               <span className="loser">({getPlayerName(players, match.loserCaptain)})</span>
             </div>
 
-            <div className="penalty-status">
-              <label className="status-label">Payment Status:</label>
-              <select
-                value={penaltyPaid ? 'paid' : 'not-paid'}
-                onChange={(event) => handlePenaltyStatusChange(event.target.value === 'paid')}
-                disabled={isUpdating}
-                className={`status-select ${penaltyPaid ? 'paid' : 'unpaid'}`}
-              >
-                <option value="not-paid">Not Paid</option>
-                <option value="paid">Paid</option>
-              </select>
-            </div>
+            {canEdit ? (
+              <div className="penalty-status">
+                <label className="status-label">Payment Status:</label>
+                <select
+                  value={penaltyPaid ? 'paid' : 'not-paid'}
+                  onChange={(event) => handlePenaltyStatusChange(event.target.value === 'paid')}
+                  disabled={isUpdating}
+                  className={`status-select ${penaltyPaid ? 'paid' : 'unpaid'}`}
+                >
+                  <option value="not-paid">Not Paid</option>
+                  <option value="paid">Paid</option>
+                </select>
+              </div>
+            ) : (
+              <div className="penalty-status">
+                <span className="status-label">Payment Status:</span>
+                <span className={`status-select ${penaltyPaid ? 'paid' : 'unpaid'}`}>
+                  {penaltyPaid ? 'Paid' : 'Not Paid'}
+                </span>
+              </div>
+            )}
+            {error ? <p className="warning-text">{error}</p> : null}
           </div>
         )}
       </div>

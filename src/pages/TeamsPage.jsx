@@ -107,12 +107,19 @@ function TeamsPage() {
     }
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     const confirmed = window.confirm('Reset all Patoda XI app data and restore the default roster?');
     if (!confirmed) return;
-    resetAppState();
-    setMessageType('success');
-    setMessage('App data has been reset. Default player roster restored.');
+
+    try {
+      await resetAppState();
+      setMessageType('success');
+      setMessage('App data has been reset. Default player roster restored.');
+    } catch (error) {
+      console.error('Error resetting app data:', error);
+      setMessageType('warning');
+      setMessage('App data could not be reset. Please verify Firebase configuration and try again.');
+    }
   };
 
   return (

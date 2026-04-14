@@ -38,6 +38,7 @@ export function AppDataProvider({ children }) {
   const [appState, setAppState] = useState(stripMatchesFromAppState(defaultState));
   const [matches, setMatches] = useState([]);
   const [isReady, setIsReady] = useState(false);
+  const [syncError, setSyncError] = useState('');
   const latestAppStateRef = useRef(stripMatchesFromAppState(defaultState));
   const latestMatchesRef = useRef([]);
   const hasAppSnapshotRef = useRef(false);
@@ -105,11 +106,13 @@ export function AppDataProvider({ children }) {
       latestMatchesRef.current = [];
       setAppState(nextAppState);
       setMatches([]);
+      setSyncError('Firebase Realtime Database is not configured. Admin changes cannot be saved.');
       setIsReady(true);
       return undefined;
     }
 
     setIsReady(false);
+    setSyncError('');
     hasAppSnapshotRef.current = false;
     hasMatchesSnapshotRef.current = false;
 
@@ -128,6 +131,7 @@ export function AppDataProvider({ children }) {
         legacyMatchesRef.current = sanitizeMatchesData(rawState?.matches);
         latestAppStateRef.current = nextAppState;
         setAppState(nextAppState);
+        setSyncError('');
 
         if (!snapshot.exists()) {
           await set(appDataRef, serializeAppStateForDatabase(defaultState));
@@ -148,6 +152,7 @@ export function AppDataProvider({ children }) {
       },
       (error) => {
         console.error('Realtime app state sync failed:', error);
+        setSyncError('Could not sync app settings from Firebase. Please check the database connection.');
         hasAppSnapshotRef.current = true;
         syncReadyState();
       }
@@ -167,6 +172,7 @@ export function AppDataProvider({ children }) {
 
         latestMatchesRef.current = nextMatches;
         setMatches(nextMatches);
+        setSyncError('');
 
         hasMatchesSnapshotRef.current = true;
         syncReadyState();
@@ -177,6 +183,7 @@ export function AppDataProvider({ children }) {
       },
       (error) => {
         console.error('Realtime matches sync failed:', error);
+        setSyncError('Could not sync matches from Firebase. Please check the database connection.');
         hasMatchesSnapshotRef.current = true;
         syncReadyState();
       }
@@ -277,12 +284,14 @@ export function AppDataProvider({ children }) {
     () => ({
       ...mergeState(appState, matches),
       isReady,
+      isDatabaseConfigured: isRealtimeDatabaseConfigured,
+      syncError,
       updateAppState,
       addMatch,
       updateMatch,
       resetAppState,
     }),
-    [addMatch, appState, isReady, matches, resetAppState, updateAppState, updateMatch]
+    [addMatch, appState, isReady, matches, resetAppState, syncError, updateAppState, updateMatch]
   );
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;

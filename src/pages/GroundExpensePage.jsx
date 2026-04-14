@@ -28,6 +28,7 @@ function GroundExpensePage({ accessMode }) {
   });
   const [editingId, setEditingId] = useState(null);
   const [fundMessage, setFundMessage] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isMobileEditorOpen, setIsMobileEditorOpen] = useState(false);
   const isAdmin = accessMode === 'admin';
@@ -182,6 +183,27 @@ function GroundExpensePage({ accessMode }) {
 
   const balance = totals.totalCredit - totals.totalDebit;
 
+  const persistFundState = async (patch, successMessage = '') => {
+    if (!isAdmin || isSaving) {
+      return false;
+    }
+
+    setIsSaving(true);
+    try {
+      await updateAppState(patch);
+      if (successMessage) {
+        setFundMessage(successMessage);
+      }
+      return true;
+    } catch (error) {
+      console.error('Error saving ground expense data:', error);
+      setFundMessage('Ground expense data could not be saved. Please verify Firebase configuration and try again.');
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleTypeChange = (type) => {
     setForm((previous) => ({
       ...previous,
@@ -202,8 +224,8 @@ function GroundExpensePage({ accessMode }) {
     }
   };
 
-  const handleResetMoney = () => {
-    if (!isAdmin) {
+  const handleResetMoney = async () => {
+    if (!isAdmin || isSaving) {
       return;
     }
 
@@ -215,14 +237,19 @@ function GroundExpensePage({ accessMode }) {
       return;
     }
 
-    updateAppState({ fundTransactions: [] });
-    resetForm();
-    setFundMessage('All transactions have been reset by admin.');
+    const didSave = await persistFundState({ fundTransactions: [] }, 'All transactions have been reset by admin.');
+    if (didSave) {
+      resetForm();
+    }
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setFundMessage('');
+
+    if (!isAdmin || isSaving) {
+      return;
+    }
 
     const trimmedName = form.name.trim();
     if (!trimmedName) {
@@ -244,9 +271,15 @@ function GroundExpensePage({ accessMode }) {
     const nextTransactions = editingId
       ? transactions.map((transaction) => (transaction.id === editingId ? payload : transaction))
       : [payload, ...transactions];
-    updateAppState({ fundTransactions: nextTransactions });
 
-    resetForm();
+    const didSave = await persistFundState(
+      { fundTransactions: nextTransactions },
+      editingId ? 'Transaction updated in Firebase.' : 'Transaction added to Firebase.'
+    );
+
+    if (didSave) {
+      resetForm();
+    }
   };
 
   const handleEdit = (transaction) => {
@@ -261,17 +294,25 @@ function GroundExpensePage({ accessMode }) {
     }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     setFundMessage('');
+    if (!isAdmin || isSaving) {
+      return;
+    }
+
     const nextTransactions = transactions.filter((transaction) => transaction.id !== id);
-    updateAppState({ fundTransactions: nextTransactions });
-    if (editingId === id) {
+    const didSave = await persistFundState({ fundTransactions: nextTransactions }, 'Transaction deleted from Firebase.');
+    if (didSave && editingId === id) {
       resetForm();
     }
   };
 
-  const markPlayerPaid = (playerName) => {
+  const markPlayerPaid = async (playerName) => {
     setFundMessage('');
+    if (!isAdmin || isSaving) {
+      return;
+    }
+
     const key = normalizeName(playerName);
     if (!key || paidPlayerNameSet.has(key)) {
       return;
@@ -284,11 +325,18 @@ function GroundExpensePage({ accessMode }) {
       type: 'credit',
     };
 
-    updateAppState({ fundTransactions: [contribution, ...transactions] });
+    await persistFundState(
+      { fundTransactions: [contribution, ...transactions] },
+      `${playerName} marked as paid in Firebase.`
+    );
   };
 
-  const markPlayerUnpaid = (playerName) => {
+  const markPlayerUnpaid = async (playerName) => {
     setFundMessage('');
+    if (!isAdmin || isSaving) {
+      return;
+    }
+
     const key = normalizeName(playerName);
     if (!key) {
       return;
@@ -301,19 +349,19 @@ function GroundExpensePage({ accessMode }) {
         normalizeName(transaction.name) === key
     );
 
-    updateAppState({
+    const didSave = await persistFundState({
       fundTransactions: transactions.filter(
         (transaction) => !(transaction.type === 'credit' && normalizeName(transaction.name) === key)
       ),
-    });
+    }, `${playerName} marked as unpaid in Firebase.`);
 
-    if (editingWillBeRemoved) {
+    if (didSave && editingWillBeRemoved) {
       resetForm();
     }
   };
 
-  const handleEditContributionPlayer = (playerName) => {
-    if (!isAdmin) {
+  const handleEditContributionPlayer = async (playerName) => {
+    if (!isAdmin || isSaving) {
       return;
     }
 
@@ -359,16 +407,15 @@ function GroundExpensePage({ accessMode }) {
       normalizeName(name) === key ? nextName : name
     );
 
-    updateAppState({
+    await persistFundState({
       players: didUpdatePlayers ? updatedPlayers : players,
       fundTransactions: updatedTransactions,
       contributionPlayers: updatedContributionPlayers,
-    });
-    setFundMessage(`Player name updated to "${nextName}".`);
+    }, `Player name updated to "${nextName}".`);
   };
 
-  const handleRemoveContributionPlayer = (playerName) => {
-    if (!isAdmin) {
+  const handleRemoveContributionPlayer = async (playerName) => {
+    if (!isAdmin || isSaving) {
       return;
     }
 
@@ -396,17 +443,15 @@ function GroundExpensePage({ accessMode }) {
       (existingName) => normalizeName(existingName) !== key
     );
 
-    updateAppState({
+    const didSave = await persistFundState({
       players: updatedPlayers,
       fundTransactions: updatedTransactions,
       contributionPlayers: updatedContributionPlayers,
-    });
+    }, `"${playerName}" removed from contribution status.`);
 
-    if (editingWillBeRemoved) {
+    if (didSave && editingWillBeRemoved) {
       resetForm();
     }
-
-    setFundMessage(`"${playerName}" removed from contribution status.`);
   };
 
   const openMobileEditorForNew = () => {
@@ -434,6 +479,7 @@ function GroundExpensePage({ accessMode }) {
             type="button"
             className="button-secondary button-small fund-editor-close-btn"
             onClick={resetForm}
+            disabled={isSaving}
           >
             Close
           </button>
@@ -451,6 +497,7 @@ function GroundExpensePage({ accessMode }) {
             value={form.name}
             onChange={(event) => setForm((previous) => ({ ...previous, name: event.target.value }))}
             placeholder="Example: Rahul / Ball / Ground Rent"
+            disabled={isSaving}
             required
           />
         </div>
@@ -463,6 +510,7 @@ function GroundExpensePage({ accessMode }) {
             id="transaction-type"
             value={form.type}
             onChange={(event) => handleTypeChange(event.target.value)}
+            disabled={isSaving}
           >
             <option value="credit">{'\u091c\u092e\u093e (Fixed \u20B9100)'}</option>
             <option value="debit">{'\u0916\u0930\u094d\u091a'}</option>
@@ -479,17 +527,17 @@ function GroundExpensePage({ accessMode }) {
             min="1"
             value={form.type === 'credit' ? FIXED_CONTRIBUTION : form.amount}
             onChange={(event) => setForm((previous) => ({ ...previous, amount: event.target.value }))}
-            disabled={form.type === 'credit'}
+            disabled={isSaving || form.type === 'credit'}
             required
           />
         </div>
 
         <div className="button-row">
-          <button type="submit" className="button-primary">
-            {editingId ? 'Update Transaction' : 'Add Transaction'}
+          <button type="submit" className="button-primary" disabled={isSaving}>
+            {isSaving ? 'Saving...' : editingId ? 'Update Transaction' : 'Add Transaction'}
           </button>
           {editingId ? (
-            <button type="button" className="button-secondary" onClick={resetForm}>
+            <button type="button" className="button-secondary" onClick={resetForm} disabled={isSaving}>
               Cancel Edit
             </button>
           ) : null}
@@ -509,8 +557,8 @@ function GroundExpensePage({ accessMode }) {
 
         <div className="button-row" style={{ marginTop: 0, marginBottom: '12px' }}>
           {isAdmin ? (
-            <button type="button" className="button-secondary fund-reset-btn" onClick={handleResetMoney}>
-              Reset Money (Admin)
+            <button type="button" className="button-secondary fund-reset-btn" onClick={handleResetMoney} disabled={isSaving}>
+              {isSaving ? 'Saving...' : 'Reset Money (Admin)'}
             </button>
           ) : null}
         </div>
@@ -572,7 +620,7 @@ function GroundExpensePage({ accessMode }) {
                       type="button"
                       className="button-primary button-small fund-paid-btn"
                       onClick={() => markPlayerPaid(playerName)}
-                      disabled={isPaid}
+                      disabled={!isAdmin || isSaving || isPaid}
                     >
                       Paid
                     </button>
@@ -580,7 +628,7 @@ function GroundExpensePage({ accessMode }) {
                       type="button"
                       className="button-secondary button-small fund-unpaid-btn"
                       onClick={() => markPlayerUnpaid(playerName)}
-                      disabled={!isPaid}
+                      disabled={!isAdmin || isSaving || !isPaid}
                     >
                       Unpaid
                     </button>
@@ -592,6 +640,7 @@ function GroundExpensePage({ accessMode }) {
                         type="button"
                         className="button-secondary button-small"
                         onClick={() => handleEditContributionPlayer(playerName)}
+                        disabled={isSaving}
                       >
                         Edit Player
                       </button>
@@ -599,6 +648,7 @@ function GroundExpensePage({ accessMode }) {
                         type="button"
                         className="button-primary button-small fund-delete-btn"
                         onClick={() => handleRemoveContributionPlayer(playerName)}
+                        disabled={isSaving}
                       >
                         Remove Player
                       </button>
@@ -648,6 +698,7 @@ function GroundExpensePage({ accessMode }) {
                   type="button"
                   className="button-primary button-small"
                   onClick={openMobileEditorForNew}
+                  disabled={isSaving}
                 >
                   Add Transaction
                 </button>
@@ -679,22 +730,28 @@ function GroundExpensePage({ accessMode }) {
                         </span>
                       </td>
                       <td>
-                        <div className="button-row" style={{ marginTop: 0 }}>
-                          <button
-                            type="button"
-                            className="button-secondary button-small"
-                            onClick={() => handleEdit(transaction)}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            className="button-primary button-small fund-delete-btn"
-                            onClick={() => handleDelete(transaction.id)}
-                          >
-                            Delete
-                          </button>
-                        </div>
+                        {isAdmin ? (
+                          <div className="button-row" style={{ marginTop: 0 }}>
+                            <button
+                              type="button"
+                              className="button-secondary button-small"
+                              onClick={() => handleEdit(transaction)}
+                              disabled={isSaving}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              className="button-primary button-small fund-delete-btn"
+                              onClick={() => handleDelete(transaction.id)}
+                              disabled={isSaving}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="empty-state">View only</span>
+                        )}
                       </td>
                     </tr>
                   ))}

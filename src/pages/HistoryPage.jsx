@@ -6,10 +6,11 @@ import MatchFee from '../components/MatchFee';
 import PendingFeeNotice from '../components/PendingFeeNotice';
 import { useAppData } from '../context/AppDataContext';
 
-function HistoryPage() {
+function HistoryPage({ accessMode }) {
   const { players, matches } = useAppData();
   const [weekFilter, setWeekFilter] = useState('all');
   const [playerFilter, setPlayerFilter] = useState('all');
+  const isAdmin = accessMode === 'admin';
 
   const weeks = useMemo(() => {
     return Array.from(new Set(matches.map((match) => match.weekId))).sort((a, b) => (a < b ? 1 : -1));
@@ -87,6 +88,7 @@ function HistoryPage() {
                       key={match.id}
                       match={match}
                       players={players}
+                      canEdit={isAdmin}
                     />
                   ))}
               </div>

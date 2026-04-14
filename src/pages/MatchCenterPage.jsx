@@ -176,6 +176,11 @@ function MatchCenterPage({ accessMode }) {
   };
 
   const selectCaptainsForDay = async (targetDate) => {
+    if (!isAdmin) {
+      setCaptainMessage('Only admin can select captains.');
+      return;
+    }
+
     if (!currentTeams) {
       setCaptainMessage('Please generate weekly teams before selecting captains.');
       return;
@@ -210,17 +215,27 @@ function MatchCenterPage({ accessMode }) {
       ],
     };
 
-    await updateAppState({
-      captains: {
-        ...captains,
-        [weekId]: nextWeekCaptains,
-      },
-    });
+    try {
+      await updateAppState({
+        captains: {
+          ...captains,
+          [weekId]: nextWeekCaptains,
+        },
+      });
 
-    setCaptainMessage(`Captains selected successfully for ${formatDate(targetDate)}.`);
+      setCaptainMessage(`Captains selected successfully for ${formatDate(targetDate)}.`);
+    } catch (error) {
+      console.error('Error selecting captains:', error);
+      setCaptainMessage('Captains could not be saved. Please verify Firebase configuration and try again.');
+    }
   };
 
   const handleSaveMatch = async () => {
+    if (!isAdmin) {
+      setMatchMessage('Only admin can record matches.');
+      return;
+    }
+
     if (!canRecordMatch) {
       setMatchMessage("A match cannot be recorded right now. Please check teams and today's captains.");
       return;
@@ -252,6 +267,11 @@ function MatchCenterPage({ accessMode }) {
   };
 
   const handleSaveNoMatch = async () => {
+    if (!isAdmin) {
+      setMatchMessage('Only admin can record matches.');
+      return;
+    }
+
     if (!canMarkNoMatch) {
       setMatchMessage("A no-match entry cannot be recorded right now. Please check today's data.");
       return;
@@ -451,7 +471,7 @@ function MatchCenterPage({ accessMode }) {
                           className="button-primary button-small"
                           type="button"
                           onClick={() => selectCaptainsForDay(day.date)}
-                          disabled={!isSelectable}
+                          disabled={!isAdmin || !isSelectable}
                         >
                           Select Captains
                         </button>
@@ -570,10 +590,10 @@ function MatchCenterPage({ accessMode }) {
                 </div>
 
                 <div className="button-row">
-                  <button className="button-primary button-small" type="button" onClick={handleSaveMatch} disabled={!canRecordMatch}>
+                  <button className="button-primary button-small" type="button" onClick={handleSaveMatch} disabled={!isAdmin || !canRecordMatch}>
                     Record Match
                   </button>
-                  <button className="button-secondary button-small" type="button" onClick={handleSaveNoMatch} disabled={!canMarkNoMatch}>
+                  <button className="button-secondary button-small" type="button" onClick={handleSaveNoMatch} disabled={!isAdmin || !canMarkNoMatch}>
                     No Match Today
                   </button>
                 </div>

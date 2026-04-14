@@ -10,7 +10,10 @@ import useAutoClearMessage from '../hooks/useAutoClearMessage';
 function Dashboard({ accessMode }) {
   const { players, teams, captains, matches, resetAppState } = useAppData();
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('success');
+  const [isResetting, setIsResetting] = useState(false);
   const isGuest = accessMode === 'guest';
+  const isAdmin = accessMode === 'admin';
 
   useAutoClearMessage(message, setMessage);
 
@@ -55,11 +58,25 @@ function Dashboard({ accessMode }) {
   const formatTeamPlayerLabel = (playerId, index) => (playerId ? `${index + 1}. ${getPlayerName(players, playerId)}` : '--');
 
   const handleResetApp = async () => {
+    if (!isAdmin || isResetting) {
+      return;
+    }
+
     const confirmed = window.confirm('This will reset ALL application data including players, teams, captains, and matches. Are you sure?');
     if (!confirmed) return;
 
-    await resetAppState();
-    setMessage('Application data has been reset successfully!');
+    setIsResetting(true);
+    try {
+      await resetAppState();
+      setMessageType('success');
+      setMessage('Application data has been reset successfully!');
+    } catch (error) {
+      console.error('Error resetting app data:', error);
+      setMessageType('warning');
+      setMessage('Application data could not be reset. Please verify Firebase configuration and try again.');
+    } finally {
+      setIsResetting(false);
+    }
   };
 
   return (
@@ -222,15 +239,25 @@ function Dashboard({ accessMode }) {
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: '24px' }}>
-        <h2 className="card-title">Application Settings</h2>
-        <div className="button-row">
-          <button className="button-secondary button-small" onClick={handleResetApp}>
-            Reset Application Data
-          </button>
+      {isAdmin ? (
+        <div className="card" style={{ marginTop: '24px' }}>
+          <h2 className="card-title">Application Settings</h2>
+          <div className="button-row">
+            <button
+              className="button-secondary button-small"
+              onClick={handleResetApp}
+              disabled={isResetting}
+            >
+              {isResetting ? 'Resetting...' : 'Reset Application Data'}
+            </button>
+          </div>
+          {message && (
+            <p className={messageType === 'success' ? 'success-text' : 'warning-text'} style={{ marginTop: '14px' }}>
+              {message}
+            </p>
+          )}
         </div>
-        {message && <p className="success-text" style={{ marginTop: '14px' }}>{message}</p>}
-      </div>
+      ) : null}
     </section>
   );
 }
