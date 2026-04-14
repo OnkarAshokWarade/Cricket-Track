@@ -35,27 +35,25 @@ const getPaymentStatusLabel = (match) => {
   return match.penaltyPaid === true ? 'Paid' : 'Pending';
 };
 
-export const openMatchDayPdf = ({ match, players = [] }) => {
-  if (typeof window === 'undefined' || !match) {
-    return false;
-  }
+const getCaptainSheetHtml = ({
+  title,
+  weekId,
+  date,
+  captainAName,
+  captainBName,
+  teamA = [],
+  teamB = [],
+  players = [],
+  match = null,
+}) => {
+  const loserCaptainName = match?.loserCaptain ? getPlayerName(players, match.loserCaptain) : '--';
 
-  const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=960,height=780');
-  if (!printWindow) {
-    return false;
-  }
-
-  const captainAName = match.captainA ? getPlayerName(players, match.captainA) : '--';
-  const captainBName = match.captainB ? getPlayerName(players, match.captainB) : '--';
-  const loserCaptainName = match.loserCaptain ? getPlayerName(players, match.loserCaptain) : '--';
-  const printTitle = `Patoda XI ${match.weekId || 'Weekly'} ${formatDate(match.date)}`;
-
-  printWindow.document.write(`
+  return `
     <!doctype html>
     <html lang="en">
       <head>
         <meta charset="utf-8" />
-        <title>${escapeHtml(printTitle)}</title>
+        <title>${escapeHtml(title)}</title>
         <style>
           :root {
             color-scheme: light;
@@ -186,15 +184,15 @@ export const openMatchDayPdf = ({ match, players = [] }) => {
         <main class="sheet">
           <header class="hero">
             <div>
-              <h1>Patoda XI Day Summary</h1>
-              <p>Week: ${escapeHtml(match.weekId || '--')}</p>
-              <p>Date: ${escapeHtml(formatDate(match.date))}</p>
-              <span class="pill">Winner: ${escapeHtml(getWinnerLabel(match))}</span>
+              <h1>${escapeHtml(title)}</h1>
+              <p>Week: ${escapeHtml(weekId || '--')}</p>
+              <p>Date: ${escapeHtml(formatDate(date))}</p>
+              <span class="pill">Captain sheet for this day</span>
             </div>
             <div>
-              <p>Payment status: <strong>${escapeHtml(getPaymentStatusLabel(match))}</strong></p>
-              <p>Penalty: <strong>Rs. ${escapeHtml(match.penalty || 0)}</strong></p>
-              <p>Losing captain: <strong>${escapeHtml(loserCaptainName)}</strong></p>
+              <p>Team A Captain: <strong>${escapeHtml(captainAName)}</strong></p>
+              <p>Team B Captain: <strong>${escapeHtml(captainBName)}</strong></p>
+              <p>Match status: <strong>${escapeHtml(match ? (match.status === 'no-match' ? 'No Match' : 'Played') : 'Not recorded')}</strong></p>
             </div>
           </header>
 
@@ -212,18 +210,18 @@ export const openMatchDayPdf = ({ match, players = [] }) => {
             </article>
 
             <article class="card">
-              <h2>Match Details</h2>
+              <h2>Day Match Details</h2>
               <div class="meta-row">
-                <span>Status</span>
-                <strong>${escapeHtml(match.status === 'no-match' ? 'No Match' : 'Played')}</strong>
+                <span>Winner</span>
+                <strong>${escapeHtml(match ? getWinnerLabel(match) : 'Not recorded')}</strong>
               </div>
               <div class="meta-row">
-                <span>Score</span>
-                <strong>${escapeHtml(match.score || '--')}</strong>
+                <span>Losing captain</span>
+                <strong>${escapeHtml(match ? loserCaptainName : '--')}</strong>
               </div>
               <div class="meta-row">
-                <span>Week ID</span>
-                <strong>${escapeHtml(match.weekId || '--')}</strong>
+                <span>Payment status</span>
+                <strong>${escapeHtml(match ? getPaymentStatusLabel(match) : 'Not recorded')}</strong>
               </div>
             </article>
           </section>
@@ -231,15 +229,15 @@ export const openMatchDayPdf = ({ match, players = [] }) => {
           <section class="team-grid">
             <article class="card">
               <h2>Week Team A</h2>
-              <ul>${formatTeamList(match.teamA, players)}</ul>
+              <ul>${formatTeamList(teamA, players)}</ul>
             </article>
             <article class="card">
               <h2>Week Team B</h2>
-              <ul>${formatTeamList(match.teamB, players)}</ul>
+              <ul>${formatTeamList(teamB, players)}</ul>
             </article>
           </section>
 
-          <p class="footer-note">Use your browser print dialog and choose "Save as PDF" to keep this day summary as a PDF file.</p>
+          <p class="footer-note">Use your browser print dialog and choose "Save as PDF" to keep this team and captain sheet for WhatsApp sharing.</p>
         </main>
 
         <script>
@@ -252,7 +250,66 @@ export const openMatchDayPdf = ({ match, players = [] }) => {
         </script>
       </body>
     </html>
-  `);
+  `;
+};
+
+export const openMatchDayPdf = ({ match, players = [] }) => {
+  if (typeof window === 'undefined' || !match) {
+    return false;
+  }
+
+  const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=960,height=780');
+  if (!printWindow) {
+    return false;
+  }
+
+  const captainAName = match.captainA ? getPlayerName(players, match.captainA) : '--';
+  const captainBName = match.captainB ? getPlayerName(players, match.captainB) : '--';
+  const printTitle = `Patoda XI ${match.weekId || 'Weekly'} ${formatDate(match.date)}`;
+
+  printWindow.document.write(
+    getCaptainSheetHtml({
+      title: 'Patoda XI Day Summary',
+      weekId: match.weekId,
+      date: match.date,
+      captainAName,
+      captainBName,
+      teamA: match.teamA,
+      teamB: match.teamB,
+      players,
+      match,
+    })
+  );
+  printWindow.document.close();
+  return true;
+};
+
+export const openCaptainDayPdf = ({ date, weekId, captains, teams, players = [], match = null }) => {
+  if (typeof window === 'undefined' || !captains) {
+    return false;
+  }
+
+  const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=960,height=780');
+  if (!printWindow) {
+    return false;
+  }
+
+  const captainAName = captains.teamA ? getPlayerName(players, captains.teamA) : '--';
+  const captainBName = captains.teamB ? getPlayerName(players, captains.teamB) : '--';
+
+  printWindow.document.write(
+    getCaptainSheetHtml({
+      title: 'Patoda XI Team and Captain Sheet',
+      weekId,
+      date,
+      captainAName,
+      captainBName,
+      teamA: teams?.teamA || [],
+      teamB: teams?.teamB || [],
+      players,
+      match,
+    })
+  );
   printWindow.document.close();
   return true;
 };

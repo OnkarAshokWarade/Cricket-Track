@@ -558,8 +558,16 @@ textarea {
 
 .captain-item .name.captain-loss-color,
 .captain-item .name.captain-win-color,
+.captain-item .name.captain-neutral-color,
 .team-table .team-player-name.captain-loss-color,
-.team-table .team-player-name.captain-win-color {
+.team-table .team-player-name.captain-win-color,
+.team-table .team-player-name.captain-neutral-color,
+.captain-history-field strong.captain-loss-color,
+.captain-history-field strong.captain-win-color,
+.captain-history-field strong.captain-neutral-color,
+.weekly-date-field strong.captain-loss-color,
+.weekly-date-field strong.captain-win-color,
+.weekly-date-field strong.captain-neutral-color {
   font-weight: 800;
 }
 
@@ -573,6 +581,12 @@ textarea {
 .team-table .team-player-name.captain-win-color,
 .match-details-value.captain-win-color {
   color: #15803d;
+}
+
+.captain-item .name.captain-neutral-color,
+.team-table .team-player-name.captain-neutral-color,
+.match-details-value.captain-neutral-color {
+  color: #2563eb;
 }
 
 .player-roster-scroll {
@@ -1287,6 +1301,11 @@ textarea {
 
 .captain-win-color {
   color: #15803d;
+  font-weight: 800;
+}
+
+.captain-neutral-color {
+  color: #2563eb;
   font-weight: 800;
 }
 

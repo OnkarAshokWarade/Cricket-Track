@@ -227,43 +227,6 @@ function GroundExpensePage({ accessMode }) {
     }
   };
 
-  const handleResetMoney = async () => {
-    if (!isAdmin || isSaving) {
-      return;
-    }
-
-    const shouldReset = window.confirm(
-      'Reset the active money records? The current transactions will be archived in Firebase and then cleared from the active table.'
-    );
-
-    if (!shouldReset) {
-      return;
-    }
-
-    const archiveEntry = transactions.length > 0
-      ? {
-          id: createId(),
-          date: currentDateKey,
-          weekId: currentWeekId,
-          resetAt: Date.now(),
-          transactions,
-        }
-      : null;
-
-    const didSave = await persistFundState(
-      {
-        fundTransactions: [],
-        fundArchives: archiveEntry ? [archiveEntry, ...(fundArchives || [])] : fundArchives,
-      },
-      archiveEntry
-        ? 'Active transactions archived to Firebase and cleared from the current view.'
-        : 'No active transactions were available to archive.'
-    );
-    if (didSave) {
-      resetForm();
-    }
-  };
-
   const handleSubmit = async (event) => {
     event.preventDefault();
     setFundMessage('');
@@ -590,14 +553,6 @@ function GroundExpensePage({ accessMode }) {
         <p className="pill" style={{ margin: '0 0 12px', fontWeight: 800 }}>
           Firebase history stays saved with date-wise and week-wise records.
         </p>
-
-        <div className="button-row" style={{ marginTop: 0, marginBottom: '12px' }}>
-          {isAdmin ? (
-            <button type="button" className="button-secondary fund-reset-btn" onClick={handleResetMoney} disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Reset Money (Admin)'}
-            </button>
-          ) : null}
-        </div>
 
         <div className="fund-summary-grid fund-summary-top-grid">
           <article className="fund-summary-card credit">

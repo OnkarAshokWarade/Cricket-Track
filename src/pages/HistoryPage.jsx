@@ -5,6 +5,18 @@ import MatchCard from '../components/MatchCard';
 import MatchFee from '../components/MatchFee';
 import { useAppData } from '../context/AppDataContext';
 
+const getCaptainResultClass = (match, captainId) => {
+  if (!captainId) {
+    return '';
+  }
+
+  if (match.status === 'no-match' || !match.winnerTeam || !match.loserCaptain) {
+    return 'captain-neutral-color';
+  }
+
+  return captainId === match.loserCaptain ? 'captain-loss-color' : 'captain-win-color';
+};
+
 function HistoryPage({ accessMode }) {
   const { players, matches } = useAppData();
   const [weekFilter, setWeekFilter] = useState('all');
@@ -173,7 +185,7 @@ function HistoryPage({ accessMode }) {
           <div className="card" style={{ marginTop: '20px' }}>
             <h2 className="card-title">Captain History by Week</h2>
             <p className="captain-color-legend">
-              <span className="captain-loss-color">Red</span> = Losing captain, <span className="captain-win-color">Green</span> = Winning captain
+              <span className="captain-loss-color">Red</span> = Losing captain, <span className="captain-win-color">Green</span> = Winning captain, <span className="captain-neutral-color">Blue</span> = Captain selected but result not recorded
             </p>
             {Object.keys(captainHistory).length > 0 ? (
               Object.entries(captainHistory).map(([weekId, weekMatches]) => (
@@ -197,7 +209,7 @@ function HistoryPage({ accessMode }) {
                             <td style={{ fontWeight: 800 }}>{formatDate(match.date)}</td>
                             <td>
                               <span
-                                className={match.status === 'no-match' ? '' : match.captainA === match.loserCaptain ? 'captain-loss-color' : 'captain-win-color'}
+                                className={getCaptainResultClass(match, match.captainA)}
                                 style={{ fontWeight: 700 }}
                               >
                                 {match.captainA ? getPlayerName(players, match.captainA) : match.status === 'no-match' ? 'No match' : '--'}
@@ -205,7 +217,7 @@ function HistoryPage({ accessMode }) {
                             </td>
                             <td>
                               <span
-                                className={match.status === 'no-match' ? '' : match.captainB === match.loserCaptain ? 'captain-loss-color' : 'captain-win-color'}
+                                className={getCaptainResultClass(match, match.captainB)}
                                 style={{ fontWeight: 700 }}
                               >
                                 {match.captainB ? getPlayerName(players, match.captainB) : match.status === 'no-match' ? 'No match' : '--'}

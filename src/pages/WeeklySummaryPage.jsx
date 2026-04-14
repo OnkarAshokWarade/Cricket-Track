@@ -29,6 +29,18 @@ const getStatusLabel = (match) => {
   return match.penaltyPaid === true ? 'Paid' : 'Pending';
 };
 
+const getCaptainResultClass = (match, captainId) => {
+  if (!captainId) {
+    return '';
+  }
+
+  if (match.status === 'no-match' || !match.winnerTeam || !match.loserCaptain) {
+    return 'captain-neutral-color';
+  }
+
+  return captainId === match.loserCaptain ? 'captain-loss-color' : 'captain-win-color';
+};
+
 function WeeklySummaryPage() {
   const { players, matches } = useAppData();
   const [pdfMessage, setPdfMessage] = useState('');
@@ -158,11 +170,11 @@ function WeeklySummaryPage() {
                           </div>
                           <div className="weekly-date-field">
                             <span>Team A Captain</span>
-                            <strong>{captainAName}</strong>
+                            <strong className={getCaptainResultClass(match, match.captainA)}>{captainAName}</strong>
                           </div>
                           <div className="weekly-date-field">
                             <span>Team B Captain</span>
-                            <strong>{captainBName}</strong>
+                            <strong className={getCaptainResultClass(match, match.captainB)}>{captainBName}</strong>
                           </div>
                           <div className="weekly-date-field">
                             <span>Week Teams</span>

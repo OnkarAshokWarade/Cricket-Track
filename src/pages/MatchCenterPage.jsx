@@ -20,12 +20,28 @@ import MatchDetails from '../components/MatchDetails';
 import ubedUpiQr from '../assets/ubed-upi-qr.jpeg';
 import { useAppData } from '../context/AppDataContext';
 import useAutoClearMessage from '../hooks/useAutoClearMessage';
+import { openCaptainDayPdf } from '../utils/pdfUtils';
 
 const PENALTY_AMOUNT = 100;
 const PAYMENT_RECEIVER_EN = 'Ubed Shaikh';
 const PAYMENT_RECEIVER_MR = '\u0909\u092c\u0947\u0926 \u0936\u0947\u0916';
 const PAYMENT_RECEIVER_LABEL = `${PAYMENT_RECEIVER_EN} (${PAYMENT_RECEIVER_MR})`;
 const PAYMENT_UPI_ID = 'ubbus313-3@okaxis';
+const getCaptainResultClass = (match, captainId) => {
+  if (!captainId) {
+    return '';
+  }
+
+  if (!match || match.status === 'no-match' || !match.winnerTeam || !match.loserCaptain) {
+    return 'captain-neutral-color';
+  }
+
+  if (captainId === match.loserCaptain) {
+    return 'captain-loss-color';
+  }
+
+  return 'captain-win-color';
+};
 
 function MatchCenterPage({ accessMode }) {
   const { players, teams, captains, matches, addMatch, updateAppState, saveWeeklyTeams } = useAppData();
@@ -301,6 +317,24 @@ function MatchCenterPage({ accessMode }) {
     }
   };
 
+  const handleCaptainPdf = (entry) => {
+    const relatedMatch = matches.find((match) => isSameDay(match.date, entry.date)) || null;
+    const didOpen = openCaptainDayPdf({
+      date: entry.date,
+      weekId,
+      captains: entry,
+      teams: currentTeams,
+      players,
+      match: relatedMatch,
+    });
+
+    setCaptainMessage(
+      didOpen
+        ? `Print window opened for ${formatDate(entry.date)}. Choose "Save as PDF" to share that team and captain sheet.`
+        : 'PDF window could not be opened. Please allow pop-ups for this site and try again.'
+    );
+  };
+
   return (
     <section>
       <div className="top-nav">
@@ -440,6 +474,7 @@ function MatchCenterPage({ accessMode }) {
               <div className="section-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
                 {actionableCaptainDays.map((day) => {
                   const isSelectable = !day.captains && isDateAllowedForCaptain(day.date);
+                  const relatedMatch = matches.find((match) => isSameDay(match.date, day.date)) || null;
 
                   return (
                     <div
@@ -455,11 +490,24 @@ function MatchCenterPage({ accessMode }) {
                       {day.captains ? (
                         <div>
                           <p>
-                            Team A: <strong>{getPlayerName(players, day.captains.teamA)}</strong>
+                            Team A:{' '}
+                            <strong className={getCaptainResultClass(relatedMatch, day.captains.teamA)}>
+                              {getPlayerName(players, day.captains.teamA)}
+                            </strong>
                           </p>
                           <p>
-                            Team B: <strong>{getPlayerName(players, day.captains.teamB)}</strong>
+                            Team B:{' '}
+                            <strong className={getCaptainResultClass(relatedMatch, day.captains.teamB)}>
+                              {getPlayerName(players, day.captains.teamB)}
+                            </strong>
                           </p>
+                          <button
+                            className="button-secondary button-small"
+                            type="button"
+                            onClick={() => handleCaptainPdf(day.captains)}
+                          >
+                            Print / PDF
+                          </button>
                         </div>
                       ) : (
                         <button
@@ -483,23 +531,38 @@ function MatchCenterPage({ accessMode }) {
                     {currentWeekCaptains.dailyCaptains
                       .slice()
                       .sort((a, b) => (a.date < b.date ? -1 : 1))
-                      .map((entry) => (
-                        <article className="captain-history-card" key={entry.date}>
-                          <div className="captain-history-card-top">
-                            <strong className="captain-history-card-date">{formatDate(entry.date)}</strong>
-                          </div>
-                          <div className="captain-history-card-grid">
-                            <div className="captain-history-field">
-                              <span>Team A Captain</span>
-                              <strong>{getPlayerName(players, entry.teamA)}</strong>
+                      .map((entry) => {
+                        const relatedMatch = matches.find((match) => isSameDay(match.date, entry.date)) || null;
+
+                        return (
+                          <article className="captain-history-card" key={entry.date}>
+                            <div className="captain-history-card-top">
+                              <strong className="captain-history-card-date">{formatDate(entry.date)}</strong>
+                              <button
+                                type="button"
+                                className="button-secondary button-small"
+                                onClick={() => handleCaptainPdf(entry)}
+                              >
+                                Print / PDF
+                              </button>
                             </div>
-                            <div className="captain-history-field">
-                              <span>Team B Captain</span>
-                              <strong>{getPlayerName(players, entry.teamB)}</strong>
+                            <div className="captain-history-card-grid">
+                              <div className="captain-history-field">
+                                <span>Team A Captain</span>
+                                <strong className={getCaptainResultClass(relatedMatch, entry.teamA)}>
+                                  {getPlayerName(players, entry.teamA)}
+                                </strong>
+                              </div>
+                              <div className="captain-history-field">
+                                <span>Team B Captain</span>
+                                <strong className={getCaptainResultClass(relatedMatch, entry.teamB)}>
+                                  {getPlayerName(players, entry.teamB)}
+                                </strong>
+                              </div>
                             </div>
-                          </div>
-                        </article>
-                      ))}
+                          </article>
+                        );
+                      })}
                   </div>
                 ) : (
                   <p className="empty-state">No captain selections recorded yet this week.</p>
