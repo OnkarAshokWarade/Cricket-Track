@@ -33,6 +33,15 @@ const isValidDateKey = (value) => typeof value === 'string' && DATE_KEY_PATTERN.
 
 const isOnOrAfterAppStart = (dateKey) => isValidDateKey(dateKey) && dateKey >= APP_START_DATE;
 
+const normalizePlayerId = (value) => {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  const normalized = String(value).trim();
+  return normalized || '';
+};
+
 const createMatchId = () => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -136,7 +145,15 @@ const sanitizeCaptainsData = (captainsData) => {
 
   Object.entries(captainsData).forEach(([weekId, weekData]) => {
     const dailyCaptains = Array.isArray(weekData?.dailyCaptains)
-      ? weekData.dailyCaptains.filter((entry) => isOnOrAfterAppStart(entry?.date))
+      ? weekData.dailyCaptains
+          .filter((entry) => isOnOrAfterAppStart(entry?.date))
+          .map((entry) => ({
+            ...entry,
+            date: entry.date,
+            teamA: normalizePlayerId(entry?.teamA),
+            teamB: normalizePlayerId(entry?.teamB),
+          }))
+          .filter((entry) => entry.teamA || entry.teamB)
       : [];
 
     if (dailyCaptains.length === 0) {

@@ -1,9 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { getWeekId, todayKey } from '../utils/dateUtils';
 import { teamGenerator, getPlayerName } from '../utils/teamUtils';
 import { useAppData } from '../context/AppDataContext';
 import {
   getTeamGenerationStatus,
+  getTeamGenerationIntroText,
+  getTeamGenerationLockedMessage,
+  getTeamGenerationPromptText,
+  getTeamGenerationSuccessMessage,
   MAX_TEAM_GENERATIONS,
   TEAM_GENERATE_PASSWORD,
 } from '../utils/teamGenerationUtils';
@@ -36,10 +40,19 @@ function TeamsPage() {
     [teams]
   );
 
+  useEffect(() => {
+    if (!lockedMessage) {
+      return;
+    }
+
+    setMessageType('warning');
+    setMessage((currentMessage) => currentMessage || lockedMessage);
+  }, [lockedMessage]);
+
   const openPasswordPanel = () => {
     if (!canGenerateTeams) {
       setMessageType('warning');
-      setMessage(lockedMessage || 'Today\'s 2 team-generation chances are over. You can generate teams again tomorrow.');
+      setMessage(lockedMessage || getTeamGenerationLockedMessage());
       setShowPasswordPanel(false);
       return;
     }
@@ -71,13 +84,13 @@ function TeamsPage() {
 
     if (hasReachedGenerationLimit) {
       setMessageType('warning');
-      setMessage('Today\'s 2 team-generation chances are over. You can generate teams again tomorrow.');
+      setMessage(getTeamGenerationLockedMessage());
       return;
     }
 
     if (!canGenerateTeams) {
       setMessageType('warning');
-      setMessage(lockedMessage || 'Today\'s 2 team-generation chances are over. You can generate teams again tomorrow.');
+      setMessage(lockedMessage || getTeamGenerationLockedMessage());
       return;
     }
 
@@ -94,11 +107,7 @@ function TeamsPage() {
         ...newTeams,
       });
       setMessageType('success');
-      setMessage(
-        nextGenerationCount >= MAX_TEAM_GENERATIONS
-          ? 'Weekly teams generated successfully. Generated today: 2/2. You can generate teams again tomorrow.'
-          : `Weekly teams generated successfully. Generated today: ${nextGenerationCount}/2.`
-      );
+      setMessage(getTeamGenerationSuccessMessage(nextGenerationCount));
     } catch (error) {
       console.error('Error generating weekly teams:', error);
       setMessageType('warning');
@@ -128,7 +137,7 @@ function TeamsPage() {
       <div className="top-nav">
         <div>
           <h1 className="page-title">Teams</h1>
-          <p className="page-intro">Team generation requires admin password and is limited to 2 times per day.</p>
+          <p className="page-intro">{getTeamGenerationIntroText()}</p>
         </div>
       </div>
 
@@ -149,11 +158,6 @@ function TeamsPage() {
               Generate Weekly Teams
             </button>
           </div>
-          {lockedMessage && (
-            <p className="warning-text" style={{ marginTop: '12px' }}>
-              {lockedMessage}
-            </p>
-          )}
           {message && (
             <p className={messageType === 'success' ? 'success-text' : 'warning-text'} style={{ marginTop: '14px' }}>
               {message}
@@ -163,7 +167,7 @@ function TeamsPage() {
             <div className="team-password-panel">
               <h3 className="card-title">Enter Admin Password</h3>
               <p className="page-intro" style={{ marginBottom: '12px' }}>
-                Confirm password to use 1 of today&apos;s 2 team-generation chances.
+                {getTeamGenerationPromptText()}
               </p>
               <form className="team-password-form" onSubmit={generateTeams}>
                 <label className="input-label" htmlFor="teams-page-password">

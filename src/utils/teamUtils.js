@@ -35,6 +35,7 @@ export const captainSelector = ({ teamA, teamB }, usedCaptains = {}) => {
 };
 
 export const getPlayerName = (players, playerId) => {
-  const player = players.find((item) => item.id === playerId);
+  const normalizedPlayerId = playerId === null || playerId === undefined ? '' : String(playerId).trim();
+  const player = players.find((item) => String(item.id).trim() === normalizedPlayerId);
   return player ? player.name : 'Unknown';
 };

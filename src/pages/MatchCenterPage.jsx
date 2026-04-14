@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   formatDate,
   getWeekId,
@@ -10,6 +10,9 @@ import {
 import { captainSelector, getPlayerName, teamGenerator } from '../utils/teamUtils';
 import {
   getTeamGenerationStatus,
+  getTeamGenerationLockedMessage,
+  getTeamGenerationPromptText,
+  getTeamGenerationSuccessMessage,
   MAX_TEAM_GENERATIONS,
   TEAM_GENERATE_PASSWORD,
 } from '../utils/teamGenerationUtils';
@@ -73,6 +76,15 @@ function MatchCenterPage({ accessMode }) {
     lockedMessage: teamGenerationLockedMessage,
   } = useMemo(() => getTeamGenerationStatus(currentTeams), [currentTeams]);
 
+  useEffect(() => {
+    if (!isAdmin || !teamGenerationLockedMessage) {
+      return;
+    }
+
+    setTeamMessageType('warning');
+    setTeamMessage((currentMessage) => currentMessage || teamGenerationLockedMessage);
+  }, [isAdmin, teamGenerationLockedMessage]);
+
   const availableCounts = useMemo(() => {
     if (!currentTeams) {
       return { teamA: 0, teamB: 0 };
@@ -112,7 +124,7 @@ function MatchCenterPage({ accessMode }) {
 
     if (hasReachedGenerationLimit) {
       setTeamMessageType('warning');
-      setTeamMessage('Today\'s 2 team-generation chances are over. You can generate teams again tomorrow.');
+      setTeamMessage(getTeamGenerationLockedMessage());
       setShowTeamPasswordModal(false);
       return;
     }
@@ -146,7 +158,7 @@ function MatchCenterPage({ accessMode }) {
 
     if (hasReachedGenerationLimit) {
       setTeamMessageType('warning');
-      setTeamMessage('Today\'s 2 team-generation chances are over. You can generate teams again tomorrow.');
+      setTeamMessage(getTeamGenerationLockedMessage());
       setIsSubmittingTeamGeneration(false);
       return;
     }
@@ -162,11 +174,7 @@ function MatchCenterPage({ accessMode }) {
         ...newTeams,
       });
       setTeamMessageType('success');
-      setTeamMessage(
-        nextGenerationCount >= MAX_TEAM_GENERATIONS
-          ? 'Weekly teams generated successfully. Generated today: 2/2. You can generate teams again tomorrow.'
-          : `Weekly teams generated successfully. Generated today: ${nextGenerationCount}/2.`
-      );
+      setTeamMessage(getTeamGenerationSuccessMessage(nextGenerationCount));
     } catch (error) {
       console.error('Error generating weekly teams:', error);
       setTeamMessageType('warning');
@@ -336,12 +344,6 @@ function MatchCenterPage({ accessMode }) {
             </p>
           ) : null}
 
-          {isAdmin && teamGenerationLockedMessage ? (
-            <p className="warning-text" style={{ marginTop: '12px' }}>
-              {teamGenerationLockedMessage}
-            </p>
-          ) : null}
-
           {teamMessage ? (
             <p className={teamMessageType === 'success' ? 'success-text' : 'warning-text'} style={{ marginTop: '14px' }}>
               {teamMessage}
@@ -354,7 +356,7 @@ function MatchCenterPage({ accessMode }) {
                 Enter Admin Password
               </h3>
               <p className="page-intro" style={{ marginBottom: '12px' }}>
-                Confirm password to use 1 of today&apos;s 2 team-generation chances.
+                {getTeamGenerationPromptText()}
               </p>
               <form className="team-password-form" onSubmit={generateTeams}>
                 <label className="input-label" htmlFor="team-generate-password">
