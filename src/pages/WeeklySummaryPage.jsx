@@ -3,7 +3,7 @@ import { getPlayerName } from '../utils/teamUtils';
 import { formatDate } from '../utils/dateUtils';
 import { useAppData } from '../context/AppDataContext';
 import useAutoClearMessage from '../hooks/useAutoClearMessage';
-import { openMatchDayPdf } from '../utils/pdfUtils';
+import { openMatchDayPdf, openWeekSummaryPdf } from '../utils/pdfUtils';
 import PaymentQrCard from '../components/PaymentQrCard';
 
 const getWinningCaptainLabel = (players, match) => {
@@ -28,7 +28,7 @@ const getStatusLabel = (match) => {
     return 'No payment needed';
   }
 
-  return match.penaltyPaid === true ? 'Paid' : 'Unpaid';
+  return match.penaltyPaid === true ? 'Paid' : 'Pending';
 };
 
 const getStatusClassName = (match) => {
@@ -108,6 +108,22 @@ function WeeklySummaryPage({ accessMode }) {
     );
   };
 
+  const handleExportWeekPdf = (week) => {
+    if (!isAdmin) {
+      setPdfMessageType('warning');
+      setPdfMessage('Guest mode can only open captain PDFs from the Captains section.');
+      return;
+    }
+
+    const didOpen = openWeekSummaryPdf({ week, players });
+    setPdfMessageType(didOpen ? 'success' : 'warning');
+    setPdfMessage(
+      didOpen
+        ? `Print dialog opened for ${week.weekId}. Choose "Save as PDF" to download the full date-wise summary.`
+        : 'Weekly PDF preview could not be prepared. Please try again.'
+    );
+  };
+
   return (
     <section>
       <div className="top-nav">
@@ -139,15 +155,24 @@ function WeeklySummaryPage({ accessMode }) {
                 <p>Matches played: {week.matchesPlayed}</p>
                 <p>No-match days: {week.noMatchDays}</p>
                 <p>Total money: {'\u20B9'} {week.totalMoney}</p>
-                <p>Pending money: {'\u20B9'} {week.pendingMoney} ({week.pendingCount} matches)</p>
+                <p className={week.pendingCount > 0 ? 'weekly-status-pending' : ''}>
+                  Pending money: {'\u20B9'} {week.pendingMoney} ({week.pendingCount} matches)
+                </p>
                 <p>
                   Top losing player:{' '}
                   {week.topLoser.playerId ? `${getPlayerName(players, week.topLoser.playerId)} (\u20B9 ${week.topLoser.amount})` : 'None yet'}
                 </p>
               </div>
 
-              <div style={{ marginTop: '14px' }}>
-                <p className="card-title">Date-wise details</p>
+              <div className="weekly-summary-panel" style={{ marginTop: '14px' }}>
+                <div className="weekly-summary-panel-head">
+                  <p className="card-title" style={{ margin: 0 }}>Date-wise Details</p>
+                  {isAdmin ? (
+                    <button type="button" className="button-secondary button-small" onClick={() => handleExportWeekPdf(week)}>
+                      Week PDF
+                    </button>
+                  ) : null}
+                </div>
                 <div className="weekly-date-list">
                   {week.matches.map((match) => {
                     const statusLabel = getStatusLabel(match);
@@ -162,7 +187,7 @@ function WeeklySummaryPage({ accessMode }) {
                             <span className={getStatusClassName(match)}>{statusLabel}</span>
                             {isAdmin ? (
                               <button type="button" className="button-secondary button-small" onClick={() => handleExportPdf(match)}>
-                                Print / PDF
+                                Day PDF
                               </button>
                             ) : null}
                           </div>
@@ -184,12 +209,12 @@ function WeeklySummaryPage({ accessMode }) {
                 </div>
               </div>
 
-              <div style={{ marginTop: '14px' }}>
-                <p className="card-title">Losses breakdown</p>
-                <ul>
+              <div className="weekly-summary-panel" style={{ marginTop: '14px' }}>
+                <p className="card-title" style={{ margin: 0 }}>Losses Breakdown</p>
+                <ul className="weekly-loss-list">
                   {Object.keys(week.losses).length > 0 ? (
                     Object.entries(week.losses).map(([playerId, amount]) => (
-                      <li key={playerId}>
+                      <li key={playerId} className="weekly-loss-item">
                         {getPlayerName(players, playerId)} - {'\u20B9'} {amount}
                       </li>
                     ))

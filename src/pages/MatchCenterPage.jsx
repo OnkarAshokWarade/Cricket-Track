@@ -48,6 +48,27 @@ const getCaptainResultClass = (match, captainId) => {
   return 'captain-win-color';
 };
 
+const getCaptainHistoryStatus = (match) => {
+  if (match?.status === 'no-match') {
+    return {
+      label: 'No Match',
+      className: 'captain-history-status-neutral',
+    };
+  }
+
+  if (!match || !match.winnerTeam || !match.loserCaptain) {
+    return {
+      label: 'Pending',
+      className: 'captain-neutral-color',
+    };
+  }
+
+  return {
+    label: match.winnerTeam === 'teamA' ? 'Team A won' : 'Team B won',
+    className: 'captain-win-color',
+  };
+};
+
 function MatchCenterPage({ accessMode }) {
   const { players, teams, captains, matches, addMatch, updateAppState, saveWeeklyTeams } = useAppData();
   const [selectedWinner, setSelectedWinner] = useState('A');
@@ -572,8 +593,15 @@ function MatchCenterPage({ accessMode }) {
                 })}
               </div>
 
-              <div style={{ marginTop: '20px' }}>
-                <h3 className="card-title">Current Week Captain History</h3>
+              <div className="captain-history-panel" style={{ marginTop: '20px' }}>
+                <div className="captain-history-panel-head">
+                  <div>
+                    <h3 className="card-title" style={{ marginBottom: '6px' }}>Current Week Captain History</h3>
+                    <p className="captain-color-legend" style={{ marginBottom: 0 }}>
+                      <span className="captain-win-color">Green</span> = Winning captain, <span className="captain-loss-color">Red</span> = Losing captain, <span className="captain-neutral-color">Blue</span> = Captain selected but result not recorded
+                    </p>
+                  </div>
+                </div>
                 {currentWeekCaptains.dailyCaptains?.length > 0 ? (
                   <div className="captain-history-list">
                     {currentWeekCaptains.dailyCaptains
@@ -581,11 +609,13 @@ function MatchCenterPage({ accessMode }) {
                       .sort((a, b) => (a.date < b.date ? -1 : 1))
                       .map((entry) => {
                         const relatedMatch = matches.find((match) => isSameDay(match.date, entry.date)) || null;
+                        const status = getCaptainHistoryStatus(relatedMatch);
 
                         return (
                           <article className="captain-history-card" key={entry.date}>
                             <div className="captain-history-card-top">
                               <strong className="captain-history-card-date">{formatDate(entry.date)}</strong>
+                              <span className={`captain-history-status ${status.className}`}>{status.label}</span>
                             </div>
                             <div className="captain-history-card-grid">
                               <div className="captain-history-field">
