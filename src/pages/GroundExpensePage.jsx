@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import PaymentQrCard from '../components/PaymentQrCard';
 import { useAppData } from '../context/AppDataContext';
 import useAutoClearMessage from '../hooks/useAutoClearMessage';
+import { formatDate, getWeekId, todayKey } from '../utils/dateUtils';
 
 const FIXED_CONTRIBUTION = 100;
 const PAYMENT_RECEIVER_EN = 'Ubed Shaikh';
@@ -19,7 +20,7 @@ const createId = () => {
 const formatINR = (value) => `\u20B9${value.toLocaleString('en-IN')}`;
 
 function GroundExpensePage({ accessMode }) {
-  const { players, fundTransactions, contributionPlayers, updateAppState } = useAppData();
+  const { players, fundTransactions, fundArchives, contributionPlayers, updateAppState } = useAppData();
   const transactions = fundTransactions;
   const [form, setForm] = useState({
     name: '',
@@ -32,6 +33,8 @@ function GroundExpensePage({ accessMode }) {
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isMobileEditorOpen, setIsMobileEditorOpen] = useState(false);
   const isAdmin = accessMode === 'admin';
+  const currentDateKey = todayKey();
+  const currentWeekId = getWeekId(currentDateKey);
   const formPanelRef = useRef(null);
   const nameInputRef = useRef(null);
 
@@ -230,14 +233,32 @@ function GroundExpensePage({ accessMode }) {
     }
 
     const shouldReset = window.confirm(
-      'Reset all money records? This will clear the full transactions history.'
+      'Reset the active money records? The current transactions will be archived in Firebase and then cleared from the active table.'
     );
 
     if (!shouldReset) {
       return;
     }
 
-    const didSave = await persistFundState({ fundTransactions: [] }, 'All transactions have been reset by admin.');
+    const archiveEntry = transactions.length > 0
+      ? {
+          id: createId(),
+          date: currentDateKey,
+          weekId: currentWeekId,
+          resetAt: Date.now(),
+          transactions,
+        }
+      : null;
+
+    const didSave = await persistFundState(
+      {
+        fundTransactions: [],
+        fundArchives: archiveEntry ? [archiveEntry, ...(fundArchives || [])] : fundArchives,
+      },
+      archiveEntry
+        ? 'Active transactions archived to Firebase and cleared from the current view.'
+        : 'No active transactions were available to archive.'
+    );
     if (didSave) {
       resetForm();
     }
@@ -261,9 +282,17 @@ function GroundExpensePage({ accessMode }) {
       return;
     }
 
+    const existingTransaction = editingId
+      ? transactions.find((transaction) => transaction.id === editingId) || null
+      : null;
+
     const payload = {
       id: editingId || createId(),
       name: trimmedName,
+      date: existingTransaction?.date || currentDateKey,
+      weekId: existingTransaction?.weekId || currentWeekId,
+      createdAt: existingTransaction?.createdAt || Date.now(),
+      updatedAt: Date.now(),
       amount,
       type: form.type,
     };
@@ -321,6 +350,10 @@ function GroundExpensePage({ accessMode }) {
     const contribution = {
       id: createId(),
       name: playerName,
+      date: currentDateKey,
+      weekId: currentWeekId,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
       amount: FIXED_CONTRIBUTION,
       type: 'credit',
     };
@@ -554,6 +587,9 @@ function GroundExpensePage({ accessMode }) {
         <p className="page-intro" style={{ marginBottom: '14px' }}>
           {'Select each player as Paid/Unpaid. Paid automatically adds a \u091c\u092e\u093e transaction of \u20B9100.'}
         </p>
+        <p className="pill" style={{ margin: '0 0 12px', fontWeight: 800 }}>
+          Firebase history stays saved with date-wise and week-wise records.
+        </p>
 
         <div className="button-row" style={{ marginTop: 0, marginBottom: '12px' }}>
           {isAdmin ? (
@@ -713,6 +749,8 @@ function GroundExpensePage({ accessMode }) {
               <table className="table fund-table">
                 <thead>
                   <tr>
+                    <th>Date</th>
+                    <th>Week</th>
                     <th>Name</th>
                     <th>Amount</th>
                     <th>Type</th>
@@ -722,6 +760,8 @@ function GroundExpensePage({ accessMode }) {
                 <tbody>
                   {transactions.map((transaction) => (
                     <tr key={transaction.id}>
+                      <td>{transaction.date ? formatDate(transaction.date) : '--'}</td>
+                      <td>{transaction.weekId || '--'}</td>
                       <td>{transaction.name}</td>
                       <td>{formatINR(transaction.amount)}</td>
                       <td>
@@ -767,6 +807,55 @@ function GroundExpensePage({ accessMode }) {
           </aside>
         ) : null}
       </div>
+
+      <section className="card">
+        <div className="top-nav" style={{ marginBottom: '10px' }}>
+          <div>
+            <h2 className="card-title" style={{ marginBottom: '4px' }}>Archived Ground Expense History</h2>
+            <p className="page-intro" style={{ margin: 0 }}>
+              Every reset keeps the older transaction batch saved in Firebase.
+            </p>
+          </div>
+          <p className="pill" style={{ margin: 0, fontWeight: 800 }}>
+            Archives: {fundArchives.length}
+          </p>
+        </div>
+
+        {fundArchives.length === 0 ? (
+          <p className="empty-state">No archived ground expense history yet.</p>
+        ) : (
+          <div className="fund-archive-list">
+            {fundArchives.map((archive) => {
+              const archiveTotals = archive.transactions.reduce(
+                (accumulator, transaction) => {
+                  if (transaction.type === 'credit') {
+                    accumulator.credit += transaction.amount;
+                  } else {
+                    accumulator.debit += transaction.amount;
+                  }
+                  return accumulator;
+                },
+                { credit: 0, debit: 0 }
+              );
+
+              return (
+                <article key={archive.id} className="fund-archive-card">
+                  <div className="fund-archive-card-top">
+                    <strong>{archive.date ? formatDate(archive.date) : '--'}</strong>
+                    <span className="pill">{archive.weekId || '--'}</span>
+                  </div>
+                  <div className="fund-archive-summary">
+                    <span>Entries: {archive.transactions.length}</span>
+                    <span>Credit: {formatINR(archiveTotals.credit)}</span>
+                    <span>Debit: {formatINR(archiveTotals.debit)}</span>
+                    <span>Balance: {formatINR(archiveTotals.credit - archiveTotals.debit)}</span>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
 
       {isMobileViewport && isMobileEditorOpen ? (
         <div className="fund-mobile-editor-overlay" role="dialog" aria-modal="true" aria-label="Add or edit transaction">

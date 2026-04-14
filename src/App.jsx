@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Navigate, Routes, Route, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
+import PendingFeeNotice from './components/PendingFeeNotice';
 import Dashboard from './pages/Dashboard';
 import PlayersPage from './pages/PlayersPage';
 import MatchCenterPage from './pages/MatchCenterPage';
@@ -32,7 +33,7 @@ function AppContent() {
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
   const [authError, setAuthError] = useState('');
-  const { isReady, isDatabaseConfigured, syncError } = useAppData();
+  const { isReady, isDatabaseConfigured, syncError, players, matches } = useAppData();
 
   useAutoClearMessage(authError, setAuthError);
 
@@ -209,6 +210,8 @@ function AppContent() {
             Guest Mode: View only. Login as Admin to edit or manage data.
           </div>
         ) : null}
+
+        <PendingFeeNotice matches={matches} players={players} resetKey={location.pathname} />
 
         {!isDatabaseConfigured ? (
           <div className="database-banner database-banner-warning">

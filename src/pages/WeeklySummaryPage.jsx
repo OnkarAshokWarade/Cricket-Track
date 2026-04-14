@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { getPlayerName } from '../utils/teamUtils';
 import { formatDate } from '../utils/dateUtils';
-import PendingFeeNotice from '../components/PendingFeeNotice';
 import { useAppData } from '../context/AppDataContext';
+import useAutoClearMessage from '../hooks/useAutoClearMessage';
+import { openMatchDayPdf } from '../utils/pdfUtils';
 
 const getWinnerLabel = (match) => {
   if (match.status === 'no-match') {
@@ -30,6 +31,10 @@ const getStatusLabel = (match) => {
 
 function WeeklySummaryPage() {
   const { players, matches } = useAppData();
+  const [pdfMessage, setPdfMessage] = useState('');
+  const [pdfMessageType, setPdfMessageType] = useState('success');
+
+  useAutoClearMessage(pdfMessage, setPdfMessage);
 
   const summaries = useMemo(() => {
     const weeklyMap = {};
@@ -75,16 +80,30 @@ function WeeklySummaryPage() {
       .sort((a, b) => (a.weekId < b.weekId ? 1 : -1));
   }, [matches]);
 
+  const handleExportPdf = (match) => {
+    const didOpen = openMatchDayPdf({ match, players });
+    setPdfMessageType(didOpen ? 'success' : 'warning');
+    setPdfMessage(
+      didOpen
+        ? `Print window opened for ${formatDate(match.date)}. Choose "Save as PDF" to download it.`
+        : 'PDF window could not be opened. Please allow pop-ups for this site and try again.'
+    );
+  };
+
   return (
     <section>
-      <PendingFeeNotice matches={matches} players={players} />
-
       <div className="top-nav">
         <div>
           <h1 className="page-title">Weekly Summary</h1>
           <p className="page-intro">Review money totals, match counts, and top losing players by week.</p>
         </div>
       </div>
+
+      {pdfMessage ? (
+        <div className="card" style={{ marginBottom: '18px', padding: '14px 20px' }}>
+          <p className={pdfMessageType === 'success' ? 'success-text' : 'warning-text'} style={{ margin: 0 }}>{pdfMessage}</p>
+        </div>
+      ) : null}
 
       {summaries.length > 0 ? (
         <div className="section-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
@@ -109,12 +128,19 @@ function WeeklySummaryPage() {
                   {week.matches.map((match) => {
                     const isNoMatch = match.status === 'no-match';
                     const statusLabel = getStatusLabel(match);
+                    const captainAName = match.captainA ? getPlayerName(players, match.captainA) : '--';
+                    const captainBName = match.captainB ? getPlayerName(players, match.captainB) : '--';
 
                     return (
                       <article className="weekly-date-card" key={match.id}>
                         <div className="weekly-date-card-top">
                           <strong className="weekly-date-card-date">{formatDate(match.date)}</strong>
-                          <span className={isNoMatch || match.penaltyPaid === true ? 'weekly-status-paid' : 'weekly-status-pending'}>{statusLabel}</span>
+                          <div className="weekly-date-card-actions">
+                            <span className={isNoMatch || match.penaltyPaid === true ? 'weekly-status-paid' : 'weekly-status-pending'}>{statusLabel}</span>
+                            <button type="button" className="button-secondary button-small" onClick={() => handleExportPdf(match)}>
+                              Print / PDF
+                            </button>
+                          </div>
                         </div>
 
                         <div className="weekly-date-card-grid">
@@ -129,6 +155,18 @@ function WeeklySummaryPage() {
                           <div className="weekly-date-field">
                             <span>Penalty</span>
                             <strong>{'\u20B9'} {match.penalty}</strong>
+                          </div>
+                          <div className="weekly-date-field">
+                            <span>Team A Captain</span>
+                            <strong>{captainAName}</strong>
+                          </div>
+                          <div className="weekly-date-field">
+                            <span>Team B Captain</span>
+                            <strong>{captainBName}</strong>
+                          </div>
+                          <div className="weekly-date-field">
+                            <span>Week Teams</span>
+                            <strong>{`${match.teamA.length} vs ${match.teamB.length} players`}</strong>
                           </div>
                         </div>
                       </article>

@@ -1080,6 +1080,13 @@ textarea {
   flex-wrap: wrap;
 }
 
+.weekly-date-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .weekly-date-card-date {
   color: #0f172a;
 }
@@ -1617,7 +1624,7 @@ textarea {
 }
 
 .fund-table {
-  min-width: 700px;
+  min-width: 860px;
 }
 
 .fund-table thead th {
@@ -1643,6 +1650,36 @@ textarea {
 .player-status-grid::-webkit-scrollbar-track {
   background: #f1f5f9;
   border-radius: 999px;
+}
+
+.fund-archive-list {
+  display: grid;
+  gap: 12px;
+}
+
+.fund-archive-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 14px;
+  background: #f8fafc;
+  display: grid;
+  gap: 10px;
+}
+
+.fund-archive-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.fund-archive-summary {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  color: #334155;
+  font-weight: 700;
 }
 
 @media (max-width: 1100px) {

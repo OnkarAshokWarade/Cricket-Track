@@ -228,6 +228,10 @@ const sanitizeFunds = (fundTransactions) => {
     .map((item) => ({
       id: item.id || `txn-${Date.now()}`,
       name: String(item.name || '').trim(),
+      date: item?.date && isValidDateKey(getDateKey(item.date)) ? getDateKey(item.date) : '',
+      weekId: String(item.weekId || '').trim(),
+      createdAt: Number.isFinite(Number(item.createdAt)) ? Number(item.createdAt) : 0,
+      updatedAt: Number.isFinite(Number(item.updatedAt)) ? Number(item.updatedAt) : 0,
       amount:
         item.type === 'credit'
           ? 100
@@ -246,6 +250,26 @@ const sanitizeContributionPlayers = (contributionPlayers, fundTransactions) => {
     : [];
 
   return uniqueStrings([...names, ...creditNames]);
+};
+
+const sanitizeFundArchives = (fundArchives) => {
+  if (!Array.isArray(fundArchives)) {
+    return [];
+  }
+
+  return fundArchives
+    .map((archive) => {
+      const transactions = sanitizeFunds(archive?.transactions);
+
+      return {
+        id: String(archive?.id || `fund-archive-${Date.now()}`),
+        date: archive?.date && isValidDateKey(getDateKey(archive.date)) ? getDateKey(archive.date) : '',
+        weekId: String(archive?.weekId || '').trim(),
+        resetAt: Number.isFinite(Number(archive?.resetAt)) ? Number(archive.resetAt) : 0,
+        transactions,
+      };
+    })
+    .filter((archive) => archive.transactions.length > 0);
 };
 
 const sanitizePlayers = (playersData) => {
@@ -271,6 +295,7 @@ export const createDefaultAppState = () => {
     matches: [],
     stats: {},
     fundTransactions: [],
+    fundArchives: [],
     contributionPlayers: [],
   };
 };
@@ -318,6 +343,7 @@ export const sanitizeAppState = (rawState = {}) => {
   const captains = sanitizeCaptainsData(rawState.captains);
   const matches = sanitizeMatchesData(rawState.matches);
   const fundTransactions = sanitizeFunds(rawState.fundTransactions);
+  const fundArchives = sanitizeFundArchives(rawState.fundArchives);
   const contributionPlayers = sanitizeContributionPlayers(rawState.contributionPlayers, fundTransactions);
 
   return {
@@ -327,6 +353,7 @@ export const sanitizeAppState = (rawState = {}) => {
     matches,
     stats: buildStatsFromMatches(matches),
     fundTransactions,
+    fundArchives,
     contributionPlayers,
   };
 };

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { formatDate } from '../utils/dateUtils';
 import { getPlayerName } from '../utils/teamUtils';
 
@@ -14,7 +14,8 @@ const normalizePlayerName = (players, playerId) => {
   return name === 'Unknown' ? UNKNOWN_PLAYER_LABEL : name;
 };
 
-function PendingFeeNotice({ matches = [], players = [] }) {
+function PendingFeeNotice({ matches = [], players = [], resetKey = '', autoHideMs = 5000 }) {
+  const [isVisible, setIsVisible] = useState(true);
   const pendingNotices = useMemo(
     () =>
       matches
@@ -29,8 +30,25 @@ function PendingFeeNotice({ matches = [], players = [] }) {
         })),
     [matches, players]
   );
+  const noticeSignature = pendingNotices.map((notice) => notice.id).join('|');
 
-  if (pendingNotices.length === 0) {
+  useEffect(() => {
+    if (pendingNotices.length === 0) {
+      setIsVisible(false);
+      return undefined;
+    }
+
+    setIsVisible(true);
+    const timeoutId = window.setTimeout(() => {
+      setIsVisible(false);
+    }, autoHideMs);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [autoHideMs, noticeSignature, pendingNotices.length, resetKey]);
+
+  if (pendingNotices.length === 0 || !isVisible) {
     return null;
   }
 

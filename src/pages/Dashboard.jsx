@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatDate, getWeekId, todayKey, isSameDay } from '../utils/dateUtils';
 import { getPlayerName } from '../utils/teamUtils';
-import PendingFeeNotice from '../components/PendingFeeNotice';
 import PaymentQrCard from '../components/PaymentQrCard';
 import { useAppData } from '../context/AppDataContext';
 import useAutoClearMessage from '../hooks/useAutoClearMessage';
@@ -81,8 +80,6 @@ function Dashboard({ accessMode }) {
 
   return (
     <section>
-      <PendingFeeNotice matches={matches} players={players} />
-
       <div className="top-nav">
         <div>
           <h1 className="page-title">Dashboard</h1>

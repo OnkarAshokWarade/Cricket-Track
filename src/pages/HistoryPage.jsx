@@ -3,7 +3,6 @@ import { getWeekId, formatDate } from '../utils/dateUtils';
 import { getPlayerName } from '../utils/teamUtils';
 import MatchCard from '../components/MatchCard';
 import MatchFee from '../components/MatchFee';
-import PendingFeeNotice from '../components/PendingFeeNotice';
 import { useAppData } from '../context/AppDataContext';
 
 function HistoryPage({ accessMode }) {
@@ -34,14 +33,50 @@ function HistoryPage({ accessMode }) {
     return history;
   }, [matches]);
 
+  const selectedPlayer = useMemo(
+    () => players.find((player) => player.id === playerFilter) || null,
+    [playerFilter, players]
+  );
+
+  const selectedPlayerRecentHistory = useMemo(() => {
+    if (playerFilter === 'all') {
+      return [];
+    }
+
+    return filteredMatches
+      .filter((match) => [match.captainA, match.captainB, ...match.teamA, ...match.teamB].includes(playerFilter))
+      .slice()
+      .sort((a, b) => (a.date < b.date ? 1 : -1))
+      .slice(0, 15)
+      .map((match) => {
+        const isTeamAPlayer = match.captainA === playerFilter || match.teamA.includes(playerFilter);
+        const isCaptain = match.captainA === playerFilter || match.captainB === playerFilter;
+        const teamLabel = isTeamAPlayer ? 'Team A' : 'Team B';
+        const resultLabel =
+          match.status === 'no-match'
+            ? 'No Match'
+            : (isTeamAPlayer && match.winnerTeam === 'teamA') || (!isTeamAPlayer && match.winnerTeam === 'teamB')
+            ? 'Win'
+            : 'Loss';
+
+        return {
+          id: match.id,
+          date: match.date,
+          weekId: match.weekId,
+          teamLabel,
+          roleLabel: isCaptain ? 'Captain' : 'Player',
+          resultLabel,
+          paymentLabel: match.penaltyPaid === true ? 'Paid' : match.status === 'no-match' ? 'Not needed' : 'Pending',
+        };
+      });
+  }, [filteredMatches, playerFilter]);
+
   const currentWeekId = getWeekId();
 
   return (
     <div className="history-layout">
       <div className="history-main">
         <section>
-          <PendingFeeNotice matches={matches} players={players} />
-
           <div className="top-nav">
             <div>
               <h1 className="page-title">Match History</h1>
@@ -94,6 +129,44 @@ function HistoryPage({ accessMode }) {
               </div>
             ) : (
               <p className="empty-state">No matches found for the selected filters.</p>
+            )}
+          </div>
+
+          <div className="card" style={{ marginTop: '20px' }}>
+            <h2 className="card-title">Player History - Last 15 Dates</h2>
+            {selectedPlayer ? (
+              selectedPlayerRecentHistory.length > 0 ? (
+                <div className="weekly-date-table-wrap">
+                  <table className="weekly-date-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Week</th>
+                        <th>Team</th>
+                        <th>Role</th>
+                        <th>Result</th>
+                        <th>Payment</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedPlayerRecentHistory.map((entry) => (
+                        <tr key={entry.id}>
+                          <td data-label="Date" style={{ fontWeight: 800 }}>{formatDate(entry.date)}</td>
+                          <td data-label="Week">{entry.weekId}</td>
+                          <td data-label="Team">{entry.teamLabel}</td>
+                          <td data-label="Role">{entry.roleLabel}</td>
+                          <td data-label="Result">{entry.resultLabel}</td>
+                          <td data-label="Payment">{entry.paymentLabel}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="empty-state">No recent history found for {selectedPlayer.name}.</p>
+              )
+            ) : (
+              <p className="empty-state">Select a player above to view that player&apos;s most recent 15 dates.</p>
             )}
           </div>
 

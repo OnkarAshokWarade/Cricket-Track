@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { getPlayerName } from '../utils/teamUtils';
-import PendingFeeNotice from './PendingFeeNotice';
 
 const UNKNOWN_PLAYER_LABEL = '\u0905\u091c\u094d\u091e\u093e\u0924';
 const NO_MATCH_STATUS_LABEL = '\u0906\u091c \u0938\u093e\u092e\u0928\u093e \u091d\u093e\u0932\u093e \u0928\u093e\u0939\u0940.';
@@ -29,7 +28,7 @@ const normalizePlayerName = (players, playerId) => {
   return name === 'Unknown' ? UNKNOWN_PLAYER_LABEL : name;
 };
 
-function MatchDetails({ todayMatch, players, pendingMatches = [] }) {
+function MatchDetails({ todayMatch, players }) {
   const matchInfo = useMemo(() => {
     if (!todayMatch) return null;
 
@@ -111,8 +110,6 @@ function MatchDetails({ todayMatch, players, pendingMatches = [] }) {
           ) : null}
         </div>
       ) : null}
-
-      <PendingFeeNotice matches={pendingMatches} players={players} />
     </section>
   );
 }
