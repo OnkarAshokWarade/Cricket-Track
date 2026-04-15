@@ -33,7 +33,7 @@ function Sidebar({ accessMode, onSwitchRole }) {
 
       <div className="sidebar-footer">
         <small className="sidebar-mode-tag">
-          Mode: {accessMode === 'admin' ? 'Admin' : 'Guest'}
+          Mode: {accessMode === 'admin' ? 'Admin' : 'Player'}
         </small>
         <button type="button" className="sidebar-switch-btn" onClick={onSwitchRole}>
           Switch Role
