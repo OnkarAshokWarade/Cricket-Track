@@ -4,7 +4,7 @@ import { getPlayerName } from '../utils/teamUtils';
 
 const PAYMENT_RECEIVER_MR = '\u0909\u092c\u0947\u0926 \u0936\u0947\u0916';
 
-function MatchFee({ matches, players, currentWeekId }) {
+function MatchFee({ matches, players, currentWeekId, showUnpaidNotice = true }) {
   const weeklyData = useMemo(() => {
     const weekMatches = matches.filter(
       (match) => match.weekId === currentWeekId && match.status !== 'no-match' && (match.penalty || 0) > 0 && match.loserCaptain
@@ -76,16 +76,16 @@ function MatchFee({ matches, players, currentWeekId }) {
 
       <div className="fee-summary">
         <div className="summary-item collected">
-          <span className="label">Collected</span>
+          <span className="label">जमा</span>
           <span className="amount">{`\u20B9${weeklyData.totalCollected}`}</span>
         </div>
         <div className="summary-item outstanding">
-          <span className="label">Outstanding</span>
+          <span className="label">बाकी</span>
           <span className="amount">{`\u20B9${weeklyData.totalOutstanding}`}</span>
         </div>
       </div>
 
-      {weeklyData.unpaidNotices.length > 0 ? (
+      {showUnpaidNotice && weeklyData.unpaidNotices.length > 0 ? (
         <div className="player-penalties">
           <h4>Unpaid Notice</h4>
           <div className="penalty-list">
@@ -93,7 +93,7 @@ function MatchFee({ matches, players, currentWeekId }) {
               <div key={notice.id} className="player-penalty-card">
                 <p className="match-unpaid-notice" style={{ marginBottom: '10px' }}>
                   <strong className="match-unpaid-name">{getPlayerName(players, notice.playerId)}</strong>
-                  {`: ${notice.penalty} \u0930\u0941\u092a\u092f\u0947 \u092c\u093e\u0915\u0940 \u0906\u0939\u0947\u0924, ${PAYMENT_RECEIVER_MR} \u092f\u093e\u0902\u0928\u093e \u0926\u094d\u092f\u093e.`}
+                  {` : ${notice.penalty} \u0930\u0941\u092a\u092f\u0947 ${PAYMENT_RECEIVER_MR} \u092f\u093e\u0902\u091a\u094d\u092f\u093e\u0915\u0921\u0947 \u0932\u0935\u0915\u0930\u093e\u0924 \u0932\u0935\u0915\u0930 \u091c\u092e\u093e \u0915\u0930\u093e`}
                 </p>
                 <p className="page-intro" style={{ marginBottom: 0 }}>
                   Match Date: {formatDate(notice.date)}

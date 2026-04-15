@@ -44,36 +44,26 @@ const getCaptainResultClass = (match, captainId) => {
     return '';
   }
 
-  if (!match || match.status === 'no-match' || !match.winnerTeam || !match.loserCaptain) {
+  if (!match || match.status === 'no-match' || !match.winnerTeam) {
     return 'captain-neutral-color';
+  }
+
+  const winnerCaptainId = match.winnerTeam === 'teamA' ? match.captainA : match.captainB;
+  const loserCaptainId = match.winnerTeam === 'teamA' ? match.captainB : match.captainA;
+
+  if (captainId === winnerCaptainId) {
+    return 'captain-win-color';
+  }
+
+  if (captainId === loserCaptainId) {
+    return 'captain-loss-color';
   }
 
   if (captainId === match.loserCaptain) {
     return 'captain-loss-color';
   }
 
-  return 'captain-win-color';
-};
-
-const getCaptainHistoryStatus = (match) => {
-  if (match?.status === 'no-match') {
-    return {
-      label: 'No Match',
-      className: 'captain-history-status-neutral',
-    };
-  }
-
-  if (!match || !match.winnerTeam || !match.loserCaptain) {
-    return {
-      label: 'Pending',
-      className: 'captain-neutral-color',
-    };
-  }
-
-  return {
-    label: match.winnerTeam === 'teamA' ? 'Team A won' : 'Team B won',
-    className: 'captain-win-color',
-  };
+  return 'captain-neutral-color';
 };
 
 function MatchCenterPage({ accessMode }) {
@@ -445,7 +435,6 @@ function MatchCenterPage({ accessMode }) {
       <div className="top-nav">
         <div>
           <h1 className="page-title">Match Center</h1>
-          <p className="page-intro">Run the full weekly workflow here: generate teams, select captains, and record today&apos;s result.</p>
         </div>
       </div>
 
@@ -634,9 +623,9 @@ function MatchCenterPage({ accessMode }) {
               <div className="captain-history-panel" style={{ marginTop: '20px' }}>
                 <div className="captain-history-panel-head">
                   <div>
-                    <h3 className="card-title" style={{ marginBottom: '6px' }}>Current Week Captain History</h3>
+                    <h3 className="card-title" style={{ marginBottom: '6px' }}>Date-wise Captain Color</h3>
                     <p className="captain-color-legend" style={{ marginBottom: 0 }}>
-                      <span className="captain-win-color">Green</span> = Winning captain, <span className="captain-loss-color">Red</span> = Losing captain, <span className="captain-neutral-color">Blue</span> = Captain selected but result not recorded
+                      <span className="captain-loss-color">लाल</span> = हरलेला कर्णधार, <span className="captain-win-color">हिरवा</span> = जिंकलेला कर्णधार, <span className="captain-neutral-color">निळा</span> = कर्णधार निवडलेला आहे पण निकाल नोंदलेला नाही
                     </p>
                   </div>
                 </div>
@@ -647,24 +636,24 @@ function MatchCenterPage({ accessMode }) {
                       .sort((a, b) => (a.date < b.date ? -1 : 1))
                       .map((entry) => {
                         const relatedMatch = matches.find((match) => isSameDay(match.date, entry.date)) || null;
-                        const status = getCaptainHistoryStatus(relatedMatch);
+                        const teamAClassName = getCaptainResultClass(relatedMatch, entry.teamA) || 'captain-neutral-color';
+                        const teamBClassName = getCaptainResultClass(relatedMatch, entry.teamB) || 'captain-neutral-color';
 
                         return (
                           <article className="captain-history-card" key={entry.date}>
                             <div className="captain-history-card-top">
                               <strong className="captain-history-card-date">{formatDate(entry.date)}</strong>
-                              <span className={`captain-history-status ${status.className}`}>{status.label}</span>
                             </div>
                             <div className="captain-history-card-grid">
                               <div className="captain-history-field">
                                 <span>Team A Captain</span>
-                                <strong className={getCaptainResultClass(relatedMatch, entry.teamA)}>
+                                <strong className={teamAClassName}>
                                   {getPlayerName(players, entry.teamA)}
                                 </strong>
                               </div>
                               <div className="captain-history-field">
                                 <span>Team B Captain</span>
-                                <strong className={getCaptainResultClass(relatedMatch, entry.teamB)}>
+                                <strong className={teamBClassName}>
                                   {getPlayerName(players, entry.teamB)}
                                 </strong>
                               </div>

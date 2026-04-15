@@ -36,12 +36,9 @@ function PlayerForm({ existingPlayer, onSave, onCancel, players, isSubmitting = 
   return (
     <form className="rounded-2xl border border-slate-300 bg-white p-4 shadow-md sm:p-5" onSubmit={handleSubmit}>
       <h2 className="text-lg font-extrabold text-slate-900">{existingPlayer ? 'Edit Player' : 'Add Player'}</h2>
-      <p className="mt-1 text-sm leading-relaxed text-slate-600">
-        Use clear names for better search and Marathi readability.
-      </p>
 
       <div className="mt-4 space-y-2">
-        <label className="text-sm font-medium text-slate-700" htmlFor="player-name">
+        <label className="text-sm font-extrabold text-black" htmlFor="player-name">
           Player name
         </label>
         <input

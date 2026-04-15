@@ -563,9 +563,6 @@ function GroundExpensePage({ accessMode }) {
     <section className="ground-expense-page">
       <div className="card">
         <h1 className="page-title">Ground Expense</h1>
-        <p className="page-intro" style={{ marginBottom: '14px' }}>
-          {'This page is separate from the Players page. Add contribution players manually here and mark them Paid/Unpaid. Paid automatically adds a \u091c\u092e\u093e transaction of \u20B9100.'}
-        </p>
         <p className="pill" style={{ margin: '0 0 12px', fontWeight: 800 }}>
           Firebase history stays saved with date-wise and week-wise records.
         </p>
@@ -691,7 +688,7 @@ function GroundExpensePage({ accessMode }) {
             <div className="unpaid-notice-list">
               {unpaidPlayers.map((playerName) => (
                 <p key={playerName} className="unpaid-notice-item">
-                  <span className="unpaid-notice-player">&quot;{playerName}&quot;</span>: {FIXED_CONTRIBUTION} रुपये बाकी आहेत, {PAYMENT_RECEIVER_MR} यांना द्या.
+                  <span className="unpaid-notice-player">{playerName}</span> : {FIXED_CONTRIBUTION} रुपये {PAYMENT_RECEIVER_MR} यांच्याकडे लवकरात लवकर जमा करा
                 </p>
               ))}
             </div>

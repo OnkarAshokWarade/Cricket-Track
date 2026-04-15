@@ -80,8 +80,8 @@ function AppContent() {
   }, [showAdminLogin]);
 
   const isGuest = accessMode === 'guest';
-  const shouldShowPendingFeeNotice =
-    isGuest && location.pathname !== '/rules-patodag' && location.pathname !== '/ground-expense';
+  const noticeEnabledRoutes = new Set(['/', '/players', '/match-center', '/history', '/weekly-summary']);
+  const shouldShowPendingFeeNotice = noticeEnabledRoutes.has(location.pathname);
 
   const handleGuestEntry = () => {
     setAccessMode('guest');
@@ -235,7 +235,7 @@ function AppContent() {
             matches={matches}
             players={players}
             resetKey={location.pathname}
-            timedVisibility={!isGuest}
+            timedVisibility
           />
         ) : null}
 

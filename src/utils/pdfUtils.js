@@ -25,6 +25,30 @@ const getPaymentStatusLabel = (match) => {
   return match.penaltyPaid === true ? 'Paid' : 'Pending';
 };
 
+const getPaymentStatusClassName = (match) => {
+  if (!match || match.status === 'no-match') {
+    return 'neutral';
+  }
+
+  return match.penaltyPaid === true ? 'paid' : 'pending';
+};
+
+const getResultStatusClassName = (match) => {
+  if (!match) {
+    return 'upcoming';
+  }
+
+  if (match.status === 'no-match') {
+    return 'neutral';
+  }
+
+  if (!match.winnerTeam) {
+    return 'upcoming';
+  }
+
+  return 'paid';
+};
+
 const getDayOutcome = ({ captainAName, captainBName, players = [], match = null }) => {
   if (!match) {
     return {
@@ -61,6 +85,8 @@ const getDayOutcome = ({ captainAName, captainBName, players = [], match = null 
 const getMatchSummaryHtml = ({ title, weekId, date, captainAName, captainBName, players = [], match = null }) => {
   const outcome = getDayOutcome({ captainAName, captainBName, players, match });
   const formattedDate = formatDate(date);
+  const matchStatusClassName = getResultStatusClassName(match);
+  const paymentStatusClassName = getPaymentStatusClassName(match);
 
   return `
     <!doctype html>
@@ -168,6 +194,22 @@ const getMatchSummaryHtml = ({ title, weekId, date, captainAName, captainBName, 
             color: #334155;
           }
 
+          .status-paid {
+            color: #15803d;
+          }
+
+          .status-pending {
+            color: #dc2626;
+          }
+
+          .status-upcoming {
+            color: #2563eb;
+          }
+
+          .status-neutral {
+            color: #334155;
+          }
+
           .footer-note {
             margin-top: 24px;
             color: #475569;
@@ -198,8 +240,8 @@ const getMatchSummaryHtml = ({ title, weekId, date, captainAName, captainBName, 
               <span class="pill">Day summary</span>
             </div>
             <div>
-              <p>Match status: <strong>${escapeHtml(outcome.matchStatusLabel)}</strong></p>
-              <p>Penalty status: <strong>${escapeHtml(outcome.paymentStatusLabel)}</strong></p>
+              <p>Match status: <strong class="status-${escapeHtml(matchStatusClassName)}">${escapeHtml(outcome.matchStatusLabel)}</strong></p>
+              <p>Penalty status: <strong class="status-${escapeHtml(paymentStatusClassName)}">${escapeHtml(outcome.paymentStatusLabel)}</strong></p>
             </div>
           </header>
 
@@ -250,6 +292,22 @@ const getWeeklyStatusClassName = (match) => {
   }
 
   return match.penaltyPaid === true ? 'paid' : 'pending';
+};
+
+const getWeeklyResultClassName = (match) => {
+  if (!match) {
+    return 'status-upcoming';
+  }
+
+  if (match.status === 'no-match') {
+    return 'status-neutral';
+  }
+
+  if (!match.winnerTeam) {
+    return 'status-upcoming';
+  }
+
+  return 'status-win';
 };
 
 const getWeeklyWinnerLabel = (match) => {
@@ -394,6 +452,10 @@ const getWeeklySummaryHtml = ({ title, week, players = [] }) => {
             font-size: 17px;
           }
 
+          .losses-heading {
+            color: #dc2626;
+          }
+
           .stats-list {
             display: grid;
             gap: 8px;
@@ -478,8 +540,12 @@ const getWeeklySummaryHtml = ({ title, week, players = [] }) => {
             color: #dc2626;
           }
 
+          .status-upcoming {
+            color: #2563eb;
+          }
+
           .status-neutral {
-            color: #475569;
+            color: #2563eb;
           }
 
           .status-win {
@@ -496,6 +562,7 @@ const getWeeklySummaryHtml = ({ title, week, players = [] }) => {
             gap: 12px;
             align-items: center;
             font-weight: 700;
+            color: #dc2626;
           }
 
           .empty-state {
@@ -535,7 +602,7 @@ const getWeeklySummaryHtml = ({ title, week, players = [] }) => {
             </div>
             <div class="pill-row">
               <span class="pill">Matches: ${escapeHtml(String(week.matchesPlayed || 0))}</span>
-              <span class="pill pending">Pending: ${escapeHtml(String(week.pendingCount || 0))}</span>
+              <span class="pill ${(week.pendingCount || 0) > 0 ? 'pending' : 'paid'}">Pending: ${escapeHtml(String(week.pendingCount || 0))}</span>
             </div>
           </header>
 
@@ -549,8 +616,8 @@ const getWeeklySummaryHtml = ({ title, week, players = [] }) => {
               </div>
               <div class="stats-list">
                 <div class="stats-row"><span>Pending Money</span><strong class="status-pending">Rs ${escapeHtml(String(week.pendingMoney || 0))}</strong></div>
-                <div class="stats-row"><span>Pending Status</span><strong class="status-pending">${(week.pendingCount || 0) > 0 ? 'Pending' : 'Clear'}</strong></div>
-                <div class="stats-row"><span>Pending Matches</span><strong class="${(week.pendingCount || 0) > 0 ? 'status-pending' : 'status-neutral'}">${escapeHtml(String(week.pendingCount || 0))}</strong></div>
+                <div class="stats-row"><span>Pending Status</span><strong class="${(week.pendingCount || 0) > 0 ? 'status-pending' : 'status-paid'}">${(week.pendingCount || 0) > 0 ? 'Pending' : 'Clear'}</strong></div>
+                <div class="stats-row"><span>Pending Matches</span><strong class="${(week.pendingCount || 0) > 0 ? 'status-pending' : 'status-paid'}">${escapeHtml(String(week.pendingCount || 0))}</strong></div>
               </div>
             </div>
           </section>
@@ -596,6 +663,7 @@ const getWeeklySummaryHtml = ({ title, week, players = [] }) => {
                       : match.loserCaptain
                       ? getPlayerName(players, match.loserCaptain)
                       : 'Result pending';
+                  const resultClassName = getWeeklyResultClassName(match);
 
                   return `
                     <article class="date-card">
@@ -606,15 +674,15 @@ const getWeeklySummaryHtml = ({ title, week, players = [] }) => {
                       <div class="date-grid">
                         <div class="date-field">
                           <span>Winner</span>
-                          <strong class="${match.status === 'no-match' ? 'status-neutral' : 'status-win'}">${escapeHtml(getWeeklyWinnerLabel(match))}</strong>
+                          <strong class="${escapeHtml(resultClassName)}">${escapeHtml(getWeeklyWinnerLabel(match))}</strong>
                         </div>
                         <div class="date-field">
                           <span>Winning Captain</span>
-                          <strong class="${match.status === 'no-match' ? 'status-neutral' : 'status-win'}">${escapeHtml(winningCaptainLabel)}</strong>
+                          <strong class="${escapeHtml(resultClassName)}">${escapeHtml(winningCaptainLabel)}</strong>
                         </div>
                         <div class="date-field">
                           <span>Losing Captain</span>
-                          <strong class="${match.status === 'no-match' ? 'status-neutral' : 'status-loss'}">${escapeHtml(losingCaptainLabel)}</strong>
+                          <strong class="${!match || match.status === 'no-match' ? 'status-neutral' : !match.winnerTeam ? 'status-upcoming' : 'status-loss'}">${escapeHtml(losingCaptainLabel)}</strong>
                         </div>
                       </div>
                     </article>
@@ -625,7 +693,7 @@ const getWeeklySummaryHtml = ({ title, week, players = [] }) => {
           </section>
 
           <section class="section-card">
-            <h2>Losses Breakdown</h2>
+            <h2 class="losses-heading">Losses Breakdown</h2>
             <div class="loss-list">
               ${losses.length > 0
                 ? losses
@@ -741,6 +809,11 @@ const getCaptainSheetHtml = ({ title, weekId, date, captainAName, captainBName, 
             margin: 1px 0;
             color: #475569;
             font-size: 10px;
+          }
+
+          .match-date-value {
+            color: #000000;
+            font-weight: 800;
           }
 
           .pill-row {
@@ -869,7 +942,7 @@ const getCaptainSheetHtml = ({ title, weekId, date, captainAName, captainBName, 
             <div>
               <h1>${escapeHtml(title)}</h1>
               <p>Week: ${escapeHtml(weekId || '--')}</p>
-              <p>Date of Match: <strong>${escapeHtml(formattedDate)}</strong></p>
+              <p>Date of Match: <strong class="match-date-value">${escapeHtml(formattedDate)}</strong></p>
             </div>
             <div class="pill-row">
               <span class="pill">Team A Captain: ${escapeHtml(captainAName)}</span>

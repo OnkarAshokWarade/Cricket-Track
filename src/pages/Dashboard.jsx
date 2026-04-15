@@ -62,45 +62,44 @@ function Dashboard({ accessMode }) {
       <div className="top-nav">
         <div>
           <h1 className="page-title">Dashboard</h1>
-          <p className="page-intro">Quick review of Patoda XI weekly squads, captains, and money status.</p>
         </div>
       </div>
 
       <div className="card">
-        <h2 className="card-title">Dashboard information</h2>
+        <h2 className="card-title">Dashboard Information</h2>
         <div className="overflow-x-auto">
           <table className="table">
             <thead>
               <tr>
-                <th>Metric</th>
-                <th>Value</th>
+                <th>घटक</th>
+                <th>मूल्य</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody style={{ fontWeight: 700 }}>
               <tr>
-                <td>Players</td>
-                <td>{players.length} members loaded</td>
+                <td>खेळाडू</td>
+                <td>{players.length} सदस्य लोड झाले</td>
               </tr>
               <tr>
-                <td>Current week</td>
+                <td>चालू आठवडा</td>
                 <td>{currentWeekId}</td>
               </tr>
               <tr>
-                <td>Weekly team status</td>
-                <td>{currentWeekTeam ? `${teamCount} players split into 2 teams` : 'Teams not generated yet'}</td>
+                <td>साप्ताहिक टीम स्थिती</td>
+                <td>{currentWeekTeam ? `${teamCount} खेळाडू 2 टीममध्ये विभागले` : 'टीम अजून तयार झालेल्या नाहीत'}</td>
               </tr>
               <tr>
-                <td>Today</td>
+                <td>आज</td>
                 <td>
                   {todayMatch
                     ? todayMatch.status === 'no-match'
-                      ? 'Today marked as no match'
-                      : 'Match recorded today'
-                    : 'No match recorded yet'}
+                      ? 'आज नो मॅच म्हणून नोंद केले'
+                      : 'आजची मॅच नोंद झाली आहे'
+                    : 'आजची मॅच अजून नोंदलेली नाही'}
                 </td>
               </tr>
               <tr>
-                <td>Money collected</td>
+                <td>जमा रक्कम</td>
                 <td>Rs. {totalPenalty}</td>
               </tr>
             </tbody>
@@ -116,7 +115,7 @@ function Dashboard({ accessMode }) {
 
       <div className="section-grid" style={{ gridTemplateColumns: '1fr', marginTop: '20px' }}>
         <div className="card">
-          <h2 className="card-title">Current week status</h2>
+          <h2 className="card-title">चालू आठवड्याची स्थिती</h2>
           <div className="overflow-x-auto">
             <table className="table team-table split-team-table">
               <thead>
@@ -133,10 +132,10 @@ function Dashboard({ accessMode }) {
                 {!currentWeekTeam ? (
                   <tr>
                     <td className="team-players-cell team-col-a">
-                      <span className="empty-state">Not generated yet</span>
+                      <span className="empty-state">अजून तयार नाही</span>
                     </td>
                     <td className="team-players-cell team-col-b">
-                      <span className="empty-state">Not generated yet</span>
+                      <span className="empty-state">अजून तयार नाही</span>
                     </td>
                   </tr>
                 ) : (

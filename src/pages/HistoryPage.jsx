@@ -22,7 +22,7 @@ function HistoryPage({ accessMode }) {
   const { players, matches } = useAppData();
   const isAdmin = accessMode === 'admin';
   const isGuest = accessMode === 'guest';
-  const showSidebar = !isAdmin;
+  const showSidebar = true;
 
   const sortedMatches = useMemo(
     () => matches.slice().sort((a, b) => (a.date < b.date ? 1 : -1)),
@@ -74,7 +74,7 @@ function HistoryPage({ accessMode }) {
           <div className="card" style={{ marginTop: '20px' }}>
             <h2 className="card-title">Captain History by Week</h2>
             <p className="captain-color-legend">
-              <span className="captain-loss-color">Red</span> = Losing captain, <span className="captain-win-color">Green</span> = Winning captain, <span className="captain-neutral-color">Blue</span> = Captain selected but result not recorded
+              <span className="captain-loss-color">लाल</span> = हरलेला कर्णधार, <span className="captain-win-color">हिरवा</span> = जिंकलेला कर्णधार, <span className="captain-neutral-color">निळा</span> = कर्णधार निवडलेला आहे पण निकाल नोंदलेला नाही
             </p>
             {Object.keys(captainHistory).length > 0 ? (
               Object.entries(captainHistory).map(([weekId, weekMatches]) => (
@@ -122,12 +122,18 @@ function HistoryPage({ accessMode }) {
               <p className="empty-state">No recorded captain history yet.</p>
             )}
           </div>
+
         </section>
       </div>
 
       {showSidebar ? (
         <aside className="history-sidebar">
-          <MatchFee matches={matches} players={players} currentWeekId={currentWeekId} />
+          <MatchFee
+            matches={matches}
+            players={players}
+            currentWeekId={currentWeekId}
+            showUnpaidNotice={false}
+          />
           {isGuest ? (
             <div style={{ marginTop: '18px' }}>
               <PaymentQrCard title="Guest Contribution QR" />

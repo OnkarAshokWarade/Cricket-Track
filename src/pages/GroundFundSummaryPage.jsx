@@ -61,9 +61,6 @@ function GroundFundSummaryPage() {
     <section className="ground-expense-page">
       <div className="card">
         <h1 className="page-title">Ground Fund Summary</h1>
-        <p className="page-intro" style={{ marginBottom: '14px' }}>
-          Match fee collections from losing captains are added here with the current Ground Expense calculation, without changing the existing Ground Expense page.
-        </p>
       </div>
 
       <div className="fund-summary-grid fund-summary-top-grid">
@@ -85,27 +82,24 @@ function GroundFundSummaryPage() {
         <section className="card ground-fund-breakdown">
           <div className="top-nav" style={{ marginBottom: '10px' }}>
             <div>
-              <h2 className="card-title" style={{ marginBottom: '4px' }}>Collection Breakdown</h2>
-              <p className="page-intro" style={{ margin: 0 }}>
-                Match fee tracker totals are included here separately from the main Ground Expense page.
-              </p>
+              <h2 className="card-title" style={{ marginBottom: '4px' }}>संकलन तपशील</h2>
             </div>
           </div>
 
           <article className="fund-summary-card credit">
-            <span>Match Fee Collected</span>
+            <span>हरलेल्या जमा मॅच फी</span>
             <strong>{formatINR(matchFeeTotals.totalCollected)}</strong>
           </article>
           <article className="fund-summary-card debit">
-            <span>Match Fee Outstanding</span>
+            <span>हरलेल्या बाकी मॅच फी</span>
             <strong>{formatINR(matchFeeTotals.totalOutstanding)}</strong>
           </article>
           <article className="fund-summary-card credit">
-            <span>Ground Contribution Collected</span>
+            <span>ग्राऊंड साठी दिलेले पैसे</span>
             <strong>{formatINR(groundExpenseTotals.totalCredit)}</strong>
           </article>
           <article className="fund-summary-card debit">
-            <span>Ground Expense Spent</span>
+            <span>क्रिकेट + ग्राऊंड साठी झालेला खर्च</span>
             <strong>{formatINR(groundExpenseTotals.totalDebit)}</strong>
           </article>
         </section>
@@ -113,10 +107,7 @@ function GroundFundSummaryPage() {
         <section className="card">
           <div className="top-nav" style={{ marginBottom: '10px' }}>
             <div>
-              <h2 className="card-title" style={{ marginBottom: '4px' }}>Calculation</h2>
-              <p className="page-intro" style={{ margin: 0 }}>
-                Combined total = Ground contribution + paid match fee - Ground expense.
-              </p>
+              <h2 className="card-title" style={{ marginBottom: '4px' }}>गणना</h2>
             </div>
           </div>
 
@@ -124,17 +115,17 @@ function GroundFundSummaryPage() {
             <table className="table fund-calculation-table">
               <thead>
                 <tr>
-                  <th>Item</th>
-                  <th>Amount</th>
+                  <th>घटक</th>
+                  <th>रक्कम</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>Ground Contribution</td>
+                  <td>ग्राऊंड साठी दिलेले पैसे</td>
                   <td>{formatINR(groundExpenseTotals.totalCredit)}</td>
                 </tr>
                 <tr>
-                  <td>Match Fee Collected</td>
+                  <td>हरलेल्या जमा मॅच फी</td>
                   <td>{formatINR(matchFeeTotals.totalCollected)}</td>
                 </tr>
                 <tr>
