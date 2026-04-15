@@ -3,6 +3,7 @@ import PaymentQrCard from '../components/PaymentQrCard';
 import { useAppData } from '../context/AppDataContext';
 import useAutoClearMessage from '../hooks/useAutoClearMessage';
 import { formatDate, getWeekId, todayKey } from '../utils/dateUtils';
+import { openFundTransactionsPdf } from '../utils/pdfUtils';
 
 const FIXED_CONTRIBUTION = 100;
 const PAYMENT_RECEIVER_MR = '\u0909\u092c\u0947\u0926 \u0936\u0947\u0916';
@@ -488,6 +489,19 @@ function GroundExpensePage({ accessMode }) {
     }
   };
 
+  const handleExportTransactionsPdf = () => {
+    const didOpen = openFundTransactionsPdf({
+      transactions,
+      archives: fundArchives,
+    });
+
+    setFundMessage(
+      didOpen
+        ? 'Transaction history PDF opened. Choose "Save as PDF" to download it.'
+        : 'Transaction history PDF could not be prepared. Please try again.'
+    );
+  };
+
   const renderEditorContent = (showMobileCloseButton = false) => (
     <>
       <div className="ground-expense-editor-header">
@@ -604,7 +618,7 @@ function GroundExpensePage({ accessMode }) {
       <div className="card">
         <div className="top-nav" style={{ marginBottom: '10px' }}>
           <div>
-            <h2 className="card-title" style={{ marginBottom: '4px' }}>Player Contribution Status</h2>
+            <h2 className="card-title" style={{ marginBottom: '4px' }}>ग्राउंडसाठी व क्रिकेटच्या सामनासाठी</h2>
             <p className="page-intro" style={{ margin: 0 }}>
               Add players manually here and mark them as Paid or Unpaid.
             </p>
@@ -729,6 +743,14 @@ function GroundExpensePage({ accessMode }) {
                   {transactionTypeCounts.debit}
                 </span>
               </p>
+              <button
+                type="button"
+                className="button-secondary button-small"
+                onClick={handleExportTransactionsPdf}
+                data-guest-allowed="true"
+              >
+                Generate PDF
+              </button>
               {isAdmin && isMobileViewport ? (
                 <button
                   type="button"

@@ -986,6 +986,348 @@ const getCaptainSheetHtml = ({ title, weekId, date, captainAName, captainBName, 
   `;
 };
 
+const getFundTypeLabel = (type) => {
+  if (type === 'credit-fixed') {
+    return 'जमा (Fixed ₹100)';
+  }
+
+  if (type === 'credit-manual' || type === 'credit') {
+    return 'जमा';
+  }
+
+  return 'खर्च';
+};
+
+const isFundCreditType = (type) => type === 'credit-fixed' || type === 'credit-manual' || type === 'credit';
+
+const getFundTransactionsHtml = ({ title, transactions = [], archives = [] }) => {
+  const sortedCurrent = transactions
+    .slice()
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
+
+  const currentTotals = sortedCurrent.reduce(
+    (accumulator, transaction) => {
+      if (isFundCreditType(transaction.type)) {
+        accumulator.credit += Number(transaction.amount) || 0;
+      } else {
+        accumulator.debit += Number(transaction.amount) || 0;
+      }
+      return accumulator;
+    },
+    { credit: 0, debit: 0 }
+  );
+
+  const sortedArchives = archives
+    .slice()
+    .sort((a, b) => (a.date < b.date ? 1 : -1))
+    .map((archive) => ({
+      ...archive,
+      transactions: (archive.transactions || []).slice().sort((a, b) => (a.date < b.date ? 1 : -1)),
+    }));
+
+  return `
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <title>${escapeHtml(title)}</title>
+        <style>
+          @page {
+            size: A4 portrait;
+            margin: 8mm;
+          }
+
+          :root {
+            color-scheme: light;
+            font-family: Arial, sans-serif;
+          }
+
+          body {
+            margin: 0;
+            padding: 14px;
+            color: #0f172a;
+            background: #f8fafc;
+            font-size: 11px;
+          }
+
+          .sheet {
+            max-width: 980px;
+            margin: 0 auto;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 16px;
+            padding: 16px;
+            display: grid;
+            gap: 12px;
+          }
+
+          .hero {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+          }
+
+          .hero h1 {
+            margin: 0 0 4px;
+            font-size: 22px;
+          }
+
+          .hero p {
+            margin: 2px 0;
+            color: #475569;
+          }
+
+          .pill-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+          }
+
+          .pill {
+            border-radius: 999px;
+            padding: 4px 10px;
+            background: #e2e8f0;
+            color: #334155;
+            font-weight: 700;
+          }
+
+          .pill.credit {
+            background: #dcfce7;
+            color: #166534;
+          }
+
+          .pill.debit {
+            background: #fee2e2;
+            color: #b91c1c;
+          }
+
+          .section-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: #f8fafc;
+            padding: 10px;
+            display: grid;
+            gap: 8px;
+          }
+
+          .section-card h2 {
+            margin: 0;
+            font-size: 15px;
+          }
+
+          .table-wrap {
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            background: #ffffff;
+          }
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+
+          th,
+          td {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 7px 8px;
+            text-align: left;
+            vertical-align: top;
+          }
+
+          thead th {
+            background: #f1f5f9;
+            color: #334155;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+          }
+
+          tbody tr:last-child td {
+            border-bottom: 0;
+          }
+
+          .type-credit {
+            color: #15803d;
+            font-weight: 700;
+          }
+
+          .type-debit {
+            color: #dc2626;
+            font-weight: 700;
+          }
+
+          .archive-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+          }
+
+          .archive-meta {
+            color: #475569;
+            font-weight: 700;
+          }
+
+          .empty-state {
+            margin: 0;
+            color: #64748b;
+            font-weight: 700;
+          }
+
+          .footer-note {
+            margin: 0;
+            color: #475569;
+            font-size: 10px;
+          }
+
+          @media print {
+            body {
+              background: #ffffff;
+              padding: 0;
+            }
+
+            .sheet {
+              max-width: none;
+              border: 0;
+              border-radius: 0;
+              padding: 0;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <main class="sheet">
+          <header class="hero">
+            <div>
+              <h1>${escapeHtml(title)}</h1>
+              <p>Total current transactions: ${escapeHtml(String(sortedCurrent.length))}</p>
+              <p>Total archives: ${escapeHtml(String(sortedArchives.length))}</p>
+            </div>
+            <div class="pill-row">
+              <span class="pill credit">जमा: ₹${escapeHtml(String(currentTotals.credit))}</span>
+              <span class="pill debit">खर्च: ₹${escapeHtml(String(currentTotals.debit))}</span>
+              <span class="pill">शिल्लक: ₹${escapeHtml(String(currentTotals.credit - currentTotals.debit))}</span>
+            </div>
+          </header>
+
+          <section class="section-card">
+            <h2>Current Transactions</h2>
+            ${
+              sortedCurrent.length === 0
+                ? '<p class="empty-state">No current transactions available.</p>'
+                : `
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Week</th>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${sortedCurrent
+                      .map(
+                        (transaction) => `
+                      <tr>
+                        <td>${escapeHtml(transaction.date ? formatDate(transaction.date) : '--')}</td>
+                        <td>${escapeHtml(transaction.weekId || '--')}</td>
+                        <td><strong>${escapeHtml(transaction.name || '--')}</strong></td>
+                        <td class="${isFundCreditType(transaction.type) ? 'type-credit' : 'type-debit'}">${escapeHtml(getFundTypeLabel(transaction.type))}</td>
+                        <td>₹${escapeHtml(String(transaction.amount || 0))}</td>
+                      </tr>
+                    `
+                      )
+                      .join('')}
+                  </tbody>
+                </table>
+              </div>
+            `
+            }
+          </section>
+
+          <section class="section-card">
+            <h2>All Archived Transaction History</h2>
+            ${
+              sortedArchives.length === 0
+                ? '<p class="empty-state">No archived transaction history available.</p>'
+                : sortedArchives
+                    .map((archive) => {
+                      const archiveTotals = (archive.transactions || []).reduce(
+                        (accumulator, transaction) => {
+                          if (isFundCreditType(transaction.type)) {
+                            accumulator.credit += Number(transaction.amount) || 0;
+                          } else {
+                            accumulator.debit += Number(transaction.amount) || 0;
+                          }
+                          return accumulator;
+                        },
+                        { credit: 0, debit: 0 }
+                      );
+
+                      return `
+                        <article class="section-card">
+                          <div class="archive-head">
+                            <strong>${escapeHtml(archive.date ? formatDate(archive.date) : '--')}</strong>
+                            <span class="archive-meta">Week: ${escapeHtml(archive.weekId || '--')} | Entries: ${escapeHtml(String((archive.transactions || []).length))}</span>
+                            <span class="archive-meta">₹${escapeHtml(String(archiveTotals.credit - archiveTotals.debit))}</span>
+                          </div>
+                          ${
+                            (archive.transactions || []).length === 0
+                              ? '<p class="empty-state">No transactions in this archive.</p>'
+                              : `
+                            <div class="table-wrap">
+                              <table>
+                                <thead>
+                                  <tr>
+                                    <th>Date</th>
+                                    <th>Week</th>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  ${(archive.transactions || [])
+                                    .map(
+                                      (transaction) => `
+                                    <tr>
+                                      <td>${escapeHtml(transaction.date ? formatDate(transaction.date) : '--')}</td>
+                                      <td>${escapeHtml(transaction.weekId || '--')}</td>
+                                      <td><strong>${escapeHtml(transaction.name || '--')}</strong></td>
+                                      <td class="${isFundCreditType(transaction.type) ? 'type-credit' : 'type-debit'}">${escapeHtml(getFundTypeLabel(transaction.type))}</td>
+                                      <td>₹${escapeHtml(String(transaction.amount || 0))}</td>
+                                    </tr>
+                                  `
+                                    )
+                                    .join('')}
+                                </tbody>
+                              </table>
+                            </div>
+                          `
+                          }
+                        </article>
+                      `;
+                    })
+                    .join('')
+            }
+          </section>
+
+          <p class="footer-note">Use the print dialog and choose "Save as PDF" to keep this complete transaction history.</p>
+        </main>
+      </body>
+    </html>
+  `;
+};
+
 const openPrintDocument = (html) => {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return false;
@@ -1088,6 +1430,20 @@ export const openWeekSummaryPdf = ({ week, players = [] }) => {
       title: 'Patoda XI Weekly Summary',
       week,
       players,
+    })
+  );
+};
+
+export const openFundTransactionsPdf = ({ transactions = [], archives = [] }) => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return openPrintDocument(
+    getFundTransactionsHtml({
+      title: 'Patoda XI Transactions History',
+      transactions,
+      archives,
     })
   );
 };
