@@ -147,7 +147,7 @@ function AppContent() {
 
   if (!accessMode) {
     return (
-      <div className="auth-shell">
+      <div className={`auth-shell ${showAdminLogin ? 'auth-shell-login-active' : ''}`}>
         <div className={`auth-card ${showAdminLogin ? 'auth-card-active' : ''}`} ref={authCardRef}>
           <div className="auth-copy">
             <h1 className="auth-title">Patoda XI Access</h1>
@@ -224,12 +224,17 @@ function AppContent() {
       >
         {isGuest ? (
           <div className="readonly-banner">
-            Guest Mode: View only. Login as Admin to edit or manage data.
+            Player Mode: You can Only View
           </div>
         ) : null}
 
         {shouldShowPendingFeeNotice ? (
-          <PendingFeeNotice matches={matches} players={players} resetKey={location.pathname} />
+          <PendingFeeNotice
+            matches={matches}
+            players={players}
+            resetKey={location.pathname}
+            timedVisibility={!isGuest}
+          />
         ) : null}
 
         {!isDatabaseConfigured ? (

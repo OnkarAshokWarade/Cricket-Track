@@ -5,9 +5,7 @@ import useAutoClearMessage from '../hooks/useAutoClearMessage';
 import { formatDate, getWeekId, todayKey } from '../utils/dateUtils';
 
 const FIXED_CONTRIBUTION = 100;
-const PAYMENT_RECEIVER_EN = 'Ubed Shaikh';
 const PAYMENT_RECEIVER_MR = '\u0909\u092c\u0947\u0926 \u0936\u0947\u0916';
-const PAYMENT_RECEIVER_LABEL = `${PAYMENT_RECEIVER_EN} (${PAYMENT_RECEIVER_MR})`;
 const normalizeName = (value) => String(value || '').trim().toLowerCase();
 
 const createId = () => {
@@ -684,21 +682,22 @@ function GroundExpensePage({ accessMode }) {
         )}
       </div>
 
-      <div className="card unpaid-notice-card">
-        <h2 className="card-title" style={{ marginBottom: '8px' }}>Unpaid Notices</h2>
-        {unpaidPlayers.length === 0 ? (
-          <p className="success-text" style={{ margin: 0 }}>All players are marked as paid.</p>
-        ) : (
-          <div className="unpaid-notice-list">
-            {unpaidPlayers.map((playerName) => (
-              <p key={playerName} className="unpaid-notice-item">
-                <strong>{playerName}</strong>: {formatINR(FIXED_CONTRIBUTION)} pending. Pay it to{' '}
-                <strong>{PAYMENT_RECEIVER_LABEL}</strong>.
-              </p>
-            ))}
-          </div>
-        )}
-      </div>
+      {!isAdmin ? (
+        <div className="card unpaid-notice-card">
+          <h2 className="card-title" style={{ marginBottom: '8px' }}>Unpaid Notices</h2>
+          {unpaidPlayers.length === 0 ? (
+            <p className="success-text" style={{ margin: 0 }}>All players are marked as paid.</p>
+          ) : (
+            <div className="unpaid-notice-list">
+              {unpaidPlayers.map((playerName) => (
+                <p key={playerName} className="unpaid-notice-item">
+                  <span className="unpaid-notice-player">&quot;{playerName}&quot;</span>: {FIXED_CONTRIBUTION} रुपये बाकी आहेत, {PAYMENT_RECEIVER_MR} यांना द्या.
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : null}
 
       {!isAdmin ? <PaymentQrCard title="Ground Contribution QR" /> : null}
 
@@ -754,7 +753,9 @@ function GroundExpensePage({ accessMode }) {
                     <tr key={transaction.id}>
                       <td data-label="Date">{transaction.date ? formatDate(transaction.date) : '--'}</td>
                       <td data-label="Week">{transaction.weekId || '--'}</td>
-                      <td data-label="Name">{transaction.name}</td>
+                      <td data-label="Name" className="fund-transaction-name-cell">
+                        <strong className="fund-transaction-name">{transaction.name}</strong>
+                      </td>
                       <td data-label="Amount">{formatINR(transaction.amount)}</td>
                       <td data-label="Type">
                         <span className={`fund-type-pill ${transaction.type}`}>

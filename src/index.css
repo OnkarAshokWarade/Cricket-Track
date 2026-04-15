@@ -105,13 +105,38 @@ button:disabled {
   padding: clamp(20px, 4vw, 36px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable both-edges;
   background:
     radial-gradient(circle at top, rgba(191, 219, 254, 0.7) 0%, rgba(255, 255, 255, 0) 38%),
     linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
+.auth-shell-login-active {
+  place-items: start center;
+  padding-bottom: 160px;
+}
+
+.auth-shell::-webkit-scrollbar,
+.auth-card::-webkit-scrollbar {
+  width: 10px;
+}
+
+.auth-shell::-webkit-scrollbar-thumb,
+.auth-card::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.auth-shell::-webkit-scrollbar-track,
+.auth-card::-webkit-scrollbar-track {
+  background: #e2e8f0;
+  border-radius: 999px;
+}
+
 .auth-card {
   width: min(100%, 480px);
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
   background: #ffffff;
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 16px;
@@ -279,6 +304,10 @@ button:disabled {
   .auth-shell {
     padding: 20px 16px 28px;
   }
+
+  .auth-shell-login-active {
+    padding-bottom: 220px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -287,7 +316,8 @@ button:disabled {
   }
 
   .auth-card {
-    margin: auto 0;
+    margin: 0;
+    max-height: calc(100dvh - 24px);
   }
 
   .auth-actions,
@@ -297,14 +327,14 @@ button:disabled {
 }
 
 .readonly-banner {
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
-  border-left: 4px solid #ea580c;
-  color: #9a3412;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-left: 4px solid #16a34a;
+  color: #166534;
   border-radius: 14px;
   padding: 12px 14px;
   margin-bottom: 0;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .read-only-mode :is(button, input, select, textarea, label, form) {
@@ -1111,6 +1141,7 @@ textarea {
   z-index: 1000;
   pointer-events: auto;
   overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .match-fee-toast.visible {
@@ -1899,6 +1930,11 @@ textarea {
   font-weight: 600;
 }
 
+.unpaid-notice-player {
+  color: #dc2626;
+  font-weight: 800;
+}
+
 .fund-qr-image {
   width: 100%;
   max-width: 280px;
@@ -1929,6 +1965,7 @@ textarea {
   border: 1px solid #e2e8f0;
   border-radius: 14px;
   scroll-behavior: smooth;
+  scrollbar-gutter: stable;
 }
 
 .fund-table {
@@ -1941,6 +1978,58 @@ textarea {
   top: 0;
   z-index: 1;
   background: #f8fafc;
+}
+
+.fund-transaction-name-cell {
+  color: #0f172a;
+}
+
+.fund-transaction-name {
+  font-weight: 800;
+}
+
+.winner-selection-panel {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+}
+
+.winner-selection-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.winner-selection-card {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.winner-selection-card.active {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.14);
+  background: #eff6ff;
+}
+
+.winner-selection-label {
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.winner-selection-name {
+  color: #0f172a;
+  font-size: 1rem;
+  font-weight: 800;
 }
 
 .fund-table-wrap::-webkit-scrollbar,
@@ -2020,9 +2109,11 @@ textarea {
   }
 
   .fund-table-wrap {
-    border: 0;
-    max-height: none;
-    overflow: visible;
+    max-height: min(68vh, 560px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: 1px solid #e2e8f0;
+    padding: 6px;
   }
 
   .fund-table thead {
@@ -2067,5 +2158,9 @@ textarea {
 
   .fund-table td .button-row {
     justify-content: flex-start;
+  }
+
+  .winner-selection-grid {
+    grid-template-columns: 1fr;
   }
 }

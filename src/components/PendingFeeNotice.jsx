@@ -13,7 +13,7 @@ const normalizePlayerName = (players, playerId) => {
   return name === 'Unknown' ? UNKNOWN_PLAYER_LABEL : name;
 };
 
-function PendingFeeNotice({ matches = [], players = [], resetKey = '' }) {
+function PendingFeeNotice({ matches = [], players = [], resetKey = '', timedVisibility = true }) {
   const pendingNotices = useMemo(
     () =>
       matches
@@ -41,6 +41,10 @@ function PendingFeeNotice({ matches = [], players = [], resetKey = '' }) {
 
     setIsVisible(true);
 
+    if (!timedVisibility) {
+      return undefined;
+    }
+
     const timeoutId = window.setTimeout(() => {
       setIsVisible(false);
     }, PENDING_NOTICE_TIMEOUT);
@@ -48,7 +52,7 @@ function PendingFeeNotice({ matches = [], players = [], resetKey = '' }) {
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [pendingNoticeKey, pendingNotices.length]);
+  }, [pendingNoticeKey, pendingNotices.length, timedVisibility]);
 
   if (pendingNotices.length === 0 || !isVisible) {
     return null;
