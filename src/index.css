@@ -599,6 +599,10 @@ textarea {
   margin-top: 24px;
 }
 
+.history-layout-single {
+  grid-template-columns: 1fr;
+}
+
 @media (max-width: 900px) {
   .history-layout {
     grid-template-columns: 1fr;
@@ -1772,6 +1776,27 @@ textarea {
   gap: 18px;
 }
 
+.ground-fund-summary-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.ground-fund-breakdown {
+  display: grid;
+  gap: 12px;
+}
+
+.fund-calculation-table td:last-child,
+.fund-calculation-table th:last-child {
+  text-align: right;
+}
+
+.fund-calculation-table tfoot td {
+  font-weight: 800;
+}
+
 .fund-summary-top-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -2085,6 +2110,10 @@ textarea {
 }
 
 @media (max-width: 1100px) {
+  .ground-fund-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
   .ground-expense-content {
     grid-template-columns: 1fr;
   }

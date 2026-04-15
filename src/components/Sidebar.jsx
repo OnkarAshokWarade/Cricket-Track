@@ -9,6 +9,7 @@ const navItems = [
   { label: 'Weekly Summary', path: '/weekly-summary' },
   { label: 'Rules Patoda(g)', path: '/rules-patodag' },
   { label: 'Ground Expense', path: '/ground-expense' },
+  { label: 'Ground Fund Summary', path: '/ground-fund-summary' },
 ];
 
 function Sidebar({ accessMode, onSwitchRole }) {

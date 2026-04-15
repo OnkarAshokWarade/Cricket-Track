@@ -7,6 +7,7 @@ import PlayersPage from './pages/PlayersPage';
 import MatchCenterPage from './pages/MatchCenterPage';
 import HistoryPage from './pages/HistoryPage';
 import GroundExpensePage from './pages/GroundExpensePage';
+import GroundFundSummaryPage from './pages/GroundFundSummaryPage';
 import WeeklySummaryPage from './pages/WeeklySummaryPage';
 import RulesPatodaPage from './pages/RulesPatodaPage';
 import { AppDataProvider, useAppData } from './context/AppDataContext';
@@ -79,7 +80,8 @@ function AppContent() {
   }, [showAdminLogin]);
 
   const isGuest = accessMode === 'guest';
-  const shouldShowPendingFeeNotice = location.pathname !== '/rules-patodag' && location.pathname !== '/ground-expense';
+  const shouldShowPendingFeeNotice =
+    isGuest && location.pathname !== '/rules-patodag' && location.pathname !== '/ground-expense';
 
   const handleGuestEntry = () => {
     setAccessMode('guest');
@@ -156,7 +158,7 @@ function AppContent() {
 
           <div className="auth-actions">
             <button type="button" className="auth-choice-button auth-choice-button-secondary" onClick={handleGuestEntry}>
-              Continue as Player 
+              Continue as Player
             </button>
             <button
               type="button"
@@ -257,6 +259,7 @@ function AppContent() {
             <Route path="/match" element={<Navigate to="/match-center" replace />} />
             <Route path="/history" element={<HistoryPage accessMode={accessMode} />} />
             <Route path="/ground-expense" element={<GroundExpensePage accessMode={accessMode} />} />
+            <Route path="/ground-fund-summary" element={<GroundFundSummaryPage />} />
             <Route path="/weekly-summary" element={<WeeklySummaryPage accessMode={accessMode} />} />
             <Route path="/rules-patodag" element={<RulesPatodaPage />} />
           </Routes>

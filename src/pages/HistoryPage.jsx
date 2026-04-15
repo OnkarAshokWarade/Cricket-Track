@@ -22,6 +22,7 @@ function HistoryPage({ accessMode }) {
   const { players, matches } = useAppData();
   const isAdmin = accessMode === 'admin';
   const isGuest = accessMode === 'guest';
+  const showSidebar = !isAdmin;
 
   const sortedMatches = useMemo(
     () => matches.slice().sort((a, b) => (a.date < b.date ? 1 : -1)),
@@ -42,7 +43,7 @@ function HistoryPage({ accessMode }) {
   const currentWeekId = getWeekId();
 
   return (
-    <div className="history-layout">
+    <div className={`history-layout ${showSidebar ? '' : 'history-layout-single'}`.trim()}>
       <div className="history-main">
         <section>
           <div className="top-nav">
@@ -124,14 +125,16 @@ function HistoryPage({ accessMode }) {
         </section>
       </div>
 
-      <aside className="history-sidebar">
-        <MatchFee matches={matches} players={players} currentWeekId={currentWeekId} />
-        {isGuest ? (
-          <div style={{ marginTop: '18px' }}>
-            <PaymentQrCard title="Guest Contribution QR" />
-          </div>
-        ) : null}
-      </aside>
+      {showSidebar ? (
+        <aside className="history-sidebar">
+          <MatchFee matches={matches} players={players} currentWeekId={currentWeekId} />
+          {isGuest ? (
+            <div style={{ marginTop: '18px' }}>
+              <PaymentQrCard title="Guest Contribution QR" />
+            </div>
+          ) : null}
+        </aside>
+      ) : null}
     </div>
   );
 }

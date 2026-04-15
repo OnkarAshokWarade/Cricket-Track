@@ -1,7 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { formatDate } from '../utils/dateUtils';
 import { getPlayerName } from '../utils/teamUtils';
 import { useAppData } from '../context/AppDataContext';
+import {
+  RESULT_NO_MATCH,
+  RESULT_TEAM_A,
+  RESULT_TEAM_B,
+  buildMatchResultPayload,
+  getMatchResultSelection,
+} from '../utils/matchResultUtils';
 
 const PAYMENT_RECEIVER_MR = '\u0909\u092c\u0947\u0926 \u0936\u0947\u0916';
 
@@ -9,10 +16,15 @@ function MatchCard({ match, players, canEdit = false }) {
   const { updateMatch } = useAppData();
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState('');
+  const [selectedResult, setSelectedResult] = useState(() => getMatchResultSelection(match));
   const isNoMatch = match.status === 'no-match';
   const captainAResultClass = !isNoMatch ? (match.winnerTeam === 'teamA' ? 'captain-win-color' : 'captain-loss-color') : '';
   const captainBResultClass = !isNoMatch ? (match.winnerTeam === 'teamB' ? 'captain-win-color' : 'captain-loss-color') : '';
   const loserName = match.loserCaptain ? getPlayerName(players, match.loserCaptain) : '--';
+
+  useEffect(() => {
+    setSelectedResult(getMatchResultSelection(match));
+  }, [match]);
 
   const handlePenaltyStatusChange = async (newStatus) => {
     if (!canEdit) {
@@ -26,6 +38,38 @@ function MatchCard({ match, players, canEdit = false }) {
     } catch (updateError) {
       console.error('Error updating penalty status:', updateError);
       setError('Payment status could not be saved.');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleResultChange = async (nextResult) => {
+    if (!canEdit) {
+      return;
+    }
+
+    const payload = buildMatchResultPayload({
+      selection: nextResult,
+      baseMatch: match,
+      captainA: match.captainA,
+      captainB: match.captainB,
+    });
+
+    if (!payload) {
+      setSelectedResult(getMatchResultSelection(match));
+      setError('Match result could not be updated because captain details are missing.');
+      return;
+    }
+
+    setSelectedResult(nextResult);
+    setIsUpdating(true);
+    setError('');
+    try {
+      await updateMatch(match.id, payload);
+    } catch (updateError) {
+      console.error('Error updating match result:', updateError);
+      setSelectedResult(getMatchResultSelection(match));
+      setError('Match result could not be saved.');
     } finally {
       setIsUpdating(false);
     }
@@ -69,6 +113,24 @@ function MatchCard({ match, players, canEdit = false }) {
               <span className="label">Status:</span>
               <span className="amount">{match.score || 'No match'}</span>
             </div>
+
+            <div className="penalty-status">
+              <label className="status-label">Match Result:</label>
+              {canEdit ? (
+                <select
+                  value={selectedResult}
+                  onChange={(event) => handleResultChange(event.target.value)}
+                  disabled={isUpdating}
+                  className="status-select"
+                >
+                  <option value={RESULT_NO_MATCH}>No Match</option>
+                  <option value={RESULT_TEAM_A}>Team A</option>
+                  <option value={RESULT_TEAM_B}>Team B</option>
+                </select>
+              ) : (
+                <span className="status-select">No Match</span>
+              )}
+            </div>
           </div>
         ) : (
           <div className="penalty-section">
@@ -84,6 +146,27 @@ function MatchCard({ match, players, canEdit = false }) {
                 {`: ${match.penalty} \u0930\u0941\u092a\u092f\u0947 \u092c\u093e\u0915\u0940 \u0906\u0939\u0947\u0924, ${PAYMENT_RECEIVER_MR} \u092f\u093e\u0902\u0928\u093e \u0926\u094d\u092f\u093e.`}
               </p>
             ) : null}
+
+            {canEdit ? (
+              <div className="penalty-status">
+                <label className="status-label">Match Result:</label>
+                <select
+                  value={selectedResult}
+                  onChange={(event) => handleResultChange(event.target.value)}
+                  disabled={isUpdating}
+                  className="status-select"
+                >
+                  <option value={RESULT_NO_MATCH}>No Match</option>
+                  <option value={RESULT_TEAM_A}>Team A</option>
+                  <option value={RESULT_TEAM_B}>Team B</option>
+                </select>
+              </div>
+            ) : (
+              <div className="penalty-status">
+                <span className="status-label">Match Result:</span>
+                <span className="status-select">{match.winnerTeam === 'teamA' ? 'Team A' : 'Team B'}</span>
+              </div>
+            )}
 
             {canEdit ? (
               <div className="penalty-status">

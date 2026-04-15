@@ -20,6 +20,13 @@ import ubedUpiQr from '../assets/ubed-upi-qr.jpeg';
 import { useAppData } from '../context/AppDataContext';
 import useAutoClearMessage from '../hooks/useAutoClearMessage';
 import { openCaptainDayPdf } from '../utils/pdfUtils';
+import {
+  RESULT_NO_MATCH,
+  RESULT_TEAM_A,
+  RESULT_TEAM_B,
+  buildMatchResultPayload,
+  getMatchResultSelection,
+} from '../utils/matchResultUtils';
 
 const PENALTY_AMOUNT = 100;
 const PAYMENT_RECEIVER_EN = 'Ubed Shaikh';
@@ -70,8 +77,8 @@ const getCaptainHistoryStatus = (match) => {
 };
 
 function MatchCenterPage({ accessMode }) {
-  const { players, teams, captains, matches, addMatch, updateAppState, saveWeeklyTeams } = useAppData();
-  const [selectedWinner, setSelectedWinner] = useState('A');
+  const { players, teams, captains, matches, addMatch, updateMatch, updateAppState, saveWeeklyTeams } = useAppData();
+  const [selectedWinner, setSelectedWinner] = useState(RESULT_TEAM_A);
   const [teamMessage, setTeamMessage] = useState('');
   const [teamMessageType, setTeamMessageType] = useState('success');
   const [showTeamPasswordModal, setShowTeamPasswordModal] = useState(false);
@@ -155,9 +162,17 @@ function MatchCenterPage({ accessMode }) {
     [currentWeekCaptains.dailyCaptains]
   );
 
-  const canRecordMatch = useMemo(() => !!currentTeams && !!todayCaptains && !todayMatch, [currentTeams, todayCaptains, todayMatch]);
   const canMarkNoMatch = useMemo(() => !todayMatch, [todayMatch]);
-  const isWinnerSelectionReady = Boolean(currentTeams && todayCaptains);
+  const isWinnerSelectionReady = selectedWinner === RESULT_NO_MATCH || Boolean(currentTeams && todayCaptains);
+
+  useEffect(() => {
+    if (todayMatch) {
+      setSelectedWinner(getMatchResultSelection(todayMatch));
+      return;
+    }
+
+    setSelectedWinner(RESULT_TEAM_A);
+  }, [todayMatch]);
 
   const openTeamPasswordModal = () => {
     if (!isAdmin) {
@@ -316,33 +331,55 @@ function MatchCenterPage({ accessMode }) {
       return;
     }
 
-    if (!canRecordMatch) {
-      setMatchMessage("A match cannot be recorded right now. Please check teams and today's captains.");
+    if (!isWinnerSelectionReady) {
+      setMatchMessage("A result cannot be saved right now. Please check today's captains.");
       return;
     }
 
-    const winnerTeam = selectedWinner === 'A' ? 'teamA' : 'teamB';
-    const loserCaptain = selectedWinner === 'A' ? todayCaptains.teamB : todayCaptains.teamA;
+    const baseMatch = {
+      ...todayMatch,
+      date: todayKey(),
+      weekId,
+      teamA: currentTeams?.teamA || todayMatch?.teamA || [],
+      teamB: currentTeams?.teamB || todayMatch?.teamB || [],
+      captainA: todayCaptains?.teamA || todayMatch?.captainA || '',
+      captainB: todayCaptains?.teamB || todayMatch?.captainB || '',
+      penalty: todayMatch?.penalty || PENALTY_AMOUNT,
+      penaltyPaid: todayMatch?.penaltyPaid === true,
+    };
+    const payload = buildMatchResultPayload({
+      selection: selectedWinner,
+      baseMatch,
+      captainA: baseMatch.captainA,
+      captainB: baseMatch.captainB,
+      penaltyAmount: PENALTY_AMOUNT,
+    });
+
+    if (!payload) {
+      setMatchMessage("Today's captains are required before saving a winning team result.");
+      return;
+    }
 
     try {
-      await addMatch({
-        date: todayKey(),
-        weekId,
-        teamA: currentTeams.teamA,
-        teamB: currentTeams.teamB,
-        score: selectedWinner === 'A' ? 'Team A won' : 'Team B won',
-        captainA: todayCaptains.teamA,
-        captainB: todayCaptains.teamB,
-        winnerTeam,
-        loserCaptain,
-        penalty: PENALTY_AMOUNT,
-        penaltyPaid: false,
-      });
+      if (todayMatch) {
+        await updateMatch(todayMatch.id, payload);
+      } else {
+        await addMatch(payload);
+      }
 
-      setMatchMessage(`Match recorded. \u20B9${PENALTY_AMOUNT} penalty assigned to ${getPlayerName(players, loserCaptain)}.`);
+      if (payload.status === 'no-match') {
+        setMatchMessage(todayMatch ? 'Today was updated as a no-match day.' : 'No match was recorded for today.');
+        return;
+      }
+
+      setMatchMessage(
+        todayMatch
+          ? `Match result updated. \u20B9${PENALTY_AMOUNT} penalty is now assigned to ${getPlayerName(players, payload.loserCaptain)}.`
+          : `Match recorded. \u20B9${PENALTY_AMOUNT} penalty assigned to ${getPlayerName(players, payload.loserCaptain)}.`
+      );
     } catch (error) {
       console.error('Error recording match:', error);
-      setMatchMessage('Match could not be recorded. Please verify Firebase configuration and try again.');
+      setMatchMessage('Match result could not be saved. Please verify Firebase configuration and try again.');
     }
   };
 
@@ -645,63 +682,61 @@ function MatchCenterPage({ accessMode }) {
         </div>
         <MatchDetails todayMatch={todayMatch} players={players} />
 
-        <div className="card">
-          <h2 className="card-title">3. Winning Team Selection</h2>
-          <p className="page-intro" style={{ marginBottom: '14px' }}>
-            This container always stays visible so you can quickly choose today&apos;s winner once captains are ready.
-          </p>
-
-          {!currentTeams ? <p className="empty-state">Weekly teams are not ready yet, but you can still mark today as match not conducted.</p> : null}
-          {!todayCaptains && currentTeams ? <p className="empty-state">Select captains for today to unlock winning team selection.</p> : null}
-
-          <div className="winner-selection-panel">
-            <div className="winner-selection-grid">
-              <article className={`winner-selection-card ${selectedWinner === 'A' ? 'active' : ''}`}>
-                <span className="winner-selection-label">Team A</span>
-                <strong className="winner-selection-name">{captainAName}</strong>
-              </article>
-              <article className={`winner-selection-card ${selectedWinner === 'B' ? 'active' : ''}`}>
-                <span className="winner-selection-label">Team B</span>
-                <strong className="winner-selection-name">{captainBName}</strong>
-              </article>
-            </div>
-
-            <div className="input-group" style={{ marginTop: 0 }}>
-              <div>
-                <label className="input-label" style={{ fontWeight: 700 }}>Winning team</label>
-                <select
-                  value={selectedWinner}
-                  onChange={(event) => setSelectedWinner(event.target.value)}
-                  disabled={!isWinnerSelectionReady || !!todayMatch}
-                >
-                  <option value="A">Team A ({captainAName})</option>
-                  <option value="B">Team B ({captainBName})</option>
-                </select>
-              </div>
-
-              <div className="button-row">
-                <button className="button-primary button-small" type="button" onClick={handleSaveMatch} disabled={!isAdmin || !canRecordMatch}>
-                  Record Match
-                </button>
-                <button className="button-secondary button-small" type="button" onClick={handleSaveNoMatch} disabled={!isAdmin || !canMarkNoMatch}>
-                  Match Not Conducted
-                </button>
-              </div>
-
-              {todayMatch ? (
-                <p className="success-text" style={{ margin: 0 }}>
-                  Today&apos;s selection is locked because the match result is already recorded.
-                </p>
-              ) : null}
-            </div>
-          </div>
-
-          {matchMessage ? (
-            <p className="success-text" style={{ marginTop: '16px' }}>
-              {matchMessage}
+        {isAdmin ? (
+          <div className="card">
+            <h2 className="card-title">3. Winning Team Selection</h2>
+            <p className="page-intro" style={{ marginBottom: '14px' }}>
+              Admin can save or change today&apos;s result anytime.
             </p>
-          ) : null}
-        </div>
+
+            {!currentTeams ? <p className="empty-state">Weekly teams are not ready yet, but you can still mark today as match not conducted.</p> : null}
+            {!todayCaptains && currentTeams ? <p className="empty-state">Select captains for today before saving Team A or Team B as winner.</p> : null}
+
+            <div className="winner-selection-panel">
+              <div className="winner-selection-grid">
+                <article className={`winner-selection-card ${selectedWinner === RESULT_TEAM_A ? 'active' : ''}`}>
+                  <span className="winner-selection-label">Team A</span>
+                  <strong className="winner-selection-name">{captainAName}</strong>
+                </article>
+                <article className={`winner-selection-card ${selectedWinner === RESULT_TEAM_B ? 'active' : ''}`}>
+                  <span className="winner-selection-label">Team B</span>
+                  <strong className="winner-selection-name">{captainBName}</strong>
+                </article>
+              </div>
+
+              <div className="input-group" style={{ marginTop: 0 }}>
+                <div>
+                  <label className="input-label" style={{ fontWeight: 700 }}>Match result</label>
+                  <select
+                    value={selectedWinner}
+                    onChange={(event) => setSelectedWinner(event.target.value)}
+                  >
+                    <option value={RESULT_NO_MATCH}>No Match</option>
+                    <option value={RESULT_TEAM_A}>Team A ({captainAName})</option>
+                    <option value={RESULT_TEAM_B}>Team B ({captainBName})</option>
+                  </select>
+                </div>
+
+                <div className="button-row">
+                  <button className="button-primary button-small" type="button" onClick={handleSaveMatch} disabled={!isWinnerSelectionReady}>
+                    {todayMatch ? 'Update Result' : 'Save Result'}
+                  </button>
+                  {!todayMatch ? (
+                    <button className="button-secondary button-small" type="button" onClick={handleSaveNoMatch} disabled={!canMarkNoMatch}>
+                      Match Not Conducted
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            {matchMessage ? (
+              <p className="success-text" style={{ marginTop: '16px' }}>
+                {matchMessage}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="card">
           <h2 className="card-title">4. Match Result</h2>
