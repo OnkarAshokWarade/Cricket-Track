@@ -32,7 +32,7 @@ function MatchPage() {
   }, [currentTeams]);
 
   const canRecordMatch = useMemo(() => !!currentTeams && !!todayCaptains && !todayMatch, [currentTeams, todayCaptains, todayMatch]);
-  const canMarkNoMatch = useMemo(() => !!currentTeams && !todayMatch, [currentTeams, todayMatch]);
+  const canMarkNoMatch = useMemo(() => !todayMatch, [todayMatch]);
 
   const handleSaveMatch = async () => {
     if (!canRecordMatch) {
@@ -75,8 +75,8 @@ function MatchPage() {
       date: todayKey(),
       weekId,
       status: 'no-match',
-      teamA: currentTeams.teamA,
-      teamB: currentTeams.teamB,
+      teamA: currentTeams?.teamA || [],
+      teamB: currentTeams?.teamB || [],
       score: 'No match',
       captainA: todayCaptains?.teamA || '',
       captainB: todayCaptains?.teamB || '',
@@ -108,9 +108,9 @@ function MatchPage() {
         <MatchDetails todayMatch={todayMatch} players={players} />
 
         <div className="card">
-          <h2 className="card-title">Today's match</h2>
-          {!currentTeams && <p className="empty-state">Generate this week's teams first.</p>}
-          {!todayCaptains && currentTeams && <p className="empty-state">Select captains for today before recording a match.</p>}
+          <h2 className="card-title">Match Result</h2>
+          {!currentTeams && <p className="empty-state">Weekly teams are not ready yet, but you can still mark today as match not conducted.</p>}
+          {!todayCaptains && currentTeams && <p className="empty-state">Select captains for today to record a winner, or use Match Not Conducted if the game did not happen.</p>}
 
           {todayMatch && (
             <div>
@@ -135,56 +135,58 @@ function MatchPage() {
             </div>
           )}
 
-          {currentTeams && !todayMatch && (
+          {!todayMatch && (
             <div className="input-group">
-              <div>
-                <p className="card-title">Teams and captains</p>
-                <div className="overflow-x-auto">
-                  <table className="table team-table split-team-table">
-                    <thead>
-                      <tr>
-                        <th>Team A</th>
-                        <th>Team B</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td className="team-players-cell team-col-a">
-                          <span className="team-label">Captain: </span>
-                          <span className="team-player-name">{captainAName}</span>
-                        </td>
-                        <td className="team-players-cell team-col-b">
-                          <span className="team-label">Captain: </span>
-                          <span className="team-player-name">{captainBName}</span>
-                        </td>
-                      </tr>
-                      {Array.from({ length: maxTeamSize }, (_, index) => {
-                        const playerAId = currentTeams.teamA[index];
-                        const playerBId = currentTeams.teamB[index];
+              {currentTeams ? (
+                <div>
+                  <p className="card-title">Teams and captains</p>
+                  <div className="overflow-x-auto">
+                    <table className="table team-table split-team-table">
+                      <thead>
+                        <tr>
+                          <th>Team A</th>
+                          <th>Team B</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="team-players-cell team-col-a">
+                            <span className="team-label">Captain: </span>
+                            <span className="team-player-name">{captainAName}</span>
+                          </td>
+                          <td className="team-players-cell team-col-b">
+                            <span className="team-label">Captain: </span>
+                            <span className="team-player-name">{captainBName}</span>
+                          </td>
+                        </tr>
+                        {Array.from({ length: maxTeamSize }, (_, index) => {
+                          const playerAId = currentTeams.teamA[index];
+                          const playerBId = currentTeams.teamB[index];
 
-                        return (
-                          <tr key={`match-team-row-${index}`}>
-                            <td className="team-players-cell team-col-a">
-                              {playerAId ? (
-                                <span className="team-player-name">{getPlayerName(players, playerAId)}</span>
-                              ) : (
-                                <span className="empty-state">--</span>
-                              )}
-                            </td>
-                            <td className="team-players-cell team-col-b">
-                              {playerBId ? (
-                                <span className="team-player-name">{getPlayerName(players, playerBId)}</span>
-                              ) : (
-                                <span className="empty-state">--</span>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                          return (
+                            <tr key={`match-team-row-${index}`}>
+                              <td className="team-players-cell team-col-a">
+                                {playerAId ? (
+                                  <span className="team-player-name">{getPlayerName(players, playerAId)}</span>
+                                ) : (
+                                  <span className="empty-state">--</span>
+                                )}
+                              </td>
+                              <td className="team-players-cell team-col-b">
+                                {playerBId ? (
+                                  <span className="team-player-name">{getPlayerName(players, playerBId)}</span>
+                                ) : (
+                                  <span className="empty-state">--</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
+              ) : null}
               <div>
                 <label className="input-label">Winning team</label>
                 <select value={selectedWinner} onChange={(event) => setSelectedWinner(event.target.value)} disabled={!todayCaptains}>
@@ -197,7 +199,7 @@ function MatchPage() {
                   Record Match
                 </button>
                 <button className="button-secondary button-small" type="button" onClick={handleSaveNoMatch} disabled={!canMarkNoMatch}>
-                  No Match Today
+                  Match Not Conducted
                 </button>
               </div>
             </div>

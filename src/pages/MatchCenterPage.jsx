@@ -156,7 +156,7 @@ function MatchCenterPage({ accessMode }) {
   );
 
   const canRecordMatch = useMemo(() => !!currentTeams && !!todayCaptains && !todayMatch, [currentTeams, todayCaptains, todayMatch]);
-  const canMarkNoMatch = useMemo(() => !!currentTeams && !todayMatch, [currentTeams, todayMatch]);
+  const canMarkNoMatch = useMemo(() => !todayMatch, [todayMatch]);
 
   const openTeamPasswordModal = () => {
     if (!isAdmin) {
@@ -361,8 +361,8 @@ function MatchCenterPage({ accessMode }) {
         date: todayKey(),
         weekId,
         status: 'no-match',
-        teamA: currentTeams.teamA,
-        teamB: currentTeams.teamB,
+        teamA: currentTeams?.teamA || [],
+        teamB: currentTeams?.teamB || [],
         score: 'No match',
         captainA: todayCaptains?.teamA || '',
         captainB: todayCaptains?.teamB || '',
@@ -645,9 +645,9 @@ function MatchCenterPage({ accessMode }) {
         <MatchDetails todayMatch={todayMatch} players={players} />
 
         <div className="card">
-          <h2 className="card-title">3. Today&apos;s Match</h2>
-          {!currentTeams ? <p className="empty-state">Generate this week&apos;s teams first.</p> : null}
-          {!todayCaptains && currentTeams ? <p className="empty-state">Select captains for today before recording a match.</p> : null}
+          <h2 className="card-title">3. Match Result</h2>
+          {!currentTeams ? <p className="empty-state">Weekly teams are not ready yet, but you can still mark today as match not conducted.</p> : null}
+          {!todayCaptains && currentTeams ? <p className="empty-state">Select captains for today to record a winner, or use Match Not Conducted if the game did not happen.</p> : null}
 
           {todayMatch ? (
             <div>
@@ -677,8 +677,8 @@ function MatchCenterPage({ accessMode }) {
               )}
             </div>
           ) : (
-            currentTeams ? (
-              <div className="input-group">
+            <div className="input-group">
+              {currentTeams ? (
                 <div>
                   <p className="card-title">Teams and captains</p>
                   <div className="overflow-x-auto">
@@ -709,25 +709,25 @@ function MatchCenterPage({ accessMode }) {
                     </table>
                   </div>
                 </div>
+              ) : null}
 
-                <div>
-                  <label className="input-label" style={{ fontWeight: 700 }}>Winning team</label>
-                  <select value={selectedWinner} onChange={(event) => setSelectedWinner(event.target.value)} disabled={!todayCaptains}>
-                    <option value="A">Team A ({captainAName})</option>
-                    <option value="B">Team B ({captainBName})</option>
-                  </select>
-                </div>
-
-                <div className="button-row">
-                  <button className="button-primary button-small" type="button" onClick={handleSaveMatch} disabled={!isAdmin || !canRecordMatch}>
-                    Record Match
-                  </button>
-                  <button className="button-secondary button-small" type="button" onClick={handleSaveNoMatch} disabled={!isAdmin || !canMarkNoMatch}>
-                    No Match Today
-                  </button>
-                </div>
+              <div>
+                <label className="input-label" style={{ fontWeight: 700 }}>Winning team</label>
+                <select value={selectedWinner} onChange={(event) => setSelectedWinner(event.target.value)} disabled={!todayCaptains}>
+                  <option value="A">Team A ({captainAName})</option>
+                  <option value="B">Team B ({captainBName})</option>
+                </select>
               </div>
-            ) : null
+
+              <div className="button-row">
+                <button className="button-primary button-small" type="button" onClick={handleSaveMatch} disabled={!isAdmin || !canRecordMatch}>
+                  Record Match
+                </button>
+                <button className="button-secondary button-small" type="button" onClick={handleSaveNoMatch} disabled={!isAdmin || !canMarkNoMatch}>
+                  Match Not Conducted
+                </button>
+              </div>
+            </div>
           )}
 
           {matchMessage ? (

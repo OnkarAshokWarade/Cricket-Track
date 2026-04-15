@@ -9,6 +9,10 @@ const escapeHtml = (value) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
+const PENDING_NOTICE_TITLE_MR = '\u092a\u094d\u0930\u0932\u0902\u092c\u093f\u0924 \u092e\u0945\u091a \u092b\u0940 \u0938\u0942\u091a\u0928\u093e';
+const PENDING_NOTICE_COPY_MR =
+  '\u0916\u093e\u0932\u0940\u0932 \u0916\u0947\u0933\u093e\u0921\u0942\u0902\u0928\u0940 100 \u0930\u0941\u092a\u092f\u0947 \u0909\u092c\u0947\u0926 \u0936\u0947\u0916 \u092f\u093e\u0902\u091a\u094d\u092f\u093e\u0915\u0921\u0947 \u0932\u0935\u0915\u0930\u093e\u0924 \u0932\u0935\u0915\u0930 \u091c\u092e\u093e \u0915\u0930\u093e\u0935\u0947\u0924:';
+
 const getPaymentStatusLabel = (match) => {
   if (!match) {
     return 'Not recorded';
@@ -266,6 +270,7 @@ const getWeeklyWinnerLabel = (match) => {
 
 const getWeeklySummaryHtml = ({ title, week, players = [] }) => {
   const losses = Object.entries(week.losses || {}).sort(([, amountA], [, amountB]) => amountB - amountA);
+  const pendingMatches = (week.matches || []).filter((match) => match.status !== 'no-match' && match.penaltyPaid !== true);
 
   return `
     <!doctype html>
@@ -361,6 +366,20 @@ const getWeeklySummaryHtml = ({ title, week, players = [] }) => {
             gap: 10px;
           }
 
+          .notice-list {
+            margin: 0;
+            padding-left: 18px;
+            display: grid;
+            gap: 8px;
+          }
+
+          .notice-copy {
+            margin: 0;
+            color: #334155;
+            font-weight: 700;
+            line-height: 1.45;
+          }
+
           .section-card {
             border: 1px solid #e2e8f0;
             border-radius: 16px;
@@ -454,7 +473,8 @@ const getWeeklySummaryHtml = ({ title, week, players = [] }) => {
 
           .status-pending,
           .loss-item strong,
-          .loss-amount {
+          .loss-amount,
+          .notice-list strong {
             color: #dc2626;
           }
 
@@ -530,14 +550,31 @@ const getWeeklySummaryHtml = ({ title, week, players = [] }) => {
               <div class="stats-list">
                 <div class="stats-row"><span>Pending Money</span><strong class="status-pending">Rs ${escapeHtml(String(week.pendingMoney || 0))}</strong></div>
                 <div class="stats-row"><span>Pending Status</span><strong class="status-pending">${(week.pendingCount || 0) > 0 ? 'Pending' : 'Clear'}</strong></div>
-                <div class="stats-row"><span>Top Losing Player</span><strong class="${week.topLoser?.playerId ? 'status-loss' : 'status-neutral'}">${escapeHtml(
-                  week.topLoser?.playerId
-                    ? `${getPlayerName(players, week.topLoser.playerId)} (Rs ${week.topLoser.amount})`
-                    : 'None yet'
-                )}</strong></div>
+                <div class="stats-row"><span>Pending Matches</span><strong class="${(week.pendingCount || 0) > 0 ? 'status-pending' : 'status-neutral'}">${escapeHtml(String(week.pendingCount || 0))}</strong></div>
               </div>
             </div>
           </section>
+
+          ${pendingMatches.length > 0
+            ? `
+          <section class="section-card">
+            <h2>${escapeHtml(PENDING_NOTICE_TITLE_MR)}</h2>
+            <p class="notice-copy">${escapeHtml(PENDING_NOTICE_COPY_MR)}</p>
+            <ul class="notice-list">
+              ${pendingMatches
+                .map(
+                  (match) => `
+                    <li>
+                      ${escapeHtml(formatDate(match.date))} &mdash;
+                      <strong>${escapeHtml(match.loserCaptain ? getPlayerName(players, match.loserCaptain) : 'Result pending')}</strong>
+                    </li>
+                  `
+                )
+                .join('')}
+            </ul>
+          </section>
+          `
+            : ''}
 
           <section class="section-card">
             <h2>Date-wise Details</h2>
@@ -612,32 +649,33 @@ const getWeeklySummaryHtml = ({ title, week, players = [] }) => {
   `;
 };
 
-const getTeamListMarkup = ({ teamName, playerIds = [], captainId = '', players = [] }) => `
-  <article class="team-card">
-    <div class="team-card-header">
-      <div>
-        <h2>${escapeHtml(teamName)}</h2>
-        <p>Captain: <strong>${escapeHtml(captainId ? getPlayerName(players, captainId) : '--')}</strong></p>
-      </div>
-      <span class="team-count">${playerIds.length} players</span>
-    </div>
-    <ol class="player-list">
-      ${playerIds
-        .map((playerId) => {
-          const isCaptain = String(playerId) === String(captainId);
-          const playerName = getPlayerName(players, playerId);
+const getCaptainTableRowsMarkup = ({ teamAIds = [], teamBIds = [], captainAId = '', captainBId = '', players = [] }) => {
+  const maxTeamSize = Math.max(teamAIds.length, teamBIds.length);
 
-          return `
-            <li class="${isCaptain ? 'captain-player' : ''}">
-              <span>${escapeHtml(playerName)}</span>
-              ${isCaptain ? '<strong>Captain</strong>' : ''}
-            </li>
-          `;
-        })
-        .join('')}
-    </ol>
-  </article>
-`;
+  return Array.from({ length: maxTeamSize }, (_, index) => {
+    const playerAId = teamAIds[index];
+    const playerBId = teamBIds[index];
+    const playerAName = playerAId ? getPlayerName(players, playerAId) : '--';
+    const playerBName = playerBId ? getPlayerName(players, playerBId) : '--';
+    const isCaptainA = playerAId && String(playerAId) === String(captainAId);
+    const isCaptainB = playerBId && String(playerBId) === String(captainBId);
+
+    return `
+      <tr>
+        <td class="${isCaptainA ? 'captain-cell' : ''}">
+          <span class="player-index">${index + 1}.</span>
+          <span class="player-name">${escapeHtml(playerAName)}</span>
+          ${isCaptainA ? '<span class="captain-badge">Captain</span>' : ''}
+        </td>
+        <td class="${isCaptainB ? 'captain-cell' : ''}">
+          <span class="player-index">${index + 1}.</span>
+          <span class="player-name">${escapeHtml(playerBName)}</span>
+          ${isCaptainB ? '<span class="captain-badge">Captain</span>' : ''}
+        </td>
+      </tr>
+    `;
+  }).join('');
+};
 
 const getCaptainSheetHtml = ({ title, weekId, date, captainAName, captainBName, teams, captains, players = [] }) => {
   const teamAIds = teams?.teamA || [];
@@ -651,8 +689,8 @@ const getCaptainSheetHtml = ({ title, weekId, date, captainAName, captainBName, 
         <title>${escapeHtml(title)}</title>
         <style>
           @page {
-            size: A4 landscape;
-            margin: 6mm;
+            size: A4 portrait;
+            margin: 7mm;
           }
 
           :root {
@@ -666,19 +704,22 @@ const getCaptainSheetHtml = ({ title, weekId, date, captainAName, captainBName, 
             padding: 0;
             color: #0f172a;
             background: #f1f5f9;
-            font-size: 11px;
+            font-size: 10px;
+          }
+
+          body {
+            padding: 8px;
           }
 
           .sheet {
-            max-width: 1120px;
-            min-height: calc(210mm - 12mm);
+            max-width: 820px;
             margin: 0 auto;
             background: #ffffff;
             border: 1px solid #cbd5e1;
             border-radius: 12px;
-            padding: 10px 12px;
+            padding: 10px;
             display: grid;
-            gap: 6px;
+            gap: 8px;
           }
 
           .hero {
@@ -686,160 +727,122 @@ const getCaptainSheetHtml = ({ title, weekId, date, captainAName, captainBName, 
             justify-content: space-between;
             gap: 10px;
             align-items: flex-start;
-            padding-bottom: 6px;
+            padding-bottom: 8px;
             border-bottom: 1px solid #e2e8f0;
           }
 
           .hero h1 {
             margin: 0 0 4px;
-            font-size: 19px;
+            font-size: 18px;
           }
 
           .hero p {
             margin: 1px 0;
             color: #475569;
-            font-size: 11px;
+            font-size: 10px;
+          }
+
+          .pill-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
           }
 
           .pill {
-            display: inline-block;
-            margin-top: 3px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             padding: 4px 8px;
             border-radius: 999px;
             background: #dbeafe;
             color: #1d4ed8;
             font-weight: 700;
-            font-size: 10px;
+            font-size: 9px;
           }
 
-          .header-meta {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: flex-end;
-          }
-
-          .captains-container {
+          .summary-box {
             border: 1px solid #dbeafe;
             border-radius: 12px;
             background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
             padding: 8px;
             display: grid;
             gap: 8px;
-            break-inside: avoid-page;
-            page-break-inside: avoid;
           }
 
-          .captains-container-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
+          .summary-box h2 {
+            margin: 0;
+            font-size: 13px;
           }
 
-          .captains-container-head h2 {
-            margin: 0 0 2px;
-            font-size: 14px;
-          }
-
-          .captains-container-head p {
+          .summary-box p {
             margin: 0;
             color: #475569;
-            font-size: 10px;
-          }
-
-          .captains-meta {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-          }
-
-          .team-card {
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 8px;
-            background: #f8fafc;
-            min-height: 100%;
-            break-inside: avoid-page;
-            page-break-inside: avoid;
-            display: grid;
-            grid-template-rows: auto 1fr;
-          }
-
-          .team-card h2 {
-            margin: 0 0 4px;
-            font-size: 14px;
-          }
-
-          .captains-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 8px;
-            align-items: stretch;
-            height: 100%;
-          }
-
-          .team-card-header {
-            display: flex;
-            justify-content: space-between;
-            gap: 8px;
-            align-items: flex-start;
-            margin-bottom: 4px;
-          }
-
-          .team-card-header p {
-            margin: 0;
-            color: #475569;
-            font-size: 10px;
-          }
-
-          .team-count {
-            padding: 3px 7px;
-            border-radius: 999px;
-            background: #e2e8f0;
-            color: #334155;
-            font-weight: 700;
-            white-space: nowrap;
             font-size: 9px;
           }
 
-          .player-list {
-            margin: 0;
-            padding-left: 14px;
-            display: grid;
-            gap: 2px;
-            align-content: start;
+          .team-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
           }
 
-          .player-list li {
-            display: flex;
-            justify-content: space-between;
-            gap: 6px;
-            align-items: center;
-            padding: 3px 5px;
-            border-radius: 6px;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
+          .team-table th,
+          .team-table td {
+            border: 1px solid #dbeafe;
+            padding: 6px 8px;
+            vertical-align: middle;
+          }
+
+          .team-table th {
+            background: #dbeafe;
+            color: #1e3a8a;
             font-size: 10px;
-            line-height: 1.12;
+            text-align: left;
           }
 
-          .player-list li strong {
-            color: #1d4ed8;
-            font-size: 8px;
-            text-transform: uppercase;
-            flex: 0 0 auto;
+          .team-table td {
+            background: #ffffff;
+            font-size: 9.5px;
+            line-height: 1.15;
           }
 
-          .captain-player {
-            border-color: #93c5fd !important;
+          .team-table tbody tr:nth-child(odd) td {
+            background: #f8fafc;
+          }
+
+          .captain-row td {
+            background: #eff6ff !important;
+            font-weight: 800;
+          }
+
+          .captain-cell {
             background: #eff6ff !important;
           }
 
+          .player-index {
+            color: #64748b;
+            font-weight: 700;
+            margin-right: 4px;
+          }
+
+          .player-name {
+            font-weight: 700;
+          }
+
+          .captain-badge {
+            float: right;
+            padding: 2px 6px;
+            border-radius: 999px;
+            background: #dbeafe;
+            color: #1d4ed8;
+            font-size: 8px;
+            font-weight: 800;
+            text-transform: uppercase;
+          }
+
           .footer-note {
-            margin-top: 0;
+            margin: 0;
             color: #475569;
             font-size: 9px;
           }
@@ -855,25 +858,6 @@ const getCaptainSheetHtml = ({ title, weekId, date, captainAName, captainBName, 
               border: 0;
               border-radius: 0;
               padding: 0;
-              gap: 6px;
-            }
-
-            .captains-container,
-            .captains-grid,
-            .team-card {
-              break-inside: avoid-page;
-              page-break-inside: avoid;
-            }
-          }
-
-          @media (max-width: 760px) {
-            .captains-container-head {
-              flex-direction: column;
-              align-items: flex-start;
-            }
-
-            .captains-grid {
-              grid-template-columns: 1fr;
             }
           }
         </style>
@@ -885,30 +869,40 @@ const getCaptainSheetHtml = ({ title, weekId, date, captainAName, captainBName, 
               <h1>${escapeHtml(title)}</h1>
               <p>Week: ${escapeHtml(weekId || '--')}</p>
               <p>Date: ${escapeHtml(formatDate(date))}</p>
-              <span class="pill">Captain team sheet</span>
             </div>
-            <div class="header-meta">
+            <div class="pill-row">
               <span class="pill">Team A Captain: ${escapeHtml(captainAName)}</span>
               <span class="pill">Team B Captain: ${escapeHtml(captainBName)}</span>
             </div>
           </header>
 
-          <section class="captains-container">
-            <div class="captains-container-head">
-              <div>
-                <h2>Captains</h2>
-                <p>Team A and Team B are grouped together in one compact container for single-page PDF sharing.</p>
-              </div>
-              <div class="captains-meta">
-                <span class="pill">Team A Captain: ${escapeHtml(captainAName)}</span>
-                <span class="pill">Team B Captain: ${escapeHtml(captainBName)}</span>
-              </div>
+          <section class="summary-box">
+            <div>
+              <h2>Captain Team Sheet</h2>
+              <p>Both teams are grouped in one compact table so the PDF stays on a single page.</p>
             </div>
 
-            <div class="captains-grid">
-              ${getTeamListMarkup({ teamName: 'Team A', playerIds: teamAIds, captainId: captains?.teamA, players })}
-              ${getTeamListMarkup({ teamName: 'Team B', playerIds: teamBIds, captainId: captains?.teamB, players })}
-            </div>
+            <table class="team-table">
+              <thead>
+                <tr>
+                  <th>Team A (${teamAIds.length})</th>
+                  <th>Team B (${teamBIds.length})</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="captain-row">
+                  <td>Captain: ${escapeHtml(captains?.teamA ? getPlayerName(players, captains.teamA) : '--')}</td>
+                  <td>Captain: ${escapeHtml(captains?.teamB ? getPlayerName(players, captains.teamB) : '--')}</td>
+                </tr>
+                ${getCaptainTableRowsMarkup({
+                  teamAIds,
+                  teamBIds,
+                  captainAId: captains?.teamA,
+                  captainBId: captains?.teamB,
+                  players,
+                })}
+              </tbody>
+            </table>
           </section>
 
           <p class="footer-note">Use the print dialog and choose "Save as PDF" to share this team sheet.</p>

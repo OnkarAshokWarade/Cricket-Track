@@ -457,6 +457,10 @@ button:disabled {
   background: #fef3c7;
 }
 
+.split-team-table th {
+  font-size: 0.92rem;
+}
+
 .split-team-table td.team-col-a {
   background: #eff6ff;
 }
@@ -471,6 +475,10 @@ button:disabled {
 
 .split-team-table tbody tr:hover td.team-col-b {
   background: #fde68a;
+}
+
+.split-team-table .team-player-name {
+  font-size: 0.94rem;
 }
 
 .input-group {
@@ -790,6 +798,21 @@ textarea {
   font-size: 0.9rem;
 }
 
+.match-unpaid-notice {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.match-unpaid-name {
+  color: #dc2626;
+}
+
 .penalty-status {
   display: flex;
   align-items: center;
@@ -1099,6 +1122,11 @@ textarea {
   font-weight: 800;
 }
 
+.match-fee-toast-copy {
+  margin: 0 0 10px;
+  font-weight: 700;
+}
+
 .match-fee-toast-list {
   margin: 0;
   padding-left: 18px;
@@ -1106,9 +1134,13 @@ textarea {
   gap: 6px;
 }
 
+.match-fee-toast-date {
+  font-weight: 700;
+}
+
 .match-fee-toast-name {
   font-weight: 800;
-  color: #7c2d12;
+  color: #dc2626;
 }
 
 .match-fee-toast::-webkit-scrollbar {
@@ -1205,6 +1237,35 @@ textarea {
   border: 1px solid #e2e8f0;
   border-radius: 16px;
   background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+
+.pending-notice-panel {
+  border-color: #fecaca;
+  background: linear-gradient(180deg, #fff5f5 0%, #ffffff 100%);
+}
+
+.pending-notice-title {
+  color: #991b1b;
+}
+
+.pending-notice-copy {
+  margin: 0;
+  color: #7f1d1d;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.pending-notice-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+  color: #7f1d1d;
+}
+
+.pending-notice-name {
+  color: #dc2626;
+  font-weight: 800;
 }
 
 .weekly-summary-panel-head {

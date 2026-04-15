@@ -3,6 +3,8 @@ import { formatDate } from '../utils/dateUtils';
 import { getPlayerName } from '../utils/teamUtils';
 import { useAppData } from '../context/AppDataContext';
 
+const PAYMENT_RECEIVER_MR = '\u0909\u092c\u0947\u0926 \u0936\u0947\u0916';
+
 function MatchCard({ match, players, canEdit = false }) {
   const { updateMatch } = useAppData();
   const [isUpdating, setIsUpdating] = useState(false);
@@ -10,6 +12,7 @@ function MatchCard({ match, players, canEdit = false }) {
   const isNoMatch = match.status === 'no-match';
   const captainAResultClass = !isNoMatch ? (match.winnerTeam === 'teamA' ? 'captain-win-color' : 'captain-loss-color') : '';
   const captainBResultClass = !isNoMatch ? (match.winnerTeam === 'teamB' ? 'captain-win-color' : 'captain-loss-color') : '';
+  const loserName = match.loserCaptain ? getPlayerName(players, match.loserCaptain) : '--';
 
   const handlePenaltyStatusChange = async (newStatus) => {
     if (!canEdit) {
@@ -20,8 +23,8 @@ function MatchCard({ match, players, canEdit = false }) {
     setError('');
     try {
       await updateMatch(match.id, { penaltyPaid: newStatus });
-    } catch (error) {
-      console.error('Error updating penalty status:', error);
+    } catch (updateError) {
+      console.error('Error updating penalty status:', updateError);
       setError('Payment status could not be saved.');
     } finally {
       setIsUpdating(false);
@@ -71,9 +74,16 @@ function MatchCard({ match, players, canEdit = false }) {
           <div className="penalty-section">
             <div className="penalty-info">
               <span className="label">Penalty:</span>
-              <span className="amount">₹{match.penalty}</span>
-              <span className="loser">({getPlayerName(players, match.loserCaptain)})</span>
+              <span className="amount">{`\u20B9${match.penalty}`}</span>
+              <span className="loser">({loserName})</span>
             </div>
+
+            {!penaltyPaid ? (
+              <p className="match-unpaid-notice">
+                <strong className="match-unpaid-name">{loserName}</strong>
+                {`: ${match.penalty} \u0930\u0941\u092a\u092f\u0947 \u092c\u093e\u0915\u0940 \u0906\u0939\u0947\u0924, ${PAYMENT_RECEIVER_MR} \u092f\u093e\u0902\u0928\u093e \u0926\u094d\u092f\u093e.`}
+              </p>
+            ) : null}
 
             {canEdit ? (
               <div className="penalty-status">

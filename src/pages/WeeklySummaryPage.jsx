@@ -6,6 +6,10 @@ import useAutoClearMessage from '../hooks/useAutoClearMessage';
 import { openMatchDayPdf, openWeekSummaryPdf } from '../utils/pdfUtils';
 import PaymentQrCard from '../components/PaymentQrCard';
 
+const PENDING_NOTICE_TITLE = '\u092a\u094d\u0930\u0932\u0902\u092c\u093f\u0924 \u092e\u0945\u091a \u092b\u0940 \u0938\u0942\u091a\u0928\u093e';
+const PENDING_NOTICE_COPY =
+  '\u0916\u093e\u0932\u0940\u0932 \u0916\u0947\u0933\u093e\u0921\u0942\u0902\u0928\u0940 100 \u0930\u0941\u092a\u092f\u0947 \u0909\u092c\u0947\u0926 \u0936\u0947\u0916 \u092f\u093e\u0902\u091a\u094d\u092f\u093e\u0915\u0921\u0947 \u0932\u0935\u0915\u0930\u093e\u0924 \u0932\u0935\u0915\u0930 \u091c\u092e\u093e \u0915\u0930\u093e\u0935\u0947\u0924:';
+
 const getWinningCaptainLabel = (players, match) => {
   if (match.status === 'no-match') {
     return 'No Match';
@@ -70,12 +74,9 @@ function WeeklySummaryPage({ accessMode }) {
 
     return Object.entries(weeklyMap)
       .map(([weekId, summary]) => {
-        const playedMatches = summary.matches.filter((item) => item.status !== 'no-match');
+        const sortedMatches = summary.matches.slice().sort((a, b) => (a.date < b.date ? 1 : -1));
+        const playedMatches = sortedMatches.filter((item) => item.status !== 'no-match');
         const pendingMatches = playedMatches.filter((item) => item.penaltyPaid !== true);
-        const topLoser = Object.entries(summary.losses).reduce(
-          (best, [playerId, amount]) => (amount > best.amount ? { playerId, amount } : best),
-          { playerId: null, amount: 0 }
-        );
 
         return {
           weekId,
@@ -84,9 +85,9 @@ function WeeklySummaryPage({ accessMode }) {
           totalMoney: playedMatches.reduce((sum, item) => sum + item.penalty, 0),
           pendingMoney: pendingMatches.reduce((sum, item) => sum + item.penalty, 0),
           pendingCount: pendingMatches.length,
+          pendingMatches,
           losses: summary.losses,
-          matches: summary.matches.slice().sort((a, b) => (a.date < b.date ? 1 : -1)),
-          topLoser,
+          matches: sortedMatches,
         };
       })
       .sort((a, b) => (a.weekId < b.weekId ? 1 : -1));
@@ -129,7 +130,7 @@ function WeeklySummaryPage({ accessMode }) {
       <div className="top-nav">
         <div>
           <h1 className="page-title">Weekly Summary</h1>
-          <p className="page-intro">Review money totals, match counts, and top losing players by week.</p>
+          <p className="page-intro">Review weekly match counts, money totals, pending fees, and date-wise captain results.</p>
         </div>
       </div>
 
@@ -158,11 +159,23 @@ function WeeklySummaryPage({ accessMode }) {
                 <p className={week.pendingCount > 0 ? 'weekly-status-pending' : ''}>
                   Pending money: {'\u20B9'} {week.pendingMoney} ({week.pendingCount} matches)
                 </p>
-                <p>
-                  Top losing player:{' '}
-                  {week.topLoser.playerId ? `${getPlayerName(players, week.topLoser.playerId)} (\u20B9 ${week.topLoser.amount})` : 'None yet'}
-                </p>
               </div>
+
+              {week.pendingMatches.length > 0 ? (
+                <div className="weekly-summary-panel pending-notice-panel" style={{ marginTop: '14px' }}>
+                  <p className="card-title pending-notice-title" style={{ margin: 0 }}>{PENDING_NOTICE_TITLE}</p>
+                  <p className="pending-notice-copy">{PENDING_NOTICE_COPY}</p>
+                  <ul className="pending-notice-list">
+                    {week.pendingMatches.map((match) => (
+                      <li key={match.id}>
+                        <span>{formatDate(match.date)}</span>
+                        {' \u2014 '}
+                        <strong className="pending-notice-name">{getPlayerName(players, match.loserCaptain)}</strong>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
 
               <div className="weekly-summary-panel" style={{ marginTop: '14px' }}>
                 <div className="weekly-summary-panel-head">

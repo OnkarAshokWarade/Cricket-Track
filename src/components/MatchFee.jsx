@@ -1,5 +1,8 @@
 import { useMemo } from 'react';
+import { formatDate } from '../utils/dateUtils';
 import { getPlayerName } from '../utils/teamUtils';
+
+const PAYMENT_RECEIVER_MR = '\u0909\u092c\u0947\u0926 \u0936\u0947\u0916';
 
 function MatchFee({ matches, players, currentWeekId }) {
   const weeklyData = useMemo(() => {
@@ -8,10 +11,11 @@ function MatchFee({ matches, players, currentWeekId }) {
     );
 
     const playerPenalties = {};
+    const unpaidNotices = [];
     let totalPaid = 0;
     let totalUnpaid = 0;
 
-    weekMatches.forEach(match => {
+    weekMatches.forEach((match) => {
       const loserId = match.loserCaptain;
       const penaltyPaid = match.penaltyPaid !== undefined ? match.penaltyPaid : false;
 
@@ -21,7 +25,7 @@ function MatchFee({ matches, players, currentWeekId }) {
           totalPenalties: 0,
           paidCount: 0,
           unpaidCount: 0,
-          matches: []
+          matches: [],
         };
       }
 
@@ -30,7 +34,7 @@ function MatchFee({ matches, players, currentWeekId }) {
         id: match.id,
         date: match.date,
         penalty: match.penalty,
-        paid: penaltyPaid
+        paid: penaltyPaid,
       });
 
       if (penaltyPaid) {
@@ -39,21 +43,29 @@ function MatchFee({ matches, players, currentWeekId }) {
       } else {
         playerPenalties[loserId].unpaidCount += 1;
         totalUnpaid += match.penalty;
+        unpaidNotices.push({
+          id: match.id,
+          date: match.date,
+          playerId: loserId,
+          penalty: match.penalty,
+        });
       }
     });
 
     return {
       playerPenalties: Object.values(playerPenalties),
+      unpaidNotices: unpaidNotices.sort((a, b) => (a.date < b.date ? 1 : -1)),
       totalPaid,
       totalUnpaid,
       totalCollected: totalPaid,
-      totalOutstanding: totalUnpaid
+      totalOutstanding: totalUnpaid,
     };
   }, [matches, currentWeekId]);
 
-  const sortedPlayers = useMemo(() => {
-    return weeklyData.playerPenalties.sort((a, b) => b.totalPenalties - a.totalPenalties);
-  }, [weeklyData.playerPenalties]);
+  const sortedPlayers = useMemo(
+    () => weeklyData.playerPenalties.slice().sort((a, b) => b.totalPenalties - a.totalPenalties),
+    [weeklyData.playerPenalties]
+  );
 
   return (
     <div className="match-fee-sidebar">
@@ -65,23 +77,42 @@ function MatchFee({ matches, players, currentWeekId }) {
       <div className="fee-summary">
         <div className="summary-item collected">
           <span className="label">Collected</span>
-          <span className="amount">₹{weeklyData.totalCollected}</span>
+          <span className="amount">{`\u20B9${weeklyData.totalCollected}`}</span>
         </div>
         <div className="summary-item outstanding">
           <span className="label">Outstanding</span>
-          <span className="amount">₹{weeklyData.totalOutstanding}</span>
+          <span className="amount">{`\u20B9${weeklyData.totalOutstanding}`}</span>
         </div>
       </div>
+
+      {weeklyData.unpaidNotices.length > 0 ? (
+        <div className="player-penalties">
+          <h4>Unpaid Notice</h4>
+          <div className="penalty-list">
+            {weeklyData.unpaidNotices.map((notice) => (
+              <div key={notice.id} className="player-penalty-card">
+                <p className="match-unpaid-notice" style={{ marginBottom: '10px' }}>
+                  <strong className="match-unpaid-name">{getPlayerName(players, notice.playerId)}</strong>
+                  {`: ${notice.penalty} \u0930\u0941\u092a\u092f\u0947 \u092c\u093e\u0915\u0940 \u0906\u0939\u0947\u0924, ${PAYMENT_RECEIVER_MR} \u092f\u093e\u0902\u0928\u093e \u0926\u094d\u092f\u093e.`}
+                </p>
+                <p className="page-intro" style={{ marginBottom: 0 }}>
+                  Match Date: {formatDate(notice.date)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <div className="player-penalties">
         <h4>Player Penalties</h4>
         {sortedPlayers.length > 0 ? (
           <div className="penalty-list">
-            {sortedPlayers.map(playerData => (
+            {sortedPlayers.map((playerData) => (
               <div key={playerData.playerId} className="player-penalty-card">
                 <div className="player-header">
                   <span className="player-name">{getPlayerName(players, playerData.playerId)}</span>
-                  <span className="total-amount">₹{playerData.totalPenalties}</span>
+                  <span className="total-amount">{`\u20B9${playerData.totalPenalties}`}</span>
                 </div>
 
                 <div className="penalty-breakdown">
@@ -90,12 +121,12 @@ function MatchFee({ matches, players, currentWeekId }) {
                 </div>
 
                 <div className="match-details">
-                  {playerData.matches.map(match => (
+                  {playerData.matches.map((match) => (
                     <div key={match.id} className={`match-item ${match.paid ? 'paid' : 'unpaid'}`}>
-                      <span className="match-date">{new Date(match.date).toLocaleDateString()}</span>
-                      <span className="match-amount">₹{match.penalty}</span>
+                      <span className="match-date">{formatDate(match.date)}</span>
+                      <span className="match-amount">{`\u20B9${match.penalty}`}</span>
                       <span className={`status-badge ${match.paid ? 'paid' : 'unpaid'}`}>
-                        {match.paid ? '✓' : '✗'}
+                        {match.paid ? '\u2713' : '\u2717'}
                       </span>
                     </div>
                   ))}
