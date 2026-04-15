@@ -64,7 +64,7 @@ function RulesPatodaPage() {
       <div className="top-nav">
         <div>
           <h1 className="page-title">Rules Patoda(g)</h1>
-          <p className="page-intro">गावातील 12 ओव्हर क्रिकेट सामन्याचे नियम.</p>
+          <p className="page-intro">गावातील क्रिकेट सामन्याचे नियम.</p>
         </div>
       </div>
 
