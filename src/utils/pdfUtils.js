@@ -999,6 +999,444 @@ const getFundTypeLabel = (type) => {
 };
 
 const isFundCreditType = (type) => type === 'credit-fixed' || type === 'credit-manual' || type === 'credit';
+const isRelevantMatchFeeRecord = (match) =>
+  match && match.status !== 'no-match' && match.loserCaptain && (Number(match.penalty) || 0) > 0;
+const getCurrencyHtml = (value) => `&#8377;${escapeHtml(String(Number(value) || 0))}`;
+
+const getGroundFundSummaryHtml = ({ title, matches = [], players = [], transactions = [] }) => {
+  const sortedTransactions = transactions
+    .slice()
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
+
+  const matchFeeRecords = matches
+    .filter(isRelevantMatchFeeRecord)
+    .slice()
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
+
+  const matchFeeTotals = matchFeeRecords.reduce(
+    (accumulator, match) => {
+      const penalty = Number(match.penalty) || 0;
+      accumulator.totalPenalty += penalty;
+
+      if (match.penaltyPaid === true) {
+        accumulator.totalCollected += penalty;
+      } else {
+        accumulator.totalOutstanding += penalty;
+      }
+
+      return accumulator;
+    },
+    { totalPenalty: 0, totalCollected: 0, totalOutstanding: 0 }
+  );
+
+  const groundExpenseTotals = sortedTransactions.reduce(
+    (accumulator, transaction) => {
+      const amount = Number(transaction.amount) || 0;
+      if (isFundCreditType(transaction.type)) {
+        accumulator.totalCredit += amount;
+      } else {
+        accumulator.totalDebit += amount;
+      }
+      return accumulator;
+    },
+    { totalCredit: 0, totalDebit: 0 }
+  );
+
+  const combinedTotals = {
+    totalCredit: groundExpenseTotals.totalCredit + matchFeeTotals.totalCollected,
+    totalDebit: groundExpenseTotals.totalDebit,
+  };
+
+  combinedTotals.balance = combinedTotals.totalCredit - combinedTotals.totalDebit;
+
+  return `
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <title>${escapeHtml(title)}</title>
+        <style>
+          @page {
+            size: A4 portrait;
+            margin: 8mm;
+          }
+
+          :root {
+            color-scheme: light;
+            font-family: Arial, sans-serif;
+          }
+
+          body {
+            margin: 0;
+            padding: 14px;
+            color: #0f172a;
+            background: #f8fafc;
+            font-size: 11px;
+          }
+
+          .sheet {
+            max-width: 980px;
+            margin: 0 auto;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 16px;
+            padding: 16px;
+            display: grid;
+            gap: 12px;
+          }
+
+          .hero {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+          }
+
+          .hero h1 {
+            margin: 0 0 4px;
+            font-size: 22px;
+          }
+
+          .hero p {
+            margin: 2px 0;
+            color: #475569;
+          }
+
+          .pill-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+          }
+
+          .pill {
+            border-radius: 999px;
+            padding: 4px 10px;
+            background: #e2e8f0;
+            color: #334155;
+            font-weight: 700;
+          }
+
+          .pill.credit {
+            background: #dcfce7;
+            color: #166534;
+          }
+
+          .pill.debit {
+            background: #fee2e2;
+            color: #b91c1c;
+          }
+
+          .summary-grid,
+          .details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+          }
+
+          .summary-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+
+          .summary-card,
+          .section-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: #f8fafc;
+            padding: 10px;
+            display: grid;
+            gap: 8px;
+          }
+
+          .summary-card span {
+            color: #475569;
+            font-weight: 700;
+          }
+
+          .summary-card strong {
+            font-size: 20px;
+          }
+
+          .summary-card.credit strong,
+          .type-credit,
+          .status-paid {
+            color: #15803d;
+          }
+
+          .summary-card.debit strong,
+          .type-debit,
+          .status-pending {
+            color: #dc2626;
+          }
+
+          .summary-card.balance strong {
+            color: #1d4ed8;
+          }
+
+          .section-card h2 {
+            margin: 0;
+            font-size: 15px;
+          }
+
+          .stats-list {
+            display: grid;
+            gap: 8px;
+          }
+
+          .stats-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            font-weight: 700;
+          }
+
+          .table-wrap {
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            background: #ffffff;
+          }
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+
+          th,
+          td {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 7px 8px;
+            text-align: left;
+            vertical-align: top;
+          }
+
+          thead th {
+            background: #f1f5f9;
+            color: #334155;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+          }
+
+          tbody tr:last-child td,
+          tfoot td {
+            border-bottom: 0;
+          }
+
+          .section-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+          }
+
+          .meta-copy {
+            color: #475569;
+            font-weight: 700;
+          }
+
+          .empty-state {
+            margin: 0;
+            color: #64748b;
+            font-weight: 700;
+          }
+
+          .footer-note {
+            margin: 0;
+            color: #475569;
+            font-size: 10px;
+          }
+
+          @media print {
+            body {
+              background: #ffffff;
+              padding: 0;
+            }
+
+            .sheet {
+              max-width: none;
+              border: 0;
+              border-radius: 0;
+              padding: 0;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <main class="sheet">
+          <header class="hero">
+            <div>
+              <h1>${escapeHtml(title)}</h1>
+              <p>Match fee records: ${escapeHtml(String(matchFeeRecords.length))}</p>
+              <p>Ground transactions: ${escapeHtml(String(sortedTransactions.length))}</p>
+            </div>
+            <div class="pill-row">
+              <span class="pill credit">Total Credit: ${getCurrencyHtml(combinedTotals.totalCredit)}</span>
+              <span class="pill debit">Total Debit: ${getCurrencyHtml(combinedTotals.totalDebit)}</span>
+              <span class="pill">Balance: ${getCurrencyHtml(combinedTotals.balance)}</span>
+            </div>
+          </header>
+
+          <section class="summary-grid">
+            <article class="summary-card credit">
+              <span>Total Credit</span>
+              <strong>${getCurrencyHtml(combinedTotals.totalCredit)}</strong>
+            </article>
+            <article class="summary-card debit">
+              <span>Total Debit</span>
+              <strong>${getCurrencyHtml(combinedTotals.totalDebit)}</strong>
+            </article>
+            <article class="summary-card balance">
+              <span>Balance</span>
+              <strong>${getCurrencyHtml(combinedTotals.balance)}</strong>
+            </article>
+          </section>
+
+          <section class="details-grid">
+            <article class="section-card">
+              <h2>Collection Breakdown</h2>
+              <div class="stats-list">
+                <div class="stats-row"><span>Collected Match Fees</span><strong>${getCurrencyHtml(matchFeeTotals.totalCollected)}</strong></div>
+                <div class="stats-row"><span>Outstanding Match Fees</span><strong class="status-pending">${getCurrencyHtml(matchFeeTotals.totalOutstanding)}</strong></div>
+                <div class="stats-row"><span>Ground Credits</span><strong class="status-paid">${getCurrencyHtml(groundExpenseTotals.totalCredit)}</strong></div>
+                <div class="stats-row"><span>Ground Expenses</span><strong class="status-pending">${getCurrencyHtml(groundExpenseTotals.totalDebit)}</strong></div>
+              </div>
+            </article>
+
+            <article class="section-card">
+              <h2>Calculation</h2>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Component</th>
+                      <th>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Ground Credits</td>
+                      <td>${getCurrencyHtml(groundExpenseTotals.totalCredit)}</td>
+                    </tr>
+                    <tr>
+                      <td>Collected Match Fees</td>
+                      <td>${getCurrencyHtml(matchFeeTotals.totalCollected)}</td>
+                    </tr>
+                    <tr>
+                      <td>Total Credit</td>
+                      <td>${getCurrencyHtml(combinedTotals.totalCredit)}</td>
+                    </tr>
+                    <tr>
+                      <td>Total Debit</td>
+                      <td>${getCurrencyHtml(combinedTotals.totalDebit)}</td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td><strong>Balance</strong></td>
+                      <td><strong>${getCurrencyHtml(combinedTotals.balance)}</strong></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </article>
+          </section>
+
+          <section class="section-card">
+            <div class="section-head">
+              <h2>Match Fee Records</h2>
+              <span class="meta-copy">Total penalty: ${getCurrencyHtml(matchFeeTotals.totalPenalty)}</span>
+            </div>
+            ${
+              matchFeeRecords.length === 0
+                ? '<p class="empty-state">No match fee records available.</p>'
+                : `
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Week</th>
+                      <th>Losing Captain</th>
+                      <th>Status</th>
+                      <th>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${matchFeeRecords
+                      .map(
+                        (match) => `
+                      <tr>
+                        <td>${escapeHtml(match.date ? formatDate(match.date) : '--')}</td>
+                        <td>${escapeHtml(match.weekId || '--')}</td>
+                        <td><strong>${escapeHtml(match.loserCaptain ? getPlayerName(players, match.loserCaptain) : '--')}</strong></td>
+                        <td class="${match.penaltyPaid === true ? 'status-paid' : 'status-pending'}">${match.penaltyPaid === true ? 'Paid' : 'Pending'}</td>
+                        <td>${getCurrencyHtml(match.penalty)}</td>
+                      </tr>
+                    `
+                      )
+                      .join('')}
+                  </tbody>
+                </table>
+              </div>
+            `
+            }
+          </section>
+
+          <section class="section-card">
+            <div class="section-head">
+              <h2>Ground Transactions</h2>
+              <span class="meta-copy">Entries: ${escapeHtml(String(sortedTransactions.length))}</span>
+            </div>
+            ${
+              sortedTransactions.length === 0
+                ? '<p class="empty-state">No ground transactions available.</p>'
+                : `
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Week</th>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${sortedTransactions
+                      .map(
+                        (transaction) => `
+                      <tr>
+                        <td>${escapeHtml(transaction.date ? formatDate(transaction.date) : '--')}</td>
+                        <td>${escapeHtml(transaction.weekId || '--')}</td>
+                        <td><strong>${escapeHtml(transaction.name || '--')}</strong></td>
+                        <td class="${isFundCreditType(transaction.type) ? 'type-credit' : 'type-debit'}">${escapeHtml(getFundTypeLabel(transaction.type))}</td>
+                        <td>${getCurrencyHtml(transaction.amount)}</td>
+                      </tr>
+                    `
+                      )
+                      .join('')}
+                  </tbody>
+                </table>
+              </div>
+            `
+            }
+          </section>
+
+          <p class="footer-note">Use the print dialog and choose "Save as PDF" to keep this ground fund summary.</p>
+        </main>
+      </body>
+    </html>
+  `;
+};
 
 const getFundTransactionsHtml = ({ title, transactions = [], archives = [] }) => {
   const sortedCurrent = transactions
@@ -1444,6 +1882,21 @@ export const openFundTransactionsPdf = ({ transactions = [], archives = [] }) =>
       title: 'Patoda XI Transactions History',
       transactions,
       archives,
+    })
+  );
+};
+
+export const openGroundFundSummaryPdf = ({ matches = [], players = [], transactions = [] }) => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return openPrintDocument(
+    getGroundFundSummaryHtml({
+      title: 'Patoda XI Ground Fund Summary',
+      matches,
+      players,
+      transactions,
     })
   );
 };
