@@ -224,7 +224,7 @@ const sanitizeFunds = (fundTransactions) => {
   }
 
   return fundTransactions
-    .filter((item) => item && (item.type === 'credit' || item.type === 'debit'))
+    .filter((item) => item && (item.type === 'credit' || item.type === 'credit-fixed' || item.type === 'credit-manual' || item.type === 'debit'))
     .map((item) => ({
       id: item.id || `txn-${Date.now()}`,
       name: String(item.name || '').trim(),
@@ -233,12 +233,12 @@ const sanitizeFunds = (fundTransactions) => {
       createdAt: Number.isFinite(Number(item.createdAt)) ? Number(item.createdAt) : 0,
       updatedAt: Number.isFinite(Number(item.updatedAt)) ? Number(item.updatedAt) : 0,
       amount:
-        item.type === 'credit'
+        item.type === 'credit' || item.type === 'credit-fixed'
           ? 100
           : Number.isFinite(Number(item.amount))
           ? Number(item.amount)
           : 0,
-      type: item.type,
+      type: item.type === 'credit' ? 'credit-fixed' : item.type,
     }))
     .filter((item) => item.name && item.amount > 0);
 };
@@ -246,7 +246,7 @@ const sanitizeFunds = (fundTransactions) => {
 const sanitizeContributionPlayers = (contributionPlayers, fundTransactions) => {
   const names = Array.isArray(contributionPlayers) ? contributionPlayers : [];
   const creditNames = Array.isArray(fundTransactions)
-    ? fundTransactions.filter((item) => item?.type === 'credit').map((item) => item.name)
+    ? fundTransactions.filter((item) => item?.type === 'credit-fixed').map((item) => item.name)
     : [];
 
   return uniqueStrings([...names, ...creditNames]);

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useAppData } from '../context/AppDataContext';
 
 const formatINR = (value) => `\u20B9${value.toLocaleString('en-IN')}`;
+const isCreditType = (type) => type === 'credit-fixed' || type === 'credit-manual' || type === 'credit';
 
 function GroundFundSummaryPage() {
   const { matches, fundTransactions } = useAppData();
@@ -33,7 +34,7 @@ function GroundFundSummaryPage() {
     () =>
       fundTransactions.reduce(
         (accumulator, transaction) => {
-          if (transaction.type === 'credit') {
+          if (isCreditType(transaction.type)) {
             accumulator.totalCredit += transaction.amount;
           } else {
             accumulator.totalDebit += transaction.amount;

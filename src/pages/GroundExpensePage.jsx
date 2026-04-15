@@ -6,7 +6,13 @@ import { formatDate, getWeekId, todayKey } from '../utils/dateUtils';
 
 const FIXED_CONTRIBUTION = 100;
 const PAYMENT_RECEIVER_MR = '\u0909\u092c\u0947\u0926 \u0936\u0947\u0916';
+const TRANSACTION_TYPE_CREDIT_FIXED = 'credit-fixed';
+const TRANSACTION_TYPE_CREDIT_MANUAL = 'credit-manual';
+const TRANSACTION_TYPE_DEBIT = 'debit';
 const normalizeName = (value) => String(value || '').trim().toLowerCase();
+const isCreditType = (type) =>
+  type === TRANSACTION_TYPE_CREDIT_FIXED || type === TRANSACTION_TYPE_CREDIT_MANUAL || type === 'credit';
+const isFixedCreditType = (type) => type === TRANSACTION_TYPE_CREDIT_FIXED || type === 'credit';
 
 const createId = () => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -23,7 +29,7 @@ function GroundExpensePage({ accessMode }) {
   const [form, setForm] = useState({
     name: '',
     amount: '',
-    type: 'debit',
+    type: TRANSACTION_TYPE_DEBIT,
   });
   const [newContributionPlayer, setNewContributionPlayer] = useState('');
   const [editingId, setEditingId] = useState(null);
@@ -101,7 +107,7 @@ function GroundExpensePage({ accessMode }) {
   const playerNames = useMemo(() => {
     const sourceNames = [
       ...contributionPlayers,
-      ...transactions.filter((item) => item.type === 'credit').map((item) => item.name),
+      ...transactions.filter((item) => isFixedCreditType(item.type)).map((item) => item.name),
     ];
 
     const uniqueNames = [];
@@ -126,7 +132,7 @@ function GroundExpensePage({ accessMode }) {
   const paidPlayerNameSet = useMemo(() => {
     const paid = new Set();
     transactions.forEach((transaction) => {
-      if (transaction.type === 'credit') {
+      if (isFixedCreditType(transaction.type)) {
         paid.add(normalizeName(transaction.name));
       }
     });
@@ -156,7 +162,7 @@ function GroundExpensePage({ accessMode }) {
   const totals = useMemo(() => {
     return transactions.reduce(
       (accumulator, transaction) => {
-        if (transaction.type === 'credit') {
+        if (isCreditType(transaction.type)) {
           accumulator.totalCredit += transaction.amount;
         } else {
           accumulator.totalDebit += transaction.amount;
@@ -170,7 +176,7 @@ function GroundExpensePage({ accessMode }) {
     () =>
       transactions.reduce(
         (accumulator, transaction) => {
-          if (transaction.type === 'credit') {
+          if (isCreditType(transaction.type)) {
             accumulator.credit += 1;
           } else {
             accumulator.debit += 1;
@@ -209,7 +215,12 @@ function GroundExpensePage({ accessMode }) {
     setForm((previous) => ({
       ...previous,
       type,
-      amount: type === 'credit' ? String(FIXED_CONTRIBUTION) : previous.amount === String(FIXED_CONTRIBUTION) ? '' : previous.amount,
+      amount:
+        isFixedCreditType(type)
+          ? String(FIXED_CONTRIBUTION)
+          : isFixedCreditType(previous.type) && previous.amount === String(FIXED_CONTRIBUTION)
+          ? ''
+          : previous.amount,
     }));
   };
 
@@ -217,7 +228,7 @@ function GroundExpensePage({ accessMode }) {
     setForm({
       name: '',
       amount: '',
-      type: 'debit',
+      type: TRANSACTION_TYPE_DEBIT,
     });
     setEditingId(null);
     if (isMobileViewport) {
@@ -238,7 +249,7 @@ function GroundExpensePage({ accessMode }) {
       return;
     }
 
-    const amount = form.type === 'credit' ? FIXED_CONTRIBUTION : Number(form.amount);
+    const amount = isFixedCreditType(form.type) ? FIXED_CONTRIBUTION : Number(form.amount);
     if (!Number.isFinite(amount) || amount <= 0) {
       return;
     }
@@ -276,7 +287,7 @@ function GroundExpensePage({ accessMode }) {
     setEditingId(transaction.id);
     setForm({
       name: transaction.name,
-      amount: transaction.type === 'credit' ? String(FIXED_CONTRIBUTION) : String(transaction.amount),
+      amount: isFixedCreditType(transaction.type) ? String(FIXED_CONTRIBUTION) : String(transaction.amount),
       type: transaction.type,
     });
     if (isMobileViewport) {
@@ -316,7 +327,7 @@ function GroundExpensePage({ accessMode }) {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       amount: FIXED_CONTRIBUTION,
-      type: 'credit',
+      type: TRANSACTION_TYPE_CREDIT_FIXED,
     };
 
     await persistFundState(
@@ -339,13 +350,13 @@ function GroundExpensePage({ accessMode }) {
     const editingWillBeRemoved = transactions.some(
       (transaction) =>
         transaction.id === editingId &&
-        transaction.type === 'credit' &&
+        isFixedCreditType(transaction.type) &&
         normalizeName(transaction.name) === key
     );
 
     const didSave = await persistFundState({
       fundTransactions: transactions.filter(
-        (transaction) => !(transaction.type === 'credit' && normalizeName(transaction.name) === key)
+        (transaction) => !(isFixedCreditType(transaction.type) && normalizeName(transaction.name) === key)
       ),
     }, `${playerName} marked as unpaid in Firebase.`);
 
@@ -441,7 +452,7 @@ function GroundExpensePage({ accessMode }) {
     setForm({
       name: '',
       amount: '',
-      type: 'debit',
+      type: TRANSACTION_TYPE_DEBIT,
     });
     setIsMobileEditorOpen(true);
   };
@@ -524,8 +535,9 @@ function GroundExpensePage({ accessMode }) {
             onChange={(event) => handleTypeChange(event.target.value)}
             disabled={isSaving}
           >
-            <option value="credit">{'\u091c\u092e\u093e (Fixed \u20B9100)'}</option>
-            <option value="debit">{'\u0916\u0930\u094d\u091a'}</option>
+            <option value={TRANSACTION_TYPE_CREDIT_FIXED}>{'\u091c\u092e\u093e (Fixed \u20B9100)'}</option>
+            <option value={TRANSACTION_TYPE_DEBIT}>{'\u0916\u0930\u094d\u091a'}</option>
+            <option value={TRANSACTION_TYPE_CREDIT_MANUAL}>{'\u091c\u092e\u093e'}</option>
           </select>
         </div>
 
@@ -537,9 +549,9 @@ function GroundExpensePage({ accessMode }) {
             id="transaction-amount"
             type="number"
             min="1"
-            value={form.type === 'credit' ? FIXED_CONTRIBUTION : form.amount}
+            value={isFixedCreditType(form.type) ? FIXED_CONTRIBUTION : form.amount}
             onChange={(event) => setForm((previous) => ({ ...previous, amount: event.target.value }))}
-            disabled={isSaving || form.type === 'credit'}
+            disabled={isSaving || isFixedCreditType(form.type)}
             required
           />
         </div>
@@ -755,8 +767,8 @@ function GroundExpensePage({ accessMode }) {
                       </td>
                       <td data-label="Amount">{formatINR(transaction.amount)}</td>
                       <td data-label="Type">
-                        <span className={`fund-type-pill ${transaction.type}`}>
-                          {transaction.type === 'credit' ? '\u091c\u092e\u093e' : '\u0916\u0930\u094d\u091a'}
+                        <span className={`fund-type-pill ${isCreditType(transaction.type) ? 'credit' : 'debit'}`}>
+                          {isCreditType(transaction.type) ? '\u091c\u092e\u093e' : '\u0916\u0930\u094d\u091a'}
                         </span>
                       </td>
                       <td data-label="Actions">
@@ -818,7 +830,7 @@ function GroundExpensePage({ accessMode }) {
             {fundArchives.map((archive) => {
               const archiveTotals = archive.transactions.reduce(
                 (accumulator, transaction) => {
-                  if (transaction.type === 'credit') {
+                  if (isCreditType(transaction.type)) {
                     accumulator.credit += transaction.amount;
                   } else {
                     accumulator.debit += transaction.amount;
