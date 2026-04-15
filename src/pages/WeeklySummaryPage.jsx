@@ -170,9 +170,11 @@ function WeeklySummaryPage({ accessMode }) {
               <div className="weekly-summary-panel" style={{ marginTop: '14px' }}>
                 <div className="weekly-summary-panel-head">
                   <p className="card-title" style={{ margin: 0 }}>Date-wise Details</p>
-                  <button type="button" className="button-secondary button-small" onClick={() => handleExportWeekPdf(week)}>
-                    Week PDF
-                  </button>
+                  {isAdmin ? (
+                    <button type="button" className="button-secondary button-small" onClick={() => handleExportWeekPdf(week)}>
+                      Week PDF
+                    </button>
+                  ) : null}
                 </div>
                 <div className="weekly-date-list">
                   {week.matches.map((match) => {
