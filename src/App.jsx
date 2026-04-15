@@ -156,7 +156,7 @@ function AppContent() {
 
           <div className="auth-actions">
             <button type="button" className="auth-choice-button auth-choice-button-secondary" onClick={handleGuestEntry}>
-              Continue as Guest
+              Continue as Player 
             </button>
             <button
               type="button"
