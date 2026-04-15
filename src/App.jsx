@@ -149,16 +149,18 @@ function AppContent() {
     return (
       <div className="auth-shell">
         <div className={`auth-card ${showAdminLogin ? 'auth-card-active' : ''}`} ref={authCardRef}>
-          <h1 className="auth-title">Patoda XI Access</h1>
-          <p className="auth-subtitle">Choose how you want to open the app.</p>
+          <div className="auth-copy">
+            <h1 className="auth-title">Patoda XI Access</h1>
+            <p className="auth-subtitle">Choose how you want to open the app.</p>
+          </div>
 
           <div className="auth-actions">
-            <button type="button" className="button-secondary" onClick={handleGuestEntry}>
+            <button type="button" className="auth-choice-button auth-choice-button-secondary" onClick={handleGuestEntry}>
               Continue as Guest
             </button>
             <button
               type="button"
-              className="button-primary"
+              className="auth-choice-button auth-choice-button-primary"
               onClick={() => {
                 setShowAdminLogin(true);
                 setAuthError('');
@@ -169,44 +171,42 @@ function AppContent() {
           </div>
 
           {showAdminLogin ? (
-            <form className="auth-form" onSubmit={handleAdminEntry}>
-              <label className="input-label" htmlFor="admin-password">
-                Admin Password
-              </label>
-              <input
-                id="admin-password"
-                type="password"
-                ref={adminPasswordInputRef}
-                value={adminPassword}
-                onChange={(event) => setAdminPassword(event.target.value)}
-                onFocus={() => adminPasswordInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-                placeholder="Enter admin password"
-                autoFocus
-                required
-              />
-              <div className="auth-actions">
-                <button type="submit" className="button-primary">
-                  Unlock Admin
-                </button>
-                <button
-                  type="button"
-                  className="button-secondary"
-                  onClick={() => {
-                    setShowAdminLogin(false);
-                    setAdminPassword('');
-                    setAuthError('');
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-              {authError ? <p className="auth-error">{authError}</p> : null}
-            </form>
-          ) : (
-            <p className="auth-note">
-              Guest can only view data. Admin can manage and update all sections.
-            </p>
-          )}
+            <div className="auth-form-panel">
+              <form className="auth-form" onSubmit={handleAdminEntry}>
+                <label className="input-label auth-input-label" htmlFor="admin-password">
+                  Admin Password
+                </label>
+                <input
+                  id="admin-password"
+                  type="password"
+                  ref={adminPasswordInputRef}
+                  value={adminPassword}
+                  onChange={(event) => setAdminPassword(event.target.value)}
+                  onFocus={() => adminPasswordInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                  placeholder="Enter admin password"
+                  autoFocus
+                  required
+                />
+                <div className="auth-form-actions">
+                  <button type="submit" className="auth-choice-button auth-choice-button-primary">
+                    Unlock Admin
+                  </button>
+                  <button
+                    type="button"
+                    className="auth-choice-button auth-choice-button-secondary"
+                    onClick={() => {
+                      setShowAdminLogin(false);
+                      setAdminPassword('');
+                      setAuthError('');
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+                {authError ? <p className="auth-error">{authError}</p> : null}
+              </form>
+            </div>
+          ) : null}
         </div>
       </div>
     );
