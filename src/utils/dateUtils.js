@@ -1,6 +1,7 @@
 const pad2 = (value) => String(value).padStart(2, '0');
 const DATE_KEY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const APP_TIME_ZONE = 'Asia/Kolkata';
+export const CAPTAIN_SELECTION_WINDOW_DAYS = 10;
 const TIME_ZONE_DATE_FORMATTER = new Intl.DateTimeFormat('en-CA', {
   timeZone: APP_TIME_ZONE,
   year: 'numeric',
@@ -29,7 +30,7 @@ const getTimeZoneDateParts = (dateValue) => {
   return { year, month, day };
 };
 
-const addDaysToDateKey = (dateKey, daysToAdd) => {
+export const addDaysToDateKey = (dateKey, daysToAdd) => {
   if (!DATE_KEY_REGEX.test(dateKey)) return '';
   const [year, month, day] = dateKey.split('-').map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
@@ -63,6 +64,12 @@ export const tomorrowKey = () => addDaysToDateKey(todayKey(), 1);
 
 export const yesterdayKey = () => addDaysToDateKey(todayKey(), -1);
 
+export const getCaptainSelectionDateKeys = (daysCount = CAPTAIN_SELECTION_WINDOW_DAYS) => {
+  const safeDaysCount = Number.isFinite(daysCount) && daysCount > 0 ? Math.floor(daysCount) : CAPTAIN_SELECTION_WINDOW_DAYS;
+  const startDateKey = todayKey();
+  return Array.from({ length: safeDaysCount }, (_, offset) => addDaysToDateKey(startDateKey, offset)).filter(Boolean);
+};
+
 export const getWeekNumber = (dateValue = new Date()) => {
   const key = toDateKey(dateValue);
   if (!DATE_KEY_REGEX.test(key)) return 0;
@@ -92,5 +99,7 @@ export const isSameDay = (first, second) => {
 export const isDateAllowedForCaptain = (dateValue) => {
   const key = toDateKey(dateValue);
   if (!key) return false;
-  return key === todayKey() || key === tomorrowKey();
+  const startDateKey = todayKey();
+  const endDateKey = addDaysToDateKey(startDateKey, CAPTAIN_SELECTION_WINDOW_DAYS - 1);
+  return key >= startDateKey && key <= endDateKey;
 };

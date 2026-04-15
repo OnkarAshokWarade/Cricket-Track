@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  CAPTAIN_SELECTION_WINDOW_DAYS,
+  getCaptainSelectionDateKeys,
   formatDate,
   getWeekId,
   isDateAllowedForCaptain,
@@ -77,7 +79,7 @@ function MatchCenterPage({ accessMode }) {
   const [captainMessage, setCaptainMessage] = useState('');
   const [captainMessageType, setCaptainMessageType] = useState('success');
   const [matchMessage, setMatchMessage] = useState('');
-  const [captainOverride, setCaptainOverride] = useState(null);
+  const [captainOverrides, setCaptainOverrides] = useState({});
   const captainsSectionRef = useRef(null);
 
   useAutoClearMessage(teamMessage, setTeamMessage);
@@ -86,10 +88,14 @@ function MatchCenterPage({ accessMode }) {
 
   const weekId = getWeekId();
   const currentTeams = teams[weekId] || null;
-  const currentWeekCaptains =
-    captainOverride?.weekId === weekId
-      ? captainOverride
-      : captains[weekId] || createEmptyWeekCaptains(weekId);
+  const getResolvedWeekCaptains = (targetWeekId) => {
+    if (!targetWeekId) {
+      return createEmptyWeekCaptains('');
+    }
+
+    return captainOverrides[targetWeekId] || captains[targetWeekId] || createEmptyWeekCaptains(targetWeekId);
+  };
+  const currentWeekCaptains = getResolvedWeekCaptains(weekId);
   const todayMatch = matches.find((match) => isSameDay(match.date, todayKey()));
   const todayCaptains = currentWeekCaptains.dailyCaptains?.find((entry) => entry.date === todayKey()) || null;
   const latestWeekCaptains = currentWeekCaptains.dailyCaptains?.slice(-1)?.[0] || null;
@@ -123,8 +129,8 @@ function MatchCenterPage({ accessMode }) {
   }, [isAdmin, teamGenerationLockedMessage]);
 
   useEffect(() => {
-    setCaptainOverride(null);
-  }, [weekId]);
+    setCaptainOverrides({});
+  }, [captains]);
 
   const availableCounts = useMemo(() => {
     if (!currentTeams) {
@@ -142,14 +148,21 @@ function MatchCenterPage({ accessMode }) {
 
   const actionableCaptainDays = useMemo(
     () =>
-      [todayKey(), tomorrowKey()].map((dateKey) => ({
+      getCaptainSelectionDateKeys(CAPTAIN_SELECTION_WINDOW_DAYS).map((dateKey) => {
+        const targetWeekId = getWeekId(dateKey);
+        const targetWeekCaptains = getResolvedWeekCaptains(targetWeekId);
+
+        return {
         date: dateKey,
+        weekId: targetWeekId,
         formatted: formatDate(dateKey),
         isToday: dateKey === todayKey(),
         isTomorrow: dateKey === tomorrowKey(),
-        captains: currentWeekCaptains.dailyCaptains?.find((entry) => entry.date === dateKey) || null,
-      })),
-    [currentWeekCaptains.dailyCaptains]
+        teams: teams[targetWeekId] || null,
+        captains: targetWeekCaptains.dailyCaptains?.find((entry) => entry.date === dateKey) || null,
+        };
+      }),
+    [captainOverrides, captains, teams]
   );
 
   const canMarkNoMatch = useMemo(() => !todayMatch, [todayMatch]);
@@ -217,7 +230,7 @@ function MatchCenterPage({ accessMode }) {
       const newTeams = teamGenerator(players);
       const nextGenerationCount = currentGenerationCount + 1;
       const hadExistingCaptainSelections = (currentWeekCaptains.dailyCaptains?.length || 0) > 0;
-      const nextCaptainsData = { ...captains };
+      const nextCaptainsData = { ...captains, ...captainOverrides };
       const clearedWeekCaptains = createEmptyWeekCaptains(weekId);
 
       delete nextCaptainsData[weekId];
@@ -229,15 +242,18 @@ function MatchCenterPage({ accessMode }) {
         ...newTeams,
       });
       await updateAppState({ captains: nextCaptainsData });
-      setCaptainOverride(clearedWeekCaptains);
+      setCaptainOverrides((currentOverrides) => ({
+        ...currentOverrides,
+        [weekId]: clearedWeekCaptains,
+      }));
 
       setTeamMessageType('success');
       setTeamMessage(getTeamGenerationSuccessMessage(nextGenerationCount));
       setCaptainMessageType('success');
       setCaptainMessage(
         hadExistingCaptainSelections
-          ? 'Captain selections were refreshed for the newly generated teams. Please choose fresh captains for this week.'
-          : 'New teams are ready. Please choose captains for today or tomorrow.'
+          ? `Captain selections were refreshed for the newly generated teams. Please choose fresh captains from the next ${CAPTAIN_SELECTION_WINDOW_DAYS} days.`
+          : `New teams are ready. Please choose captains from the next ${CAPTAIN_SELECTION_WINDOW_DAYS} days.`
       );
       window.setTimeout(() => {
         captainsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -258,26 +274,30 @@ function MatchCenterPage({ accessMode }) {
       return;
     }
 
-    if (!currentTeams) {
-      setCaptainMessageType('warning');
-      setCaptainMessage('Please generate weekly teams before selecting captains.');
-      return;
-    }
-
     if (!isDateAllowedForCaptain(targetDate)) {
       setCaptainMessageType('warning');
-      setCaptainMessage('Captain can only be selected for today or tomorrow.');
+      setCaptainMessage(`Captain can only be selected for the next ${CAPTAIN_SELECTION_WINDOW_DAYS} days.`);
       return;
     }
 
-    const existingCaptains = currentWeekCaptains.dailyCaptains?.find((item) => item.date === targetDate);
+    const targetWeekId = getWeekId(targetDate);
+    const targetTeams = teams[targetWeekId] || null;
+    const targetWeekCaptains = getResolvedWeekCaptains(targetWeekId);
+
+    if (!targetTeams) {
+      setCaptainMessageType('warning');
+      setCaptainMessage(`Please generate weekly teams for ${targetWeekId} before selecting captains for ${formatDate(targetDate)}.`);
+      return;
+    }
+
+    const existingCaptains = targetWeekCaptains.dailyCaptains?.find((item) => item.date === targetDate);
     if (existingCaptains) {
       setCaptainMessageType('warning');
       setCaptainMessage('Captains have already been selected for this day.');
       return;
     }
 
-    const selection = captainSelector(currentTeams, currentWeekCaptains.usedCaptains);
+    const selection = captainSelector(targetTeams, targetWeekCaptains.usedCaptains);
     if (!selection) {
       setCaptainMessageType('warning');
       setCaptainMessage('No available captain candidates remain for one or both teams this week.');
@@ -285,14 +305,14 @@ function MatchCenterPage({ accessMode }) {
     }
 
     const nextWeekCaptains = {
-      ...currentWeekCaptains,
-      weekId,
+      ...targetWeekCaptains,
+      weekId: targetWeekId,
       usedCaptains: {
-        teamA: [...(currentWeekCaptains.usedCaptains.teamA || []), selection.teamA],
-        teamB: [...(currentWeekCaptains.usedCaptains.teamB || []), selection.teamB],
+        teamA: [...(targetWeekCaptains.usedCaptains.teamA || []), selection.teamA],
+        teamB: [...(targetWeekCaptains.usedCaptains.teamB || []), selection.teamB],
       },
       dailyCaptains: [
-        ...(currentWeekCaptains.dailyCaptains || []),
+        ...(targetWeekCaptains.dailyCaptains || []),
         { date: targetDate, teamA: selection.teamA, teamB: selection.teamB },
       ],
     };
@@ -301,11 +321,15 @@ function MatchCenterPage({ accessMode }) {
       await updateAppState({
         captains: {
           ...captains,
-          [weekId]: nextWeekCaptains,
+          ...captainOverrides,
+          [targetWeekId]: nextWeekCaptains,
         },
       });
 
-      setCaptainOverride(nextWeekCaptains);
+      setCaptainOverrides((currentOverrides) => ({
+        ...currentOverrides,
+        [targetWeekId]: nextWeekCaptains,
+      }));
       setCaptainMessageType('success');
       setCaptainMessage(`Captains selected successfully for ${formatDate(targetDate)}.`);
     } catch (error) {
@@ -407,8 +431,10 @@ function MatchCenterPage({ accessMode }) {
     }
   };
 
-  const handleCaptainPdf = (entry) => {
-    if (!currentTeams || !entry) {
+  const handleCaptainPdf = (entry, targetWeekId) => {
+    const targetTeams = teams[targetWeekId] || null;
+
+    if (!targetTeams || !entry) {
       setCaptainMessageType('warning');
       setCaptainMessage('Captain team sheet is not ready yet.');
       return;
@@ -416,9 +442,9 @@ function MatchCenterPage({ accessMode }) {
 
     const didOpen = openCaptainDayPdf({
       date: entry.date,
-      weekId,
+      weekId: targetWeekId,
       captains: entry,
-      teams: currentTeams,
+      teams: targetTeams,
       players,
     });
 
@@ -566,9 +592,13 @@ function MatchCenterPage({ accessMode }) {
                 </p>
               ) : null}
 
+              <p className="page-intro" style={{ marginTop: '14px' }}>
+                Admin can choose captains for the next {CAPTAIN_SELECTION_WINDOW_DAYS} days. Dates from a future week unlock after that week&apos;s teams are generated.
+              </p>
+
               <div className="section-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
                 {actionableCaptainDays.map((day) => {
-                  const isSelectable = !day.captains && isDateAllowedForCaptain(day.date);
+                  const isSelectable = !day.captains && Boolean(day.teams) && isDateAllowedForCaptain(day.date);
                   const relatedMatch = matches.find((match) => isSameDay(match.date, day.date)) || null;
 
                   return (
@@ -581,6 +611,7 @@ function MatchCenterPage({ accessMode }) {
                         {day.isToday ? ' (Today)' : ''}
                         {day.isTomorrow && !day.isToday ? ' (Tomorrow)' : ''}
                       </h3>
+                      <p className="page-intro" style={{ marginBottom: '10px' }}>Week: {day.weekId}</p>
 
                       {day.captains ? (
                         <div>
@@ -599,21 +630,28 @@ function MatchCenterPage({ accessMode }) {
                           <button
                             className="button-secondary button-small"
                             type="button"
-                            onClick={() => handleCaptainPdf(day.captains)}
+                            onClick={() => handleCaptainPdf(day.captains, day.weekId)}
                             data-guest-allowed="true"
                           >
                             {isAdmin ? 'Share Captain PDF' : 'Open Captain PDF'}
                           </button>
                         </div>
                       ) : (
-                        <button
-                          className="button-primary button-small"
-                          type="button"
-                          onClick={() => selectCaptainsForDay(day.date)}
-                          disabled={!isAdmin || !isSelectable}
-                        >
-                          Select Captains
-                        </button>
+                        <>
+                          <button
+                            className="button-primary button-small"
+                            type="button"
+                            onClick={() => selectCaptainsForDay(day.date)}
+                            disabled={!isAdmin || !isSelectable}
+                          >
+                            Select Captains
+                          </button>
+                          {!day.teams ? (
+                            <p className="warning-text" style={{ marginTop: '10px' }}>
+                              Generate weekly teams for {day.weekId} to unlock this date.
+                            </p>
+                          ) : null}
+                        </>
                       )}
                     </div>
                   );
