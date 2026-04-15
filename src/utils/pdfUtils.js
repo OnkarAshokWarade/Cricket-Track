@@ -680,6 +680,7 @@ const getCaptainTableRowsMarkup = ({ teamAIds = [], teamBIds = [], captainAId = 
 const getCaptainSheetHtml = ({ title, weekId, date, captainAName, captainBName, teams, captains, players = [] }) => {
   const teamAIds = teams?.teamA || [];
   const teamBIds = teams?.teamB || [];
+  const formattedDate = formatDate(date);
 
   return `
     <!doctype html>
@@ -868,7 +869,7 @@ const getCaptainSheetHtml = ({ title, weekId, date, captainAName, captainBName, 
             <div>
               <h1>${escapeHtml(title)}</h1>
               <p>Week: ${escapeHtml(weekId || '--')}</p>
-              <p>Date: ${escapeHtml(formatDate(date))}</p>
+              <p>Date of Match: <strong>${escapeHtml(formattedDate)}</strong></p>
             </div>
             <div class="pill-row">
               <span class="pill">Team A Captain: ${escapeHtml(captainAName)}</span>

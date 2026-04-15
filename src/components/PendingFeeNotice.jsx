@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { formatDate } from '../utils/dateUtils';
 import { getPlayerName } from '../utils/teamUtils';
 
@@ -6,13 +6,14 @@ const UNKNOWN_PLAYER_LABEL = '\u0905\u091c\u094d\u091e\u093e\u0924';
 const PENDING_NOTICE_TITLE = '\u092a\u094d\u0930\u0932\u0902\u092c\u093f\u0924 \u092e\u0945\u091a \u092b\u0940 \u0938\u0942\u091a\u0928\u093e';
 const PENDING_NOTICE_COPY =
   '\u0916\u093e\u0932\u0940\u0932 \u0916\u0947\u0933\u093e\u0921\u0942\u0902\u0928\u0940 100 \u0930\u0941\u092a\u092f\u0947 \u0909\u092c\u0947\u0926 \u0936\u0947\u0916 \u092f\u093e\u0902\u091a\u094d\u092f\u093e\u0915\u0921\u0947 \u0932\u0935\u0915\u0930\u093e\u0924 \u0932\u0935\u0915\u0930 \u091c\u092e\u093e \u0915\u0930\u093e\u0935\u0947\u0924:';
+const PENDING_NOTICE_TIMEOUT = 5000;
 
 const normalizePlayerName = (players, playerId) => {
   const name = getPlayerName(players, playerId);
   return name === 'Unknown' ? UNKNOWN_PLAYER_LABEL : name;
 };
 
-function PendingFeeNotice({ matches = [], players = [] }) {
+function PendingFeeNotice({ matches = [], players = [], resetKey = '' }) {
   const pendingNotices = useMemo(
     () =>
       matches
@@ -26,8 +27,30 @@ function PendingFeeNotice({ matches = [], players = [] }) {
         })),
     [matches, players]
   );
+  const pendingNoticeKey = useMemo(
+    () => `${resetKey}|${pendingNotices.map((notice) => `${notice.id}:${notice.date}:${notice.loserName}`).join('|')}`,
+    [pendingNotices, resetKey]
+  );
+  const [isVisible, setIsVisible] = useState(pendingNotices.length > 0);
 
-  if (pendingNotices.length === 0) {
+  useEffect(() => {
+    if (pendingNotices.length === 0) {
+      setIsVisible(false);
+      return undefined;
+    }
+
+    setIsVisible(true);
+
+    const timeoutId = window.setTimeout(() => {
+      setIsVisible(false);
+    }, PENDING_NOTICE_TIMEOUT);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [pendingNoticeKey, pendingNotices.length]);
+
+  if (pendingNotices.length === 0 || !isVisible) {
     return null;
   }
 
