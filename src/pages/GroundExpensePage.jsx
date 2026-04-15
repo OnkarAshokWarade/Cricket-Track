@@ -3,6 +3,7 @@ import PaymentQrCard from '../components/PaymentQrCard';
 import { useAppData } from '../context/AppDataContext';
 import useAutoClearMessage from '../hooks/useAutoClearMessage';
 import { formatDate, getWeekId, todayKey } from '../utils/dateUtils';
+import { openFundTransactionsPdf } from '../utils/pdfUtils';
 
 const FIXED_CONTRIBUTION = 100;
 const PAYMENT_RECEIVER_MR = '\u0909\u092c\u0947\u0926 \u0936\u0947\u0916';
@@ -488,6 +489,23 @@ function GroundExpensePage({ accessMode }) {
     }
   };
 
+  const handleExportTransactionsPdf = () => {
+    if (!isAdmin) {
+      return;
+    }
+
+    const didOpen = openFundTransactionsPdf({
+      transactions,
+      archives: fundArchives,
+    });
+
+    setFundMessage(
+      didOpen
+        ? 'Transaction history PDF opened. Choose "Save as PDF" to download it.'
+        : 'Transaction history PDF could not be prepared. Please try again.'
+    );
+  };
+
   const renderEditorContent = (showMobileCloseButton = false) => (
     <>
       <div className="ground-expense-editor-header">
@@ -729,6 +747,15 @@ function GroundExpensePage({ accessMode }) {
                   {transactionTypeCounts.debit}
                 </span>
               </p>
+              {isAdmin ? (
+                <button
+                  type="button"
+                  className="button-secondary button-small"
+                  onClick={handleExportTransactionsPdf}
+                >
+                  Generate PDF
+                </button>
+              ) : null}
               {isAdmin && isMobileViewport ? (
                 <button
                   type="button"

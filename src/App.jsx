@@ -259,7 +259,7 @@ function AppContent() {
             <Route path="/match" element={<Navigate to="/match-center" replace />} />
             <Route path="/history" element={<HistoryPage accessMode={accessMode} />} />
             <Route path="/ground-expense" element={<GroundExpensePage accessMode={accessMode} />} />
-            <Route path="/ground-fund-summary" element={<GroundFundSummaryPage />} />
+            <Route path="/ground-fund-summary" element={<GroundFundSummaryPage accessMode={accessMode} />} />
             <Route path="/weekly-summary" element={<WeeklySummaryPage accessMode={accessMode} />} />
             <Route path="/rules-patodag" element={<RulesPatodaPage />} />
           </Routes>

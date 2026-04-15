@@ -1,11 +1,18 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useAppData } from '../context/AppDataContext';
+import useAutoClearMessage from '../hooks/useAutoClearMessage';
+import { openGroundFundSummaryPdf } from '../utils/pdfUtils';
 
 const formatINR = (value) => `\u20B9${value.toLocaleString('en-IN')}`;
 const isCreditType = (type) => type === 'credit-fixed' || type === 'credit-manual' || type === 'credit';
 
-function GroundFundSummaryPage() {
-  const { matches, fundTransactions } = useAppData();
+function GroundFundSummaryPage({ accessMode }) {
+  const { matches, players, fundTransactions } = useAppData();
+  const [pdfMessage, setPdfMessage] = useState('');
+  const [pdfMessageType, setPdfMessageType] = useState('success');
+  const isAdmin = accessMode === 'admin';
+
+  useAutoClearMessage(pdfMessage, setPdfMessage);
 
   const matchFeeTotals = useMemo(
     () =>
@@ -58,10 +65,48 @@ function GroundFundSummaryPage() {
     };
   }, [groundExpenseTotals.totalCredit, groundExpenseTotals.totalDebit, matchFeeTotals.totalCollected]);
 
+  const handleExportPdf = () => {
+    if (!isAdmin) {
+      return;
+    }
+
+    const didOpen = openGroundFundSummaryPdf({
+      matches,
+      players,
+      transactions: fundTransactions,
+    });
+
+    setPdfMessageType(didOpen ? 'success' : 'warning');
+    setPdfMessage(
+      didOpen
+        ? 'Ground fund summary PDF opened. Choose "Save as PDF" to download it.'
+        : 'Ground fund summary PDF could not be prepared. Please try again.'
+    );
+  };
+
   return (
     <section className="ground-expense-page">
       <div className="card">
-        <h1 className="page-title">Ground Fund Summary</h1>
+        <div className="top-nav" style={{ marginBottom: pdfMessage ? '10px' : 0 }}>
+          <div>
+            <h1 className="page-title">Ground Fund Summary</h1>
+          </div>
+          {isAdmin ? (
+            <button
+              type="button"
+              className="button-secondary button-small"
+              onClick={handleExportPdf}
+            >
+              Generate PDF
+            </button>
+          ) : null}
+        </div>
+
+        {pdfMessage ? (
+          <p className={pdfMessageType === 'success' ? 'success-text' : 'warning-text'} style={{ margin: 0 }}>
+            {pdfMessage}
+          </p>
+        ) : null}
       </div>
 
       <div className="fund-summary-grid fund-summary-top-grid">
