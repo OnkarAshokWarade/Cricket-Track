@@ -30,56 +30,61 @@ function MatchCard({ match, players, canEdit = false }) {
   };
 
   const penaltyPaid = match.penaltyPaid !== undefined ? match.penaltyPaid : false;
+  const paymentStatusLabel = isNoMatch ? 'No Match' : penaltyPaid ? 'Paid' : 'Not Paid';
+  const paymentStatusClass = isNoMatch ? 'neutral' : penaltyPaid ? 'paid' : 'unpaid';
 
   return (
     <div className={`match-card ${isNoMatch || penaltyPaid ? 'paid' : 'unpaid'}`}>
-      <div className="match-header">
-        <div className="match-week">{match.weekId}</div>
+      <div className="match-card-top">
+        <div className="match-card-date-group">
+          <span className="match-card-date-label">Match Date</span>
+          <strong className="match-card-date">{formatDate(match.date)}</strong>
+        </div>
+        <div className="match-card-top-meta">
+          <div className="match-week">{match.weekId}</div>
+          <span className={`match-card-status-chip ${paymentStatusClass}`}>{paymentStatusLabel}</span>
+        </div>
       </div>
 
-      <div className="match-details">
-        <div className="match-summary-row">
-          <span className="match-summary-label">Date:</span>
-          <strong className="match-summary-value">{formatDate(match.date)}</strong>
-        </div>
-
-        <div className="match-summary-row">
-          <span className="match-summary-label">Winner:</span>
-          <strong className="match-summary-value">
+      <div className="match-card-grid">
+        <div className="match-card-field">
+          <span className="match-card-field-label">Winner</span>
+          <strong className="match-card-field-value">
             {isNoMatch ? 'No Match' : match.winnerTeam === 'teamA' ? 'Team A' : 'Team B'}
           </strong>
         </div>
 
-        <div className="captains-info">
-          <div className="captain-item">
-            <span className="label">Captain A:</span>
-            <span className={`name ${captainAResultClass}`}>{match.captainA ? getPlayerName(players, match.captainA) : '--'}</span>
-          </div>
-          <div className="captain-item">
-            <span className="label">Captain B:</span>
-            <span className={`name ${captainBResultClass}`}>{match.captainB ? getPlayerName(players, match.captainB) : '--'}</span>
-          </div>
+        <div className="match-card-field">
+          <span className="match-card-field-label">Captain A</span>
+          <strong className={`match-card-field-value ${captainAResultClass}`}>
+            {match.captainA ? getPlayerName(players, match.captainA) : '--'}
+          </strong>
+        </div>
+
+        <div className="match-card-field">
+          <span className="match-card-field-label">Captain B</span>
+          <strong className={`match-card-field-value ${captainBResultClass}`}>
+            {match.captainB ? getPlayerName(players, match.captainB) : '--'}
+          </strong>
         </div>
 
         {isNoMatch ? (
-          <div className="penalty-section">
-            <div className="penalty-info">
-              <span className="label">Status:</span>
-              <span className="amount">{match.score || 'No match'}</span>
-            </div>
+          <div className="match-card-field match-card-field-wide">
+            <span className="match-card-field-label">Status</span>
+            <strong className="match-card-field-value">{match.score || 'No match'}</strong>
           </div>
         ) : (
-          <div className="penalty-section">
-            <div className="penalty-info">
-              <span className="label">Penalty:</span>
-              <span className="amount">{`\u20B9${match.penalty}`}</span>
-              <span className="loser">({loserName})</span>
+          <>
+            <div className="match-card-field">
+              <span className="match-card-field-label">Penalty</span>
+              <strong className="match-card-field-value">{`\u20B9${match.penalty}`}</strong>
+              <span className="match-card-field-meta">{loserName}</span>
             </div>
-
             {canEdit ? (
-              <div className="penalty-status">
-                <label className="status-label">Payment Status:</label>
+              <div className="match-card-field match-card-field-wide">
+                <label className="match-card-field-label" htmlFor={`payment-status-${match.id}`}>Payment Status</label>
                 <select
+                  id={`payment-status-${match.id}`}
                   value={penaltyPaid ? 'paid' : 'not-paid'}
                   onChange={(event) => handlePenaltyStatusChange(event.target.value === 'paid')}
                   disabled={isUpdating}
@@ -90,15 +95,15 @@ function MatchCard({ match, players, canEdit = false }) {
                 </select>
               </div>
             ) : (
-              <div className="penalty-status">
-                <span className="status-label">Payment Status:</span>
+              <div className="match-card-field">
+                <span className="match-card-field-label">Payment Status</span>
                 <span className={`status-select ${penaltyPaid ? 'paid' : 'unpaid'}`}>
                   {penaltyPaid ? 'Paid' : 'Not Paid'}
                 </span>
               </div>
             )}
             {error ? <p className="warning-text">{error}</p> : null}
-          </div>
+          </>
         )}
       </div>
     </div>

@@ -53,7 +53,7 @@ function HistoryPage({ accessMode }) {
             </div>
           </div>
 
-          <div className="card">
+          <div className="card history-card">
             <h2 className="card-title">Match History</h2>
             {sortedMatches.length > 0 ? (
               <div className="matches-grid">
@@ -71,52 +71,57 @@ function HistoryPage({ accessMode }) {
             )}
           </div>
 
-          <div className="card" style={{ marginTop: '20px' }}>
+          <div className="card history-card" style={{ marginTop: '20px' }}>
             <h2 className="card-title">Captain History by Week</h2>
             <p className="captain-color-legend">
               <span className="captain-loss-color">लाल</span> = हरलेला कर्णधार, <span className="captain-win-color">हिरवा</span> = जिंकलेला कर्णधार, <span className="captain-neutral-color">निळा</span> = कर्णधार निवडलेला आहे पण निकाल नोंदलेला नाही
             </p>
             {Object.keys(captainHistory).length > 0 ? (
               Object.entries(captainHistory).map(([weekId, weekMatches]) => (
-                <div key={weekId} style={{ marginBottom: '18px' }}>
-                  <p className="pill">{weekId}</p>
-                  <table className="weekly-date-table captain-history-table">
-                    <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th>Team A Captain</th>
-                        <th>Team B Captain</th>
-                        <th>Winner</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {weekMatches.map((match) => (
-                        <tr key={match.id}>
-                          <td data-label="Date" style={{ fontWeight: 800 }}>{formatDate(match.date)}</td>
-                          <td data-label="Team A Captain">
-                            <span
-                              className={getCaptainResultClass(match, match.captainA)}
-                              style={{ fontWeight: 700 }}
-                            >
-                              {match.captainA ? getPlayerName(players, match.captainA) : match.status === 'no-match' ? 'No match' : '--'}
-                            </span>
-                          </td>
-                          <td data-label="Team B Captain">
-                            <span
-                              className={getCaptainResultClass(match, match.captainB)}
-                              style={{ fontWeight: 700 }}
-                            >
-                              {match.captainB ? getPlayerName(players, match.captainB) : match.status === 'no-match' ? 'No match' : '--'}
-                            </span>
-                          </td>
-                          <td data-label="Winner" style={{ fontWeight: 800 }}>
-                            {match.status === 'no-match' ? 'No Match' : match.winnerTeam === 'teamA' ? 'Team A' : 'Team B'}
-                          </td>
+                <section key={weekId} className="history-week-panel">
+                  <div className="history-week-header">
+                    <p className="pill history-week-pill">{weekId}</p>
+                    <span className="history-week-count">{weekMatches.length} day{weekMatches.length > 1 ? 's' : ''}</span>
+                  </div>
+                  <div className="history-week-table-wrap">
+                    <table className="weekly-date-table captain-history-table">
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Team A Captain</th>
+                          <th>Team B Captain</th>
+                          <th>Winner</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {weekMatches.map((match) => (
+                          <tr key={match.id}>
+                            <td data-label="Date" style={{ fontWeight: 800 }}>{formatDate(match.date)}</td>
+                            <td data-label="Team A Captain">
+                              <span
+                                className={getCaptainResultClass(match, match.captainA)}
+                                style={{ fontWeight: 700 }}
+                              >
+                                {match.captainA ? getPlayerName(players, match.captainA) : match.status === 'no-match' ? 'No match' : '--'}
+                              </span>
+                            </td>
+                            <td data-label="Team B Captain">
+                              <span
+                                className={getCaptainResultClass(match, match.captainB)}
+                                style={{ fontWeight: 700 }}
+                              >
+                                {match.captainB ? getPlayerName(players, match.captainB) : match.status === 'no-match' ? 'No match' : '--'}
+                              </span>
+                            </td>
+                            <td data-label="Winner" style={{ fontWeight: 800 }}>
+                              {match.status === 'no-match' ? 'No Match' : match.winnerTeam === 'teamA' ? 'Team A' : 'Team B'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
               ))
             ) : (
               <p className="empty-state">No recorded captain history yet.</p>

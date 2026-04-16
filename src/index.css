@@ -619,9 +619,51 @@ textarea {
   height: fit-content;
 }
 
+.history-card {
+  padding: 18px;
+}
+
+.history-week-panel {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #f8fafc;
+}
+
+.history-week-panel:last-child {
+  margin-bottom: 0;
+}
+
+.history-week-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.history-week-pill {
+  margin: 0;
+}
+
+.history-week-count {
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.history-week-table-wrap {
+  min-width: 0;
+}
+
 .matches-grid {
   display: grid;
-  gap: 16px;
+  gap: 12px;
 }
 
 /* Match Card Styles */
@@ -629,7 +671,7 @@ textarea {
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 16px;
-  padding: 20px;
+  padding: 16px;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
   transition: all 0.2s ease;
 }
@@ -649,6 +691,43 @@ textarea {
   background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
 }
 
+.match-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.match-card-date-group {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.match-card-date-label {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.match-card-date {
+  color: #0f172a;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.match-card-top-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .match-header {
   display: flex;
   justify-content: flex-end;
@@ -659,50 +738,83 @@ textarea {
 .match-week {
   background: #f1f5f9;
   color: #475569;
-  padding: 4px 12px;
+  padding: 5px 10px;
   border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.match-details {
-  display: grid;
-  gap: 12px;
-}
-
-.match-summary-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 12px;
-  background: #f8fafc;
-  border-radius: 10px;
-}
-
-.match-summary-label {
-  color: #475569;
+  font-size: 0.78rem;
   font-weight: 700;
 }
 
-.match-summary-value {
-  color: #0f172a;
-  font-size: 1rem;
+.match-card-status-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
   font-weight: 800;
 }
 
-.captains-info {
-  display: grid;
-  gap: 8px;
+.match-card-status-chip.paid {
+  background: #d1fae5;
+  color: #065f46;
 }
 
-.captain-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
+.match-card-status-chip.unpaid {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.match-card-status-chip.neutral {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.match-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.match-card-field {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 12px;
   background: #f8fafc;
-  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.match-card-field-wide {
+  grid-column: 1 / -1;
+}
+
+.match-card-field-label {
+  color: #64748b;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.match-card-field-value {
+  color: #0f172a;
+  font-size: 0.96rem;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.match-card-field-meta {
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.match-card-field .status-select {
+  width: 100%;
+  min-height: 40px;
 }
 
 .captain-item .label {
@@ -751,6 +863,7 @@ textarea {
 .team-table .team-player-name.captain-loss-color,
 .captain-history-field strong.captain-loss-color,
 .weekly-date-field strong.captain-loss-color,
+.match-card-field-value.captain-loss-color,
 .match-details-value.captain-loss-color {
   color: #dc2626;
 }
@@ -759,6 +872,7 @@ textarea {
 .team-table .team-player-name.captain-win-color,
 .captain-history-field strong.captain-win-color,
 .weekly-date-field strong.captain-win-color,
+.match-card-field-value.captain-win-color,
 .match-details-value.captain-win-color {
   color: #15803d;
 }
@@ -767,6 +881,7 @@ textarea {
 .team-table .team-player-name.captain-neutral-color,
 .captain-history-field strong.captain-neutral-color,
 .weekly-date-field strong.captain-neutral-color,
+.match-card-field-value.captain-neutral-color,
 .match-details-value.captain-neutral-color {
   color: #2563eb;
 }
@@ -1406,16 +1521,16 @@ textarea {
 
 .weekly-date-table {
   width: 100%;
-  min-width: 620px;
+  min-width: 560px;
   border-collapse: separate;
-  border-spacing: 0 10px;
-  font-size: 0.92rem;
+  border-spacing: 0 8px;
+  font-size: 0.88rem;
 }
 
 .weekly-date-table th {
   text-align: left;
   color: #475569;
-  padding: 0 10px 4px;
+  padding: 0 8px 4px;
   font-weight: 800;
   white-space: nowrap;
 }
@@ -1424,7 +1539,7 @@ textarea {
   background: #f8fafc;
   border-top: 1px solid #e2e8f0;
   border-bottom: 1px solid #e2e8f0;
-  padding: 10px;
+  padding: 8px 10px;
   white-space: nowrap;
 }
 
@@ -1441,6 +1556,66 @@ textarea {
 }
 
 @media (max-width: 760px) {
+  .history-card {
+    padding: 14px;
+  }
+
+  .matches-grid {
+    gap: 10px;
+  }
+
+  .match-card {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .match-card:hover {
+    transform: none;
+  }
+
+  .match-card-top {
+    margin-bottom: 10px;
+    gap: 8px;
+  }
+
+  .match-card-date {
+    font-size: 0.95rem;
+  }
+
+  .match-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .match-card-field {
+    padding: 8px 10px;
+  }
+
+  .match-card-field-label {
+    font-size: 0.7rem;
+  }
+
+  .match-card-field-value {
+    font-size: 0.9rem;
+  }
+
+  .match-week,
+  .match-card-status-chip {
+    font-size: 0.72rem;
+    padding: 4px 8px;
+  }
+
+  .captain-color-legend {
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .history-week-panel {
+    gap: 10px;
+    padding: 10px;
+    border-radius: 14px;
+  }
+
   .weekly-date-table-wrap {
     overflow: visible;
   }
@@ -1464,20 +1639,21 @@ textarea {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
-    padding: 8px 10px;
-    margin-bottom: 10px;
+    padding: 6px 8px;
+    margin-bottom: 8px;
   }
 
   .weekly-date-table td {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    padding: 6px 0;
+    gap: 10px;
+    padding: 4px 0;
     border: 0;
     background: transparent;
     white-space: normal;
     text-align: right;
+    font-size: 0.86rem;
   }
 
   .weekly-date-table td::before {
@@ -1499,6 +1675,16 @@ textarea {
 
   .weekly-date-card-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .match-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .match-card-top-meta {
+    justify-content: flex-start;
   }
 }
 
