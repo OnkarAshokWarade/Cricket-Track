@@ -152,6 +152,7 @@ const sanitizeCaptainsData = (captainsData) => {
             date: entry.date,
             teamA: normalizePlayerId(entry?.teamA),
             teamB: normalizePlayerId(entry?.teamB),
+            changeCount: Number.isFinite(Number(entry?.changeCount)) && Number(entry.changeCount) >= 0 ? Number(entry.changeCount) : 0,
           }))
           .filter((entry) => entry.teamA || entry.teamB)
       : [];

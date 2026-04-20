@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  CAPTAIN_SELECTION_WINDOW_DAYS,
   getCaptainSelectionDateKeys,
+  addDaysToDateKey,
   formatDate,
   getWeekId,
-  isDateAllowedForCaptain,
   isSameDay,
   todayKey,
   tomorrowKey,
@@ -35,11 +34,48 @@ const PAYMENT_RECEIVER_EN = 'Ubed Shaikh';
 const PAYMENT_RECEIVER_MR = '\u0909\u092c\u0947\u0926 \u0936\u0947\u0916';
 const PAYMENT_RECEIVER_LABEL = `${PAYMENT_RECEIVER_EN} (${PAYMENT_RECEIVER_MR})`;
 const PAYMENT_UPI_ID = 'ubbus313-3@okaxis';
+const MATCH_CENTER_CAPTAIN_WINDOW_DAYS = 3;
+const MAX_CAPTAIN_CHANGES_PER_DAY = 2;
 const createEmptyWeekCaptains = (weekId) => ({
   weekId,
   usedCaptains: { teamA: [], teamB: [] },
   dailyCaptains: [],
 });
+
+const getCaptainChangeCount = (entry) => {
+  const parsedChangeCount = Number(entry?.changeCount);
+  return Number.isFinite(parsedChangeCount) && parsedChangeCount >= 0 ? parsedChangeCount : 0;
+};
+
+const buildUsedCaptainsFromDailyCaptains = (dailyCaptains = []) =>
+  dailyCaptains.reduce(
+    (usedCaptains, entry) => {
+      if (entry?.teamA && !usedCaptains.teamA.includes(entry.teamA)) {
+        usedCaptains.teamA.push(entry.teamA);
+      }
+
+      if (entry?.teamB && !usedCaptains.teamB.includes(entry.teamB)) {
+        usedCaptains.teamB.push(entry.teamB);
+      }
+
+      return usedCaptains;
+    },
+    { teamA: [], teamB: [] }
+  );
+
+const buildWeekCaptainsState = (targetWeekId, targetWeekCaptains, dailyCaptains = []) => ({
+  ...targetWeekCaptains,
+  weekId: targetWeekId,
+  usedCaptains: buildUsedCaptainsFromDailyCaptains(dailyCaptains),
+  dailyCaptains,
+});
+
+const isDateAllowedForMatchCenterCaptain = (dateValue) => {
+  const startDateKey = todayKey();
+  const endDateKey = addDaysToDateKey(startDateKey, MATCH_CENTER_CAPTAIN_WINDOW_DAYS - 1);
+
+  return Boolean(dateValue && dateValue >= startDateKey && dateValue <= endDateKey);
+};
 
 const getCaptainResultClass = (match, captainId) => {
   if (!captainId) {
@@ -78,6 +114,9 @@ function MatchCenterPage({ accessMode }) {
   const [isSubmittingTeamGeneration, setIsSubmittingTeamGeneration] = useState(false);
   const [captainMessage, setCaptainMessage] = useState('');
   const [captainMessageType, setCaptainMessageType] = useState('success');
+  const [activeCaptainChangeDate, setActiveCaptainChangeDate] = useState('');
+  const [captainChangePassword, setCaptainChangePassword] = useState('');
+  const [isSubmittingCaptainChange, setIsSubmittingCaptainChange] = useState(false);
   const [matchMessage, setMatchMessage] = useState('');
   const [captainOverrides, setCaptainOverrides] = useState({});
   const captainsSectionRef = useRef(null);
@@ -130,6 +169,9 @@ function MatchCenterPage({ accessMode }) {
 
   useEffect(() => {
     setCaptainOverrides({});
+    setActiveCaptainChangeDate('');
+    setCaptainChangePassword('');
+    setIsSubmittingCaptainChange(false);
   }, [captains]);
 
   const availableCounts = useMemo(() => {
@@ -148,7 +190,7 @@ function MatchCenterPage({ accessMode }) {
 
   const actionableCaptainDays = useMemo(
     () =>
-      getCaptainSelectionDateKeys(CAPTAIN_SELECTION_WINDOW_DAYS).map((dateKey) => {
+      getCaptainSelectionDateKeys(MATCH_CENTER_CAPTAIN_WINDOW_DAYS).map((dateKey) => {
         const targetWeekId = getWeekId(dateKey);
         const targetWeekCaptains = getResolvedWeekCaptains(targetWeekId);
 
@@ -163,6 +205,14 @@ function MatchCenterPage({ accessMode }) {
         };
       }),
     [captainOverrides, captains, teams]
+  );
+  const visibleCaptainHistoryDays = useMemo(
+    () =>
+      actionableCaptainDays
+        .filter((day) => day.captains)
+        .slice()
+        .sort((a, b) => (a.date < b.date ? -1 : 1)),
+    [actionableCaptainDays]
   );
 
   const canMarkNoMatch = useMemo(() => !todayMatch, [todayMatch]);
@@ -252,8 +302,8 @@ function MatchCenterPage({ accessMode }) {
       setCaptainMessageType('success');
       setCaptainMessage(
         hadExistingCaptainSelections
-          ? `Captain selections were refreshed for the newly generated teams. Please choose fresh captains from the next ${CAPTAIN_SELECTION_WINDOW_DAYS} days.`
-          : `New teams are ready. Please choose captains from the next ${CAPTAIN_SELECTION_WINDOW_DAYS} days.`
+          ? 'Captain selections were refreshed for the newly generated teams. Please choose fresh captains for today and the next 2 days.'
+          : 'New teams are ready. Please choose captains for today and the next 2 days.'
       );
       window.setTimeout(() => {
         captainsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -274,9 +324,9 @@ function MatchCenterPage({ accessMode }) {
       return;
     }
 
-    if (!isDateAllowedForCaptain(targetDate)) {
+    if (!isDateAllowedForMatchCenterCaptain(targetDate)) {
       setCaptainMessageType('warning');
-      setCaptainMessage(`Captain can only be selected for the next ${CAPTAIN_SELECTION_WINDOW_DAYS} days.`);
+      setCaptainMessage('Captain can only be selected for today and the next 2 days.');
       return;
     }
 
@@ -304,18 +354,11 @@ function MatchCenterPage({ accessMode }) {
       return;
     }
 
-    const nextWeekCaptains = {
-      ...targetWeekCaptains,
-      weekId: targetWeekId,
-      usedCaptains: {
-        teamA: [...(targetWeekCaptains.usedCaptains.teamA || []), selection.teamA],
-        teamB: [...(targetWeekCaptains.usedCaptains.teamB || []), selection.teamB],
-      },
-      dailyCaptains: [
-        ...(targetWeekCaptains.dailyCaptains || []),
-        { date: targetDate, teamA: selection.teamA, teamB: selection.teamB },
-      ],
-    };
+    const nextDailyCaptains = [
+      ...(targetWeekCaptains.dailyCaptains || []),
+      { date: targetDate, teamA: selection.teamA, teamB: selection.teamB, changeCount: 0 },
+    ];
+    const nextWeekCaptains = buildWeekCaptainsState(targetWeekId, targetWeekCaptains, nextDailyCaptains);
 
     try {
       await updateAppState({
@@ -336,6 +379,154 @@ function MatchCenterPage({ accessMode }) {
       console.error('Error selecting captains:', error);
       setCaptainMessageType('warning');
       setCaptainMessage('Captains could not be saved. Please verify Firebase configuration and try again.');
+    }
+  };
+
+  const openCaptainChangePanel = (targetDate) => {
+    if (!isAdmin) {
+      setCaptainMessageType('warning');
+      setCaptainMessage('Only admin can change captains.');
+      return;
+    }
+
+    const relatedMatch = matches.find((match) => isSameDay(match.date, targetDate)) || null;
+    if (relatedMatch) {
+      setCaptainMessageType('warning');
+      setCaptainMessage(`Captain change is locked for ${formatDate(targetDate)} because that match result is already saved.`);
+      return;
+    }
+
+    const targetWeekId = getWeekId(targetDate);
+    const targetWeekCaptains = getResolvedWeekCaptains(targetWeekId);
+    const existingCaptains = targetWeekCaptains.dailyCaptains?.find((entry) => entry.date === targetDate) || null;
+    const remainingChanges = Math.max(MAX_CAPTAIN_CHANGES_PER_DAY - getCaptainChangeCount(existingCaptains), 0);
+
+    if (!existingCaptains) {
+      setCaptainMessageType('warning');
+      setCaptainMessage(`Select captains for ${formatDate(targetDate)} first.`);
+      return;
+    }
+
+    if (remainingChanges === 0) {
+      setCaptainMessageType('warning');
+      setCaptainMessage(`Captain changes are finished for ${formatDate(targetDate)}.`);
+      return;
+    }
+
+    setActiveCaptainChangeDate(targetDate);
+    setCaptainChangePassword('');
+  };
+
+  const closeCaptainChangePanel = () => {
+    setActiveCaptainChangeDate('');
+    setCaptainChangePassword('');
+  };
+
+  const changeCaptainsForDay = async (event, targetDate) => {
+    event.preventDefault();
+
+    if (isSubmittingCaptainChange) {
+      return;
+    }
+
+    if (!isAdmin) {
+      setCaptainMessageType('warning');
+      setCaptainMessage('Only admin can change captains.');
+      return;
+    }
+
+    const targetWeekId = getWeekId(targetDate);
+    const targetTeams = teams[targetWeekId] || null;
+    const targetWeekCaptains = getResolvedWeekCaptains(targetWeekId);
+    const currentEntryIndex = targetWeekCaptains.dailyCaptains?.findIndex((entry) => entry.date === targetDate) ?? -1;
+    const existingCaptains = currentEntryIndex >= 0 ? targetWeekCaptains.dailyCaptains[currentEntryIndex] : null;
+
+    if (!targetTeams || !existingCaptains) {
+      setCaptainMessageType('warning');
+      setCaptainMessage(`Captain data for ${formatDate(targetDate)} is not ready yet.`);
+      return;
+    }
+
+    const relatedMatch = matches.find((match) => isSameDay(match.date, targetDate)) || null;
+    if (relatedMatch) {
+      setCaptainMessageType('warning');
+      setCaptainMessage(`Captain change is locked for ${formatDate(targetDate)} because that match result is already saved.`);
+      closeCaptainChangePanel();
+      return;
+    }
+
+    const existingChangeCount = getCaptainChangeCount(existingCaptains);
+    const remainingChanges = Math.max(MAX_CAPTAIN_CHANGES_PER_DAY - existingChangeCount, 0);
+    if (remainingChanges === 0) {
+      setCaptainMessageType('warning');
+      setCaptainMessage(`Captain changes are finished for ${formatDate(targetDate)}.`);
+      closeCaptainChangePanel();
+      return;
+    }
+
+    if (captainChangePassword.trim() !== TEAM_GENERATE_PASSWORD) {
+      setCaptainMessageType('warning');
+      setCaptainMessage('Incorrect admin password. Captain change was not applied.');
+      return;
+    }
+
+    const selection = captainSelector(
+      targetTeams,
+      buildUsedCaptainsFromDailyCaptains(targetWeekCaptains.dailyCaptains || [])
+    );
+
+    if (!selection) {
+      setCaptainMessageType('warning');
+      setCaptainMessage('No unused replacement captains remain for one or both teams on this week.');
+      return;
+    }
+
+    if (selection.teamA === existingCaptains.teamA && selection.teamB === existingCaptains.teamB) {
+      setCaptainMessageType('warning');
+      setCaptainMessage('A different captain pair could not be found right now. Please try again later.');
+      return;
+    }
+
+    const nextDailyCaptains = (targetWeekCaptains.dailyCaptains || []).map((entry, index) =>
+      index === currentEntryIndex
+        ? {
+            ...entry,
+            teamA: selection.teamA,
+            teamB: selection.teamB,
+            changeCount: existingChangeCount + 1,
+          }
+        : entry
+    );
+    const nextWeekCaptains = buildWeekCaptainsState(targetWeekId, targetWeekCaptains, nextDailyCaptains);
+
+    setIsSubmittingCaptainChange(true);
+
+    try {
+      await updateAppState({
+        captains: {
+          ...captains,
+          ...captainOverrides,
+          [targetWeekId]: nextWeekCaptains,
+        },
+      });
+
+      setCaptainOverrides((currentOverrides) => ({
+        ...currentOverrides,
+        [targetWeekId]: nextWeekCaptains,
+      }));
+      closeCaptainChangePanel();
+
+      const nextRemainingChanges = Math.max(MAX_CAPTAIN_CHANGES_PER_DAY - (existingChangeCount + 1), 0);
+      setCaptainMessageType('success');
+      setCaptainMessage(
+        `Captains changed for ${formatDate(targetDate)}. ${nextRemainingChanges} change chance${nextRemainingChanges === 1 ? '' : 's'} left for this date.`
+      );
+    } catch (error) {
+      console.error('Error changing captains:', error);
+      setCaptainMessageType('warning');
+      setCaptainMessage('Captain change could not be saved. Please verify Firebase configuration and try again.');
+    } finally {
+      setIsSubmittingCaptainChange(false);
     }
   };
 
@@ -593,13 +784,18 @@ function MatchCenterPage({ accessMode }) {
               ) : null}
 
               <p className="page-intro" style={{ marginTop: '14px' }}>
-                Admin can choose captains for the next {CAPTAIN_SELECTION_WINDOW_DAYS} days. Dates from a future week unlock after that week&apos;s teams are generated.
+                Admin can choose captains only for today and the next 2 days. Each selected date can also change captains up to {MAX_CAPTAIN_CHANGES_PER_DAY} times with the admin password before that date&apos;s match is saved.
               </p>
 
               <div className="section-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
                 {actionableCaptainDays.map((day) => {
-                  const isSelectable = !day.captains && Boolean(day.teams) && isDateAllowedForCaptain(day.date);
+                  const isSelectable = !day.captains && Boolean(day.teams) && isDateAllowedForMatchCenterCaptain(day.date);
                   const relatedMatch = matches.find((match) => isSameDay(match.date, day.date)) || null;
+                  const changeCount = getCaptainChangeCount(day.captains);
+                  const remainingChanges = Math.max(MAX_CAPTAIN_CHANGES_PER_DAY - changeCount, 0);
+                  const isChangePanelOpen = activeCaptainChangeDate === day.date;
+                  const isCaptainChangeLocked = Boolean(relatedMatch);
+                  const canChangeCaptains = Boolean(day.captains) && !isCaptainChangeLocked && remainingChanges > 0;
 
                   return (
                     <div
@@ -635,6 +831,73 @@ function MatchCenterPage({ accessMode }) {
                           >
                             {isAdmin ? 'Share Captain PDF' : 'Open Captain PDF'}
                           </button>
+                          {isAdmin ? (
+                            <button
+                              className="button-primary button-small"
+                              type="button"
+                              onClick={() => openCaptainChangePanel(day.date)}
+                              disabled={!canChangeCaptains || isSubmittingCaptainChange}
+                              style={{ marginLeft: '8px', marginTop: '8px' }}
+                            >
+                              Change Captains
+                            </button>
+                          ) : null}
+
+                          {isAdmin ? (
+                            <p className="page-intro" style={{ marginTop: '10px', marginBottom: 0 }}>
+                              Change chances left: {remainingChanges}/{MAX_CAPTAIN_CHANGES_PER_DAY}
+                            </p>
+                          ) : null}
+
+                          {isCaptainChangeLocked ? (
+                            <p className="warning-text" style={{ marginTop: '10px' }}>
+                              Captain change is locked because this date already has a saved match result.
+                            </p>
+                          ) : null}
+
+                          {!isCaptainChangeLocked && remainingChanges === 0 ? (
+                            <p className="warning-text" style={{ marginTop: '10px' }}>
+                              Captain changes are finished for this date.
+                            </p>
+                          ) : null}
+
+                          {isAdmin && isChangePanelOpen ? (
+                            <div className="team-password-panel" style={{ marginTop: '12px' }}>
+                              <h4 className="card-title" style={{ marginBottom: '6px' }}>
+                                Change Captains
+                              </h4>
+                              <p className="page-intro" style={{ marginBottom: '12px' }}>
+                                Confirm admin password to use 1 of this date&apos;s {MAX_CAPTAIN_CHANGES_PER_DAY} captain-change chances.
+                              </p>
+                              <form className="team-password-form" onSubmit={(event) => changeCaptainsForDay(event, day.date)}>
+                                <label className="input-label" htmlFor={`captain-change-password-${day.date}`}>
+                                  Admin Password
+                                </label>
+                                <input
+                                  id={`captain-change-password-${day.date}`}
+                                  type="password"
+                                  value={captainChangePassword}
+                                  onChange={(event) => setCaptainChangePassword(event.target.value)}
+                                  placeholder="Enter admin password"
+                                  autoFocus
+                                  required
+                                />
+                                <div className="button-row team-password-actions" style={{ marginTop: '8px' }}>
+                                  <button className="button-primary button-small" type="submit" disabled={isSubmittingCaptainChange}>
+                                    Confirm Change
+                                  </button>
+                                  <button
+                                    className="button-secondary button-small"
+                                    type="button"
+                                    onClick={closeCaptainChangePanel}
+                                    disabled={isSubmittingCaptainChange}
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </form>
+                            </div>
+                          ) : null}
                         </div>
                       ) : (
                         <>
@@ -667,41 +930,38 @@ function MatchCenterPage({ accessMode }) {
                     </p>
                   </div>
                 </div>
-                {currentWeekCaptains.dailyCaptains?.length > 0 ? (
+                {visibleCaptainHistoryDays.length > 0 ? (
                   <div className="captain-history-list">
-                    {currentWeekCaptains.dailyCaptains
-                      .slice()
-                      .sort((a, b) => (a.date < b.date ? -1 : 1))
-                      .map((entry) => {
-                        const relatedMatch = matches.find((match) => isSameDay(match.date, entry.date)) || null;
-                        const teamAClassName = getCaptainResultClass(relatedMatch, entry.teamA) || 'captain-neutral-color';
-                        const teamBClassName = getCaptainResultClass(relatedMatch, entry.teamB) || 'captain-neutral-color';
+                    {visibleCaptainHistoryDays.map((day) => {
+                      const relatedMatch = matches.find((match) => isSameDay(match.date, day.date)) || null;
+                      const teamAClassName = getCaptainResultClass(relatedMatch, day.captains.teamA) || 'captain-neutral-color';
+                      const teamBClassName = getCaptainResultClass(relatedMatch, day.captains.teamB) || 'captain-neutral-color';
 
-                        return (
-                          <article className="captain-history-card" key={entry.date}>
-                            <div className="captain-history-card-top">
-                              <strong className="captain-history-card-date">{formatDate(entry.date)}</strong>
+                      return (
+                        <article className="captain-history-card" key={day.date}>
+                          <div className="captain-history-card-top">
+                            <strong className="captain-history-card-date">{formatDate(day.date)}</strong>
+                          </div>
+                          <div className="captain-history-card-grid">
+                            <div className="captain-history-field">
+                              <span>Team A Captain</span>
+                              <strong className={teamAClassName}>
+                                {getPlayerName(players, day.captains.teamA)}
+                              </strong>
                             </div>
-                            <div className="captain-history-card-grid">
-                              <div className="captain-history-field">
-                                <span>Team A Captain</span>
-                                <strong className={teamAClassName}>
-                                  {getPlayerName(players, entry.teamA)}
-                                </strong>
-                              </div>
-                              <div className="captain-history-field">
-                                <span>Team B Captain</span>
-                                <strong className={teamBClassName}>
-                                  {getPlayerName(players, entry.teamB)}
-                                </strong>
-                              </div>
+                            <div className="captain-history-field">
+                              <span>Team B Captain</span>
+                              <strong className={teamBClassName}>
+                                {getPlayerName(players, day.captains.teamB)}
+                              </strong>
                             </div>
-                          </article>
-                        );
-                      })}
+                          </div>
+                        </article>
+                      );
+                    })}
                   </div>
                 ) : (
-                  <p className="empty-state">No captain selections recorded yet this week.</p>
+                  <p className="empty-state">No captain selections recorded yet for the visible captain dates.</p>
                 )}
               </div>
             </>
