@@ -138,6 +138,7 @@ function HistoryPage({ accessMode }) {
             players={players}
             currentWeekId={currentWeekId}
             showUnpaidNotice={false}
+            includeAllPenalties
           />
           {isGuest ? (
             <div style={{ marginTop: '18px' }}>

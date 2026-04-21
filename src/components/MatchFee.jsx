@@ -4,10 +4,14 @@ import { getPlayerName } from '../utils/teamUtils';
 
 const PAYMENT_RECEIVER_MR = '\u0909\u092c\u0947\u0926 \u0936\u0947\u0916';
 
-function MatchFee({ matches, players, currentWeekId, showUnpaidNotice = true }) {
+function MatchFee({ matches, players, currentWeekId, showUnpaidNotice = true, includeAllPenalties = false }) {
   const weeklyData = useMemo(() => {
-    const weekMatches = matches.filter(
-      (match) => match.weekId === currentWeekId && match.status !== 'no-match' && (match.penalty || 0) > 0 && match.loserCaptain
+    const relevantMatches = matches.filter(
+      (match) =>
+        (includeAllPenalties || match.weekId === currentWeekId) &&
+        match.status !== 'no-match' &&
+        (Number(match.penalty) || 0) > 0 &&
+        match.loserCaptain
     );
 
     const playerPenalties = {};
@@ -15,8 +19,9 @@ function MatchFee({ matches, players, currentWeekId, showUnpaidNotice = true }) 
     let totalPaid = 0;
     let totalUnpaid = 0;
 
-    weekMatches.forEach((match) => {
+    relevantMatches.forEach((match) => {
       const loserId = match.loserCaptain;
+      const penaltyAmount = Number(match.penalty) || 0;
       const penaltyPaid = match.penaltyPaid !== undefined ? match.penaltyPaid : false;
 
       if (!playerPenalties[loserId]) {
@@ -29,38 +34,41 @@ function MatchFee({ matches, players, currentWeekId, showUnpaidNotice = true }) 
         };
       }
 
-      playerPenalties[loserId].totalPenalties += match.penalty;
+      playerPenalties[loserId].totalPenalties += penaltyAmount;
       playerPenalties[loserId].matches.push({
         id: match.id,
         date: match.date,
-        penalty: match.penalty,
+        penalty: penaltyAmount,
         paid: penaltyPaid,
       });
 
       if (penaltyPaid) {
         playerPenalties[loserId].paidCount += 1;
-        totalPaid += match.penalty;
+        totalPaid += penaltyAmount;
       } else {
         playerPenalties[loserId].unpaidCount += 1;
-        totalUnpaid += match.penalty;
+        totalUnpaid += penaltyAmount;
         unpaidNotices.push({
           id: match.id,
           date: match.date,
           playerId: loserId,
-          penalty: match.penalty,
+          penalty: penaltyAmount,
         });
       }
     });
 
     return {
-      playerPenalties: Object.values(playerPenalties),
+      playerPenalties: Object.values(playerPenalties).map((playerData) => ({
+        ...playerData,
+        matches: playerData.matches.slice().sort((a, b) => (a.date < b.date ? 1 : -1)),
+      })),
       unpaidNotices: unpaidNotices.sort((a, b) => (a.date < b.date ? 1 : -1)),
       totalPaid,
       totalUnpaid,
       totalCollected: totalPaid,
       totalOutstanding: totalUnpaid,
     };
-  }, [matches, currentWeekId]);
+  }, [matches, currentWeekId, includeAllPenalties]);
 
   const sortedPlayers = useMemo(
     () => weeklyData.playerPenalties.slice().sort((a, b) => b.totalPenalties - a.totalPenalties),
@@ -71,7 +79,7 @@ function MatchFee({ matches, players, currentWeekId, showUnpaidNotice = true }) 
     <div className="match-fee-sidebar">
       <div className="sidebar-header">
         <h3>Match Fee Tracker</h3>
-        <p className="week-indicator">{currentWeekId}</p>
+        <p className="week-indicator">{includeAllPenalties ? 'All Matches' : currentWeekId}</p>
       </div>
 
       <div className="fee-summary">
@@ -107,7 +115,7 @@ function MatchFee({ matches, players, currentWeekId, showUnpaidNotice = true }) 
       <div className="player-penalties">
         <h4>Player Penalties</h4>
         {sortedPlayers.length > 0 ? (
-          <div className="penalty-list">
+          <div className="penalty-list penalty-list-scroll">
             {sortedPlayers.map((playerData) => (
               <div key={playerData.playerId} className="player-penalty-card">
                 <div className="player-header">
