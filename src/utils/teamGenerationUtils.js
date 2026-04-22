@@ -16,11 +16,8 @@ export const getTeamGenerationSuccessMessage = (generationCount) => {
   return `Weekly teams generated successfully. ${remainingGenerations} team-generation chance${remainingGenerations === 1 ? '' : 's'} left today.`;
 };
 
-export const getTeamGenerationPromptText = () =>
-  `Confirm password to use 1 of today's ${MAX_TEAM_GENERATIONS} team-generation chances.`;
-
 export const getTeamGenerationIntroText = () =>
-  `Team generation requires admin password and is limited to ${MAX_TEAM_GENERATIONS} times per day.`;
+  `Admin can generate weekly teams up to ${MAX_TEAM_GENERATIONS} times per day.`;
 
 export const getTeamGenerationCount = (weekTeams, dateValue = todayKey()) => {
   if (!weekTeams) {

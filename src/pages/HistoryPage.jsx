@@ -1,10 +1,12 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { getWeekId, formatDate } from '../utils/dateUtils';
 import { getPlayerName } from '../utils/teamUtils';
 import MatchCard from '../components/MatchCard';
 import MatchFee from '../components/MatchFee';
 import PaymentQrCard from '../components/PaymentQrCard';
 import { useAppData } from '../context/AppDataContext';
+import useAutoClearMessage from '../hooks/useAutoClearMessage';
+import { openCaptainHistoryWeekPdf } from '../utils/pdfUtils';
 
 const getCaptainResultClass = (match, captainId) => {
   if (!captainId) {
@@ -23,6 +25,10 @@ function HistoryPage({ accessMode }) {
   const isAdmin = accessMode === 'admin';
   const isGuest = accessMode === 'guest';
   const showSidebar = true;
+  const [pdfMessage, setPdfMessage] = useState('');
+  const [pdfMessageType, setPdfMessageType] = useState('success');
+
+  useAutoClearMessage(pdfMessage, setPdfMessage);
 
   const sortedMatches = useMemo(
     () => matches.slice().sort((a, b) => (a.date < b.date ? 1 : -1)),
@@ -42,6 +48,25 @@ function HistoryPage({ accessMode }) {
 
   const currentWeekId = getWeekId();
 
+  const handleWeekPdf = (weekId, weekMatches) => {
+    if (!isAdmin) {
+      return;
+    }
+
+    const didOpen = openCaptainHistoryWeekPdf({
+      weekId,
+      matches: weekMatches,
+      players,
+    });
+
+    setPdfMessageType(didOpen ? 'success' : 'warning');
+    setPdfMessage(
+      didOpen
+        ? `Print dialog opened for ${weekId}. Choose "Save as PDF" to download the captain history with results, penalties, and payment status.`
+        : 'Weekly captain history PDF could not be prepared. Please try again.'
+    );
+  };
+
   return (
     <div className={`history-layout ${showSidebar ? '' : 'history-layout-single'}`.trim()}>
       <div className="history-main">
@@ -52,6 +77,14 @@ function HistoryPage({ accessMode }) {
               <p className="page-intro">Browse all recorded matches with captain results, penalties, and payment status.</p>
             </div>
           </div>
+
+          {pdfMessage ? (
+            <div className="card history-card" style={{ marginBottom: '20px' }}>
+              <p className={pdfMessageType === 'success' ? 'success-text' : 'warning-text'} style={{ margin: 0 }}>
+                {pdfMessage}
+              </p>
+            </div>
+          ) : null}
 
           <div className="card history-card">
             <h2 className="card-title">Match History</h2>
@@ -80,8 +113,19 @@ function HistoryPage({ accessMode }) {
               Object.entries(captainHistory).map(([weekId, weekMatches]) => (
                 <section key={weekId} className="history-week-panel">
                   <div className="history-week-header">
-                    <p className="pill history-week-pill">{weekId}</p>
-                    <span className="history-week-count">{weekMatches.length} day{weekMatches.length > 1 ? 's' : ''}</span>
+                    <div className="history-week-actions">
+                      <p className="pill history-week-pill">{weekId}</p>
+                      <span className="history-week-count">{weekMatches.length} day{weekMatches.length > 1 ? 's' : ''}</span>
+                    </div>
+                    {isAdmin ? (
+                      <button
+                        type="button"
+                        className="button-secondary button-small"
+                        onClick={() => handleWeekPdf(weekId, weekMatches)}
+                      >
+                        Week PDF
+                      </button>
+                    ) : null}
                   </div>
                   <div className="history-week-table-wrap">
                     <table className="weekly-date-table captain-history-table">

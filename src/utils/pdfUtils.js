@@ -1002,6 +1002,262 @@ const getCaptainSheetHtml = ({ title, weekId, date, captainAName, captainBName, 
   `;
 };
 
+const getCaptainHistoryWinnerLabel = (match) => {
+  if (!match) {
+    return 'Not recorded';
+  }
+
+  if (match.status === 'no-match') {
+    return 'No Match';
+  }
+
+  if (!match.winnerTeam) {
+    return 'Result pending';
+  }
+
+  return match.winnerTeam === 'teamA' ? 'Team A' : 'Team B';
+};
+
+const getCaptainHistoryPaymentStatusLabel = (match) => {
+  if (!match) {
+    return 'Not recorded';
+  }
+
+  if (match.status === 'no-match') {
+    return 'No payment needed';
+  }
+
+  return match.penaltyPaid === true ? 'Paid' : 'Pending';
+};
+
+const getCaptainHistoryPaymentStatusClassName = (match) => {
+  if (!match || match.status === 'no-match') {
+    return 'status-neutral';
+  }
+
+  return match.penaltyPaid === true ? 'status-paid' : 'status-pending';
+};
+
+const getCaptainHistoryWeekHtml = ({ title, weekId, matches = [], players = [] }) => {
+  const sortedMatches = matches.slice().sort((a, b) => (a.date < b.date ? 1 : -1));
+
+  return `
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <title>${escapeHtml(title)}</title>
+        <style>
+          ${PDF_PRINT_COLOR_CSS}
+          @page {
+            size: A4 portrait;
+            margin: 8mm;
+          }
+
+          :root {
+            color-scheme: light;
+            font-family: Arial, sans-serif;
+          }
+
+          body {
+            margin: 0;
+            padding: 12px;
+            color: #0f172a;
+            background: #f8fafc;
+            font-size: 11px;
+          }
+
+          .sheet {
+            max-width: 980px;
+            margin: 0 auto;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 16px;
+            padding: 16px;
+            display: grid;
+            gap: 12px;
+          }
+
+          .hero {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+          }
+
+          .hero h1 {
+            margin: 0 0 4px;
+            font-size: 22px;
+          }
+
+          .hero p {
+            margin: 2px 0;
+            color: #475569;
+          }
+
+          .pill-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+          }
+
+          .pill {
+            border-radius: 999px;
+            padding: 4px 10px;
+            background: #e2e8f0;
+            color: #334155;
+            font-weight: 700;
+          }
+
+          .table-wrap {
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: #ffffff;
+          }
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+
+          th,
+          td {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 8px 10px;
+            text-align: left;
+            vertical-align: top;
+          }
+
+          thead th {
+            background: #f1f5f9;
+            color: #334155;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+          }
+
+          tbody tr:last-child td {
+            border-bottom: 0;
+          }
+
+          .captain-win {
+            color: #15803d;
+            font-weight: 800;
+          }
+
+          .captain-loss {
+            color: #dc2626;
+            font-weight: 800;
+          }
+
+          .captain-neutral,
+          .status-neutral {
+            color: #334155;
+            font-weight: 700;
+          }
+
+          .status-paid {
+            color: #15803d;
+            font-weight: 800;
+          }
+
+          .status-pending {
+            color: #dc2626;
+            font-weight: 800;
+          }
+
+          .footer-note {
+            margin: 0;
+            color: #475569;
+            font-size: 10px;
+          }
+
+          @media print {
+            body {
+              background: #ffffff;
+              padding: 0;
+            }
+
+            .sheet {
+              max-width: none;
+              border: 0;
+              border-radius: 0;
+              padding: 0;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <main class="sheet">
+          <header class="hero">
+            <div>
+              <h1>${escapeHtml(title)}</h1>
+              <p>Week: ${escapeHtml(weekId || '--')}</p>
+              <p>Date-wise records: ${escapeHtml(String(sortedMatches.length))}</p>
+            </div>
+            <div class="pill-row">
+              <span class="pill">Saved in Firebase</span>
+              <span class="pill">Week-wise history</span>
+            </div>
+          </header>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Team A Captain</th>
+                  <th>Team B Captain</th>
+                  <th>Winner</th>
+                  <th>Losing Captain</th>
+                  <th>Penalty</th>
+                  <th>Payment Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${sortedMatches
+                  .map((match) => {
+                    const teamAClassName =
+                      match.status === 'no-match' || !match.winnerTeam
+                        ? 'captain-neutral'
+                        : match.loserCaptain && match.captainA === match.loserCaptain
+                        ? 'captain-loss'
+                        : 'captain-win';
+                    const teamBClassName =
+                      match.status === 'no-match' || !match.winnerTeam
+                        ? 'captain-neutral'
+                        : match.loserCaptain && match.captainB === match.loserCaptain
+                        ? 'captain-loss'
+                        : 'captain-win';
+
+                    return `
+                      <tr>
+                        <td><strong>${escapeHtml(formatDate(match.date))}</strong></td>
+                        <td><span class="${escapeHtml(teamAClassName)}">${escapeHtml(match.captainA ? getPlayerName(players, match.captainA) : match.status === 'no-match' ? 'No Match' : '--')}</span></td>
+                        <td><span class="${escapeHtml(teamBClassName)}">${escapeHtml(match.captainB ? getPlayerName(players, match.captainB) : match.status === 'no-match' ? 'No Match' : '--')}</span></td>
+                        <td><strong>${escapeHtml(getCaptainHistoryWinnerLabel(match))}</strong></td>
+                        <td>${escapeHtml(match.status === 'no-match' ? 'No Match' : match.loserCaptain ? getPlayerName(players, match.loserCaptain) : 'Result pending')}</td>
+                        <td>${match.status === 'no-match' ? 'No penalty' : getCurrencyHtml(match.penalty)}</td>
+                        <td><span class="${escapeHtml(getCaptainHistoryPaymentStatusClassName(match))}">${escapeHtml(getCaptainHistoryPaymentStatusLabel(match))}</span></td>
+                      </tr>
+                    `;
+                  })
+                  .join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <p class="footer-note">Use the print dialog and choose "Save as PDF" to keep this captain history by week.</p>
+        </main>
+      </body>
+    </html>
+  `;
+};
+
 const getFundTypeLabel = (type) => {
   if (type === 'credit-fixed') {
     return 'जमा (Fixed ₹100)';
@@ -1871,6 +2127,21 @@ export const openCaptainDayPdf = ({ date, weekId, captains, teams, players = [],
       captainBName,
       teams,
       captains,
+      players,
+    })
+  );
+};
+
+export const openCaptainHistoryWeekPdf = ({ weekId, matches = [], players = [] }) => {
+  if (typeof window === 'undefined' || !weekId || matches.length === 0) {
+    return false;
+  }
+
+  return openPrintDocument(
+    getCaptainHistoryWeekHtml({
+      title: 'Patoda XI Captain History by Week',
+      weekId,
+      matches,
       players,
     })
   );

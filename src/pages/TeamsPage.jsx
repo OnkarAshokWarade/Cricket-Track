@@ -6,9 +6,7 @@ import {
   getTeamGenerationStatus,
   getTeamGenerationIntroText,
   getTeamGenerationLockedMessage,
-  getTeamGenerationPromptText,
   getTeamGenerationSuccessMessage,
-  TEAM_GENERATE_PASSWORD,
 } from '../utils/teamGenerationUtils';
 import useAutoClearMessage from '../hooks/useAutoClearMessage';
 
@@ -17,8 +15,6 @@ function TeamsPage() {
   const [weekId] = useState(getWeekId());
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('success');
-  const [showPasswordPanel, setShowPasswordPanel] = useState(false);
-  const [teamPassword, setTeamPassword] = useState('');
   const [isSubmittingTeamGeneration, setIsSubmittingTeamGeneration] = useState(false);
 
   useAutoClearMessage(message, setMessage);
@@ -48,36 +44,14 @@ function TeamsPage() {
     setMessage((currentMessage) => currentMessage || lockedMessage);
   }, [lockedMessage]);
 
-  const openPasswordPanel = () => {
-    if (!canGenerateTeams) {
-      setMessageType('warning');
-      setMessage(lockedMessage || getTeamGenerationLockedMessage());
-      setShowPasswordPanel(false);
-      return;
-    }
-
-    setTeamPassword('');
-    setShowPasswordPanel(true);
-  };
-
-  const closePasswordPanel = () => {
-    setShowPasswordPanel(false);
-    setTeamPassword('');
-  };
-
-  const generateTeams = async (event) => {
-    event.preventDefault();
-
+  const generateTeams = async () => {
     if (isSubmittingTeamGeneration) {
       return;
     }
 
-    const enteredPassword = teamPassword.trim();
-    closePasswordPanel();
-
-    if (enteredPassword !== TEAM_GENERATE_PASSWORD) {
+    if (!canGenerateTeams) {
       setMessageType('warning');
-      setMessage('Incorrect admin password. Click "Generate Weekly Teams" to try again.');
+      setMessage(lockedMessage || getTeamGenerationLockedMessage());
       return;
     }
 
@@ -148,8 +122,8 @@ function TeamsPage() {
             <button
               className="button-primary button-small"
               type="button"
-              onClick={openPasswordPanel}
-              disabled={!canGenerateTeams || showPasswordPanel || isSubmittingTeamGeneration}
+              onClick={generateTeams}
+              disabled={!canGenerateTeams || isSubmittingTeamGeneration}
             >
               Generate Weekly Teams
             </button>
@@ -159,42 +133,6 @@ function TeamsPage() {
               {message}
             </p>
           )}
-          {showPasswordPanel && (
-            <div className="team-password-panel">
-              <h3 className="card-title">Enter Admin Password</h3>
-              <p className="page-intro" style={{ marginBottom: '12px' }}>
-                {getTeamGenerationPromptText()}
-              </p>
-              <form className="team-password-form" onSubmit={generateTeams}>
-                <label className="input-label" htmlFor="teams-page-password">
-                  Admin Password
-                </label>
-                <input
-                  id="teams-page-password"
-                  type="password"
-                  value={teamPassword}
-                  onChange={(event) => setTeamPassword(event.target.value)}
-                  placeholder="Enter admin password"
-                  autoFocus
-                  required
-                />
-                <div className="button-row team-password-actions" style={{ marginTop: '8px' }}>
-                  <button className="button-primary button-small" type="submit" disabled={isSubmittingTeamGeneration}>
-                    Generate Teams
-                  </button>
-                  <button
-                    className="button-secondary button-small"
-                    type="button"
-                    onClick={closePasswordPanel}
-                    disabled={isSubmittingTeamGeneration}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
           <div className="button-row" style={{ marginTop: '14px' }}>
             <button type="button" className="button-secondary button-small" onClick={handleReset}>
               Reset App Data

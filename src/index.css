@@ -645,6 +645,13 @@ textarea {
   flex-wrap: wrap;
 }
 
+.history-week-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .history-week-pill {
   margin: 0;
 }

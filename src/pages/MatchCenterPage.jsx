@@ -12,7 +12,6 @@ import { captainSelector, getPlayerName, teamGenerator } from '../utils/teamUtil
 import {
   getTeamGenerationStatus,
   getTeamGenerationLockedMessage,
-  getTeamGenerationPromptText,
   getTeamGenerationSuccessMessage,
   TEAM_GENERATE_PASSWORD,
 } from '../utils/teamGenerationUtils';
@@ -20,7 +19,6 @@ import MatchDetails from '../components/MatchDetails';
 import ubedUpiQr from '../assets/ubed-upi-qr.jpeg';
 import { useAppData } from '../context/AppDataContext';
 import useAutoClearMessage from '../hooks/useAutoClearMessage';
-import { openCaptainDayPdf } from '../utils/pdfUtils';
 import {
   RESULT_NO_MATCH,
   RESULT_TEAM_A,
@@ -109,8 +107,6 @@ function MatchCenterPage({ accessMode }) {
   const [selectedWinner, setSelectedWinner] = useState(RESULT_TEAM_A);
   const [teamMessage, setTeamMessage] = useState('');
   const [teamMessageType, setTeamMessageType] = useState('success');
-  const [showTeamPasswordModal, setShowTeamPasswordModal] = useState(false);
-  const [teamPassword, setTeamPassword] = useState('');
   const [isSubmittingTeamGeneration, setIsSubmittingTeamGeneration] = useState(false);
   const [captainMessage, setCaptainMessage] = useState('');
   const [captainMessageType, setCaptainMessageType] = useState('success');
@@ -227,43 +223,20 @@ function MatchCenterPage({ accessMode }) {
     setSelectedWinner(RESULT_TEAM_A);
   }, [todayMatch]);
 
-  const openTeamPasswordModal = () => {
+  const generateTeams = async () => {
+    if (isSubmittingTeamGeneration) {
+      return;
+    }
+
     if (!isAdmin) {
       setTeamMessageType('warning');
       setTeamMessage('Only admin can generate weekly teams.');
-      setShowTeamPasswordModal(false);
       return;
     }
 
     if (hasReachedGenerationLimit) {
       setTeamMessageType('warning');
       setTeamMessage(getTeamGenerationLockedMessage());
-      setShowTeamPasswordModal(false);
-      return;
-    }
-
-    setTeamPassword('');
-    setShowTeamPasswordModal(true);
-  };
-
-  const closeTeamPasswordModal = () => {
-    setShowTeamPasswordModal(false);
-    setTeamPassword('');
-  };
-
-  const generateTeams = async (event) => {
-    event.preventDefault();
-
-    if (isSubmittingTeamGeneration) {
-      return;
-    }
-
-    const enteredPassword = teamPassword.trim();
-    closeTeamPasswordModal();
-
-    if (enteredPassword !== TEAM_GENERATE_PASSWORD) {
-      setTeamMessageType('warning');
-      setTeamMessage('Incorrect admin password. Click "Generate Weekly Teams" to try again.');
       return;
     }
 
@@ -622,31 +595,6 @@ function MatchCenterPage({ accessMode }) {
     }
   };
 
-  const handleCaptainPdf = (entry, targetWeekId) => {
-    const targetTeams = teams[targetWeekId] || null;
-
-    if (!targetTeams || !entry) {
-      setCaptainMessageType('warning');
-      setCaptainMessage('Captain team sheet is not ready yet.');
-      return;
-    }
-
-    const didOpen = openCaptainDayPdf({
-      date: entry.date,
-      weekId: targetWeekId,
-      captains: entry,
-      teams: targetTeams,
-      players,
-    });
-
-    setCaptainMessageType(didOpen ? 'success' : 'warning');
-    setCaptainMessage(
-      didOpen
-        ? `Captain team sheet opened for ${formatDate(entry.date)}. Choose "Save as PDF" to share it.`
-        : 'PDF preview could not be prepared. Please try again.'
-    );
-  };
-
   return (
     <section>
       <div className="top-nav">
@@ -665,8 +613,8 @@ function MatchCenterPage({ accessMode }) {
             <button
               className="button-primary button-small"
               type="button"
-              onClick={openTeamPasswordModal}
-              disabled={!isAdmin || !canGenerateTeams || showTeamPasswordModal || isSubmittingTeamGeneration}
+              onClick={generateTeams}
+              disabled={!isAdmin || !canGenerateTeams || isSubmittingTeamGeneration}
             >
               Generate Weekly Teams
             </button>
@@ -682,44 +630,6 @@ function MatchCenterPage({ accessMode }) {
             <p className={teamMessageType === 'success' ? 'success-text' : 'warning-text'} style={{ marginTop: '14px' }}>
               {teamMessage}
             </p>
-          ) : null}
-
-          {showTeamPasswordModal ? (
-            <div className="team-password-panel">
-              <h3 id="team-password-title" className="card-title">
-                Enter Admin Password
-              </h3>
-              <p className="page-intro" style={{ marginBottom: '12px' }}>
-                {getTeamGenerationPromptText()}
-              </p>
-              <form className="team-password-form" onSubmit={generateTeams}>
-                <label className="input-label" htmlFor="team-generate-password">
-                  Admin Password
-                </label>
-                <input
-                  id="team-generate-password"
-                  type="password"
-                  value={teamPassword}
-                  onChange={(event) => setTeamPassword(event.target.value)}
-                  placeholder="Enter admin password"
-                  autoFocus
-                  required
-                />
-                <div className="button-row team-password-actions" style={{ marginTop: '8px' }}>
-                  <button className="button-primary button-small" type="submit" disabled={isSubmittingTeamGeneration}>
-                    Generate Teams
-                  </button>
-                  <button
-                    className="button-secondary button-small"
-                    type="button"
-                    onClick={closeTeamPasswordModal}
-                    disabled={isSubmittingTeamGeneration}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
           ) : null}
 
           <div className="overflow-x-auto" style={{ marginTop: '18px' }}>
@@ -823,14 +733,6 @@ function MatchCenterPage({ accessMode }) {
                               {getPlayerName(players, day.captains.teamB)}
                             </strong>
                           </p>
-                          <button
-                            className="button-secondary button-small"
-                            type="button"
-                            onClick={() => handleCaptainPdf(day.captains, day.weekId)}
-                            data-guest-allowed="true"
-                          >
-                            {isAdmin ? 'Share Captain PDF' : 'Open Captain PDF'}
-                          </button>
                           {isAdmin ? (
                             <button
                               className="button-primary button-small"
