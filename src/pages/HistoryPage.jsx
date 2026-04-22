@@ -88,20 +88,22 @@ function HistoryPage({ accessMode }) {
 
           <div className="card history-card">
             <h2 className="card-title">Match History</h2>
-            {sortedMatches.length > 0 ? (
-              <div className="matches-grid">
-                {sortedMatches.map((match) => (
-                  <MatchCard
-                    key={match.id}
-                    match={match}
-                    players={players}
-                    canEdit={isAdmin}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="empty-state">No matches recorded yet.</p>
-            )}
+            <div className="history-matches-scroll">
+              {sortedMatches.length > 0 ? (
+                <div className="matches-grid">
+                  {sortedMatches.map((match) => (
+                    <MatchCard
+                      key={match.id}
+                      match={match}
+                      players={players}
+                      canEdit={isAdmin}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="empty-state">No matches recorded yet.</p>
+              )}
+            </div>
           </div>
 
           <div className="card history-card" style={{ marginTop: '20px' }}>
