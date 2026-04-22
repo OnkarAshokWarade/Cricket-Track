@@ -1278,7 +1278,7 @@ textarea {
 .match-fee-toast {
   position: fixed;
   top: 20px;
-  left: 20px;
+  right: 20px;
   width: min(420px, calc(100vw - 30px));
   max-height: calc(100vh - 40px);
   overflow-y: auto;
@@ -1296,10 +1296,11 @@ textarea {
   pointer-events: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
+  transform-origin: top right;
 }
 
 .match-fee-toast.visible {
-  animation: toast-slide-left-to-right 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: toast-slide-right-to-left 0.75s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .match-fee-toast-title {
@@ -1365,9 +1366,9 @@ textarea {
   flex: 1 1 0;
 }
 
-@keyframes toast-slide-left-to-right {
+@keyframes toast-slide-right-to-left {
   0% {
-    transform: translateX(-120%);
+    transform: translateX(120%);
     opacity: 0;
   }
 
@@ -1380,7 +1381,7 @@ textarea {
 @media (max-width: 900px) {
   .match-fee-toast {
     top: 12px;
-    left: 12px;
+    right: 12px;
     width: min(380px, calc(100vw - 24px));
   }
 
